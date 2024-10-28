@@ -10,6 +10,7 @@ head(deaths)
 deaths$Lat <- NULL
 deaths$Long <- NULL
 
+
 deathsLong <- melt(deaths, id.vars = c("Province.State", "Country.Region"))
 deathsLong$variable <- gsub("^X", "", deathsLong$variable)
 deathsLong$variable <- gsub("\\.", "-", deathsLong$variable)
@@ -18,6 +19,7 @@ deathsLong$variable <- gsub("-20$", "-2020", deathsLong$variable)
 deathsLong$variable <- as.Date(as.character(deathsLong$variable), format = "%m-%d-%Y")
 
 agregados  <- deathsLong %>% 
+  
   group_by(Country.Region, variable) %>% 
   summarise(deaths = sum(value)) %>% 
   as.data.frame
