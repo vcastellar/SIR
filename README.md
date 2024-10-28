@@ -1,0 +1,2 @@
+# SIR
+modelo epidemiológico SIR
