@@ -67,6 +67,9 @@ barplot(diff(serie), las = 2, cex.names = 0.7)
 
 # Infected <- c(45, 62, 121, 198, 291, 440, 571, 830, 1287, 1975, 2744, 4515, 5974, 7711, 9692, 11791, 14380, 17205, 20440)
 
+# - S: número de susceptibles
+# - I: número de infectados
+# - R: número de recobrados
 Day <- 1:(length(Infected))
 SIR <- function(time, state, parameters) {
   par <- as.list(c(state, parameters))
@@ -90,16 +93,13 @@ RSS <- function(parameters) {
              func = SIR, 
              parms = parameters)
   fit <- out[ , 3]
-  sum(abs(Infected - fit))
+  mean((Infected - fit)^2)
 }
 
 # optimize with some sensible conditions
 Opt <- optim(c(0.5, 0.5), 
              RSS, 
-             # method = "L-BFGS-B"
-             method = 'BFGS', 
-             lower = c(0, 0), 
-             upper = c(1, 1),
+             method = "Nelder-Mead",
              control = list(maxit = 500, factr = 1e4)) 
 Opt$message
 ## [1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
