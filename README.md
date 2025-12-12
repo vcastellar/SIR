@@ -6,9 +6,9 @@ El modelo **SIR** es un sistema de ecuaciones diferenciales:
 
 $$
 \begin{aligned}
-\frac{dS}{dt} &= -\beta \,\frac{S I}{N}, \\
-\frac{dI}{dt} &= \beta \,\frac{S I}{N} - \gamma I, \\
-\frac{dR}{dt} &= \gamma I,
+\frac{dS}{dt} &= -\beta \cdot \frac{S \cdot I}{N}, \\
+\frac{dI}{dt} &= \beta \cdot \frac{S \cdot I}{N} - \gamma \cdot I, \\
+\frac{dR}{dt} &= \gamma \cdot I,
 \end{aligned}
 \qquad
 N = S(t)+I(t)+R(t)
