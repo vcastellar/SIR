@@ -2,7 +2,22 @@
 modelo epidemiológico SIR
 
 ## ¿Qué es el modelo SIR?
-El modelo **SIR** es un sistema de ecuaciones diferenciales que divide a la población en tres compartimentos: susceptibles (S), infectados (I) y recuperados (R). Los susceptibles pueden infectarse con una tasa de transmisión `beta`, los infectados se recuperan con una tasa `gamma`, y la población total se mantiene constante. En este proyecto el script `R/modelo.R` resuelve el sistema con `deSolve`, estima `beta` y `gamma` mediante mínimos cuadrados y calcula el número de reproducción básico `R0 = beta / gamma` a partir de los casos confirmados de COVID-19 en España.
+El modelo **SIR** es un sistema de ecuaciones diferenciales:
+
+\begin{align}
+\frac{dS}{dt} &= -\beta \,\frac{S I}{N},\\[4pt]
+\frac{dI}{dt} &= \beta \,\frac{S I}{N} - \gamma I,\\[4pt]
+\frac{dR}{dt} &= \gamma I,
+\end{align}
+\qquad \text{con } N = S(t)+I(t)+R(t).
+
+que divide a la población en tres compartimentos: 
+
+- susceptibles (S)
+- infectados (I)
+- recuperados (R).
+
+Los susceptibles pueden infectarse con una tasa de transmisión `beta`, los infectados se recuperan con una tasa `gamma`, y la población total se mantiene constante. En este proyecto el script `R/modelo.R` resuelve el sistema con `deSolve`, estima `beta` y `gamma` mediante mínimos cuadrados y calcula el número de reproducción básico `R0 = beta / gamma` a partir de los casos confirmados de COVID-19 en España.
 
 ### Curva logística
 Además del modelo SIR, el script ajusta una curva logística simple sobre la serie de infectados confirmados. La logística modela un crecimiento inicial exponencial que se desacelera al aproximarse a una capacidad máxima (el parámetro de saturación) y se usa como alternativa parsimoniosa para representar la trayectoria acumulada de casos. El ajuste se realiza por mínimos cuadrados (función `fit_logistic_curve`) y se grafica junto con los datos observados.
