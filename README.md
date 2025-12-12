@@ -1,42 +1,26 @@
 # SIR
-
-Modelo epidemiológico SIR aplicado a la serie de casos confirmados de COVID-19.
+modelo epidemiológico SIR
 
 ## Requisitos
-El script depende de los siguientes paquetes de R:
-- dplyr
-- lubridate
-- tidyr
-- reshape2
-- xts
-- zoo
-- deSolve
+- R (>= 3.6)
+- Paquetes: `dplyr`, `lubridate`, `tidyr`, `reshape2`, `xts`, `deSolve`
 
-Instala las dependencias desde una sesión de R si no están disponibles:
+Puedes instalarlos con:
 
 ```r
-install.packages(c("dplyr", "lubridate", "tidyr", "reshape2", "xts", "zoo", "deSolve"))
+install.packages(c("dplyr", "lubridate", "tidyr", "reshape2", "xts", "deSolve"))
 ```
 
-## Ejecución
-El análisis principal se encuentra en `R/modelo.R` y descarga automáticamente la
-serie de casos global desde el repositorio público de Johns Hopkins. Para
-lanzarlo con los valores predeterminados (España, umbral de 100 casos y 90 días
-de horizonte), ejecuta:
-
-```bash
-Rscript R/modelo.R
-```
-
-El script ajusta un modelo SIR y una curva logística básica, calcula el número
-reproductivo básico estimado (`R0`) y genera gráficos de las curvas ajustadas.
-
-## Parámetros
-Puedes modificar el país, la población total, el umbral mínimo de casos o el
-horizonte de proyección invocando la función `run_analysis()` desde R, por
- ejemplo:
+## Cómo ejecutar el modelo
+1. Abre R en la raíz del proyecto.
+2. Ejecuta el script principal:
 
 ```r
 source("R/modelo.R")
-resultados <- run_analysis(country = "Italy", population = 60e6, min_cases = 200)
 ```
+
+El script descarga los casos confirmados de COVID-19 y estima los parámetros del modelo SIR para España.
+
+## Resultados esperados
+- Gráficas de la serie de infectados y del ajuste del modelo SIR.
+- Estimaciones de los parámetros `beta`, `gamma` y del número de reproducción básico (`R0`).
