@@ -4,12 +4,15 @@ modelo epidemiológico SIR
 ## ¿Qué es el modelo SIR?
 El modelo **SIR** es un sistema de ecuaciones diferenciales:
 
-\begin{align}
-\frac{dS}{dt} &= -\beta \,\frac{S I}{N},\\[4pt]
-\frac{dI}{dt} &= \beta \,\frac{S I}{N} - \gamma I,\\[4pt]
+$$
+\begin{aligned}
+\frac{dS}{dt} &= -\beta \,\frac{S I}{N}, \\
+\frac{dI}{dt} &= \beta \,\frac{S I}{N} - \gamma I, \\
 \frac{dR}{dt} &= \gamma I,
-\end{align}
-\qquad \text{con } N = S(t)+I(t)+R(t).
+\end{aligned}
+\qquad
+N = S(t)+I(t)+R(t)
+$$
 
 que divide a la población en tres compartimentos: 
 
