@@ -16,9 +16,9 @@ $$
 
 que divide a la población en tres compartimentos: 
 
-- susceptibles (S)
-- infectados (I)
-- recuperados (R).
+- **susceptibles (S)**: individuos sin inmunidad al agente infeccioso, y que por tanto puede ser infectada si es expuesta al agente infeccioso
+- **infectados (I)**: individuos que están infectados en un momento dado y pueden transmitir la infección a individuos de la población susceptible con la que entran en contacto
+- **recuperados (R)**: individuos que son inmunes a la infección (o fallecidos), y consecuentemente no afectan a la transmisión cuando entran en contacto con otros individuos
 
 Los susceptibles pueden infectarse con una tasa de transmisión `beta`, los infectados se recuperan con una tasa `gamma`, y la población total se mantiene constante. En este proyecto el script `R/modelo.R` resuelve el sistema con `deSolve`, estima `beta` y `gamma` mediante mínimos cuadrados y calcula el número de reproducción básico `R0 = beta / gamma` a partir de los casos confirmados de COVID-19 en España.
 
@@ -48,3 +48,8 @@ El script descarga los casos confirmados de COVID-19 y estima los parámetros de
 ## Resultados esperados
 - Gráficas de la serie de infectados y del ajuste del modelo SIR.
 - Estimaciones de los parámetros `beta`, `gamma` y del número de reproducción básico (`R0`).
+
+## Referencias
+- Wikipedia contributors. *Modelo SIR*. Wikipedia, The Free Encyclopedia.  
+ [Modelo SIR](https://es.wikipedia.org/wiki/Modelo_SIR)
+
