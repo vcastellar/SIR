@@ -9,9 +9,13 @@
 #' @details
 #' ## Model
 #' The SIR dynamics are:
-#' \deqn{\frac{dS}{dt} = -\lambda(t)}
-#' \deqn{\frac{dI}{dt} = \lambda(t) - \gamma I(t)}
-#' \deqn{\frac{dR}{dt} = \gamma I(t)}
+#' \deqn{
+#' \begin{aligned}
+#' \frac{dS}{dt} &= -\lambda(t) \\
+#' \frac{dI}{dt} &= \lambda(t) - \gamma I(t) \\
+#' \frac{dR}{dt} &= \gamma I(t)
+#' \end{aligned}
+#' }
 #' where the incidence \eqn{\lambda(t)} (new infections per day) is defined as:
 #' \deqn{\lambda(t) = \beta \frac{S(t) I(t)}{N}}
 #' with \eqn{N = S(t) + I(t) + R(t)}.
@@ -87,8 +91,8 @@
 #' @export
 simulate_sir <- function(n_days = 200, N = 1e6, beta = 0.35, gamma = 0.10,
     I0 = 10, R0 = 0,
-    rho = 0.3,          # tasa de notificación (0-1)
-    obs = c("poisson", "negbin"),
+    rho = 1,          # tasa de notificación (0-1)
+    obs = c("negbin", "poisson"),
     size = 20,          # dispersión para NegBin (más grande = menos overdisp)
     seed = NULL
 ) {

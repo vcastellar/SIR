@@ -29,11 +29,14 @@
 #' \deqn{\lambda(t) = \beta \frac{S(t) I(t)}{N}}
 #'
 #' and the ODE system is:
-#' \deqn{\frac{dS}{dt} = -\lambda(t)}
-#' \deqn{\frac{dI}{dt} = \lambda(t) - \gamma I(t)}
-#' \deqn{\frac{dR}{dt} = \gamma I(t)}
-#' \deqn{\frac{dC}{dt} = \lambda(t)}
-#'
+#' \deqn{
+#' \begin{aligned}
+#' \frac{dS}{dt} &= -\lambda(t) \\
+#' \frac{dI}{dt} &= \lambda(t) - \gamma I(t) \\
+#' \frac{dR}{dt} &= \gamma I(t) \\
+#' \frac{dC}{dt} &= \lambda(t) \\22222
+#' \end{aligned}
+#' }
 #' The function returns a list with the derivatives and an additional named output
 #' \code{incidence} equal to \eqn{\lambda(t)}, which will appear as an extra column
 #' in the output of \code{deSolve::ode()}.
@@ -54,11 +57,11 @@
 #' @examples
 #' library(deSolve)
 #'
-#' pars <- c(beta = 0.30, gamma = 0.10)
+#' parms <- c(beta = 0.30, gamma = 0.10)
 #' init <- c(S = 999, I = 1, R = 0, C = 1)
 #' times <- 0:160
 #'
-#' out <- ode(y = init, times = times, func = sir_c, parms = pars, method = "lsoda")
+#' out <- deSolve::ode(y = init, times = times, func = sir_c, parms = parms, method = "lsoda")
 #' head(out)
 #'
 #' # Plot infectious prevalence I(t)

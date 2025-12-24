@@ -1,52 +1,62 @@
 
-fit_sir_model <- function(infected, population, horizon_days) {
+#' @examples
+#' xsim <- simulate_sir(beta = 0.3, gamma = 0.15)
+#' x <- round(diff(xsim$states$C ))    # longitud n_days
+#' plot(x)
+#' fit <- fit_sir_model(x)
+#' params <- fit
+#' times <- seq_along(x)
+#' init <- c(S = 1e6 -10,
+#'           I = 10,
+#'           R = 0,
+#'           C = 10)
+#' out <- deSolve::ode(y = init,
+#'                     times = times,
+#'                     func = sir_c,
+#'                     parms = params,
+#'                     method = "lsoda")
+#' out <- as.data.frame(out)
+#' plot(x)
+#' lines(out$incidence, lty = 2)
+#' plot(cumsum(x))
+#' lines(out$C, type = 'l', lty = 2)
+#' @export
+fit_sir_model <- function(x, optimizar = 'C', init = list(I = 10, N = 1e6)) {
 
-  inf_0 <- diff(infected)
-  Day <- seq_along(inf_0)
-  init <- c(S = population - inf_0[1], I = inf_0[1], R = 0)
+  times <- seq_along(x)
+  ini0 <- c(S = init$N - init$I,
+            I = init$I,
+            R = 0,
+            C = init$I)
 
-  rss <- function(parameters) {
+  rss <- function(theta) {
+    print(theta)
+    names(theta) <- c("beta", "gamma")
 
-    names(parameters) <- c("beta", "gamma", "population")
+    out <- deSolve::ode(y = ini0,
+                        times = times,
+                        func = sir_c,
+                        parms = theta,
+                        method = "lsoda")
+    mu <- diff(as.data.frame(out)[['C']])
+    eps <- 1e-8
+    mu <- pmax(mu, eps)
 
-    out <- deSolve::ode(y = init,
-                        times = Day,
-                        func = SIR,
-                        parms = parameters)
-    # plot(out)
-    fit <- out[, 3]
-    message("n obs: ", length(inf_0), " | n fit: ", length(fit))
-    mean((inf_0 - fit) ^ 2)
+
+    -sum(dpois(x, lambda = mu, log = TRUE))
+
   }
 
-  # optimize with some sensible conditions
-  opt <- optim(c(7, 3, 5e6),
-               rss,
-               method = "Nelder-Mead",
-               control = list(maxit = 5000, factr = 1e4))
 
   opt <- optim(
-    par = c(1, 1, 5e6),
+    par = c(0.32, 0.1),
     fn  = rss,
     method = "L-BFGS-B",
-    lower = c(0, 0),
-    upper = c(Inf, Inf),
     control = list(maxit = 5000)
   )
+
   opt$message
-  opt_par <- setNames(opt$par, c("beta", "gamma", "population"))
+  opt_par <- setNames(opt$par, c("beta", "gamma"))
 
-
-  fit <- data.frame(ode(y = init,
-                        times = Day,
-                        func = SIR,
-                        parms = opt_par))
-
-  plot(inf_0)
-  lines(fit$I, col = 'red')
-  lines(fit$R)
-
-  plot(inf_0)
-
-  list(parameters = opt_par, fit = fit)
+  return(opt_par)
 }
