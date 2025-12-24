@@ -39,12 +39,12 @@ Además del modelo SIR, el script ajusta una curva logística simple sobre la se
 
 ## Requisitos
 - R (>= 3.6)
-- Paquetes: `dplyr`, `lubridate`, `tidyr`, `reshape2`, `xts`, `deSolve`
+- Paquetes: `deSolve`
 
 Puedes instalarlos con:
 
 ```r
-install.packages(c("dplyr", "lubridate", "tidyr", "reshape2", "xts", "deSolve"))
+install.packages("deSolve")
 ```
 
 ## Cómo ejecutar el modelo
