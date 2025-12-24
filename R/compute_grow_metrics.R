@@ -1,5 +1,5 @@
 #' Compute short-horizon growth metrics from an infection time series
-#' @name compute_grow_metrics
+#' @name compute_growth_metrics
 #' @description
 #' Computes two related growth metrics from a univariate time series of (typically)
 #' **cumulative** counts:
@@ -24,12 +24,14 @@
 #'   time. In most epidemiological uses this is a **cumulative** count series, but
 #'   the function will work for any numeric series with positive values.
 #'
-#' @return A named list with two numeric vectors:
+#' @return A named list with three numeric vectors:
 #'   \describe{
 #'     \item{inc_pct}{Vector of length `length(infected) - 1` with the one-step
 #'       relative increases.}
 #'     \item{doubling_days}{Vector of length `length(infected) - 4` with the implied
 #'       doubling time (in days) computed from the 4-point moving average of `inc_pct`.}
+#'     \item{alpha}{Vector of length `length(infected) - 4` with the 4-point moving
+#'       average of `inc_pct`.}
 #'   }
 #'
 #' @details
@@ -48,7 +50,7 @@
 #'
 #' @examples
 #' infected <- ts(c(100, 110, 121, 133, 146, 161))
-#' out <- compute_growth_metrics_base(infected)
+#' out <- compute_growth_metrics(infected)
 #' out$inc_pct
 #' out$doubling_days
 

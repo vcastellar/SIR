@@ -21,7 +21,7 @@
 #' plot(cumsum(x))
 #' lines(out$C, type = 'l', lty = 2)
 #' @export
-fit_sir_model <- function(x, optimizar = 'C', init = list(I = 10, N = 1e6)) {
+fit_sir_model <- function(x, init = list(I = 10, N = 1e6)) {
 
   times <- seq_along(x)
   ini0 <- c(S = init$N - init$I,
@@ -30,7 +30,6 @@ fit_sir_model <- function(x, optimizar = 'C', init = list(I = 10, N = 1e6)) {
             C = init$I)
 
   rss <- function(theta) {
-    print(theta)
     names(theta) <- c("beta", "gamma")
 
     out <- deSolve::ode(y = ini0,
@@ -52,6 +51,7 @@ fit_sir_model <- function(x, optimizar = 'C', init = list(I = 10, N = 1e6)) {
     par = c(0.32, 0.1),
     fn  = rss,
     method = "L-BFGS-B",
+    lower = c(0, 0),
     control = list(maxit = 5000)
   )
 
