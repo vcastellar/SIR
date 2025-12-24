@@ -34,7 +34,7 @@
 #' \frac{dS}{dt} &= -\lambda(t) \\
 #' \frac{dI}{dt} &= \lambda(t) - \gamma I(t) \\
 #' \frac{dR}{dt} &= \gamma I(t) \\
-#' \frac{dC}{dt} &= \lambda(t) \\22222
+#' \frac{dC}{dt} &= \lambda(t) \\
 #' \end{aligned}
 #' }
 #' The function returns a list with the derivatives and an additional named output
