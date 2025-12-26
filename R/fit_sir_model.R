@@ -1,7 +1,7 @@
 
 #' @examples
-#' xsim <- simulate_sir(beta = 0.3, gamma = 0.15)
-#' x <- round(diff(xsim$states$C ))    # longitud n_days
+#' xsim <- simulate_sir(beta = 0.3, gamma = 0.1)
+#' x <- xsim$incidence_obs$inc    # longitud n_days
 #' plot(x)
 #' fit <- fit_sir_model(x)
 #' params <- fit
@@ -17,9 +17,9 @@
 #'                     method = "lsoda")
 #' out <- as.data.frame(out)
 #' plot(x)
-#' lines(out$incidence, lty = 2)
+#' lines(out$incidence, lty = 2, col = "red")
 #' plot(cumsum(x))
-#' lines(out$C, type = 'l', lty = 2)
+#' lines(out$C, type = 'l', lty = 2, col = "red")
 #' @export
 fit_sir_model <- function(x, init = list(I = 10, N = 1e6)) {
 
@@ -46,9 +46,28 @@ fit_sir_model <- function(x, init = list(I = 10, N = 1e6)) {
 
   }
 
+  # escaneo Multi-start de parámetros beta y gamma iniciales
+  multi_start_optim <- function(fn, n = 30,
+                                beta_range  = c(0.01, 2),
+                                gamma_range = c(0.02, 1)) {
+    best <- list(value = Inf, par = NULL, opt = NULL)
+    for (i in seq_len(n)) {
+      par0 <- c(runif(1, beta_range[1], beta_range[2]),
+                runif(1, gamma_range[1], gamma_range[2]))
+      opt <- optim(par0, fn, method = "L-BFGS-B",
+                   lower = c(1e-8, 1e-8),
+                   upper = c(beta_range[2], gamma_range[2]))
+      if (is.finite(opt$value) && opt$value < best$value) {
+        best <- list(value=opt$value, par=opt$par, opt=opt)
+      }
+    return(best)
+    }
+  }
+
+  best_init_parms <- multi_start_optim(fn = rss)
 
   opt <- optim(
-    par = c(0.32, 0.1),
+    par = best_init_parms$opt$par,
     fn  = rss,
     method = "L-BFGS-B",
     lower = c(0, 0),
