@@ -110,7 +110,7 @@ simulate_sir <- function(n_days = 200, N = 1e6, beta = 0.35, gamma = 0.10,
   out <- deSolve::ode(
     y = init,
     times = times,
-    func = sir_c,
+    func = sir,
     parms = c(beta = beta, gamma = gamma),
     method = "lsoda"
   )

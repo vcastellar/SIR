@@ -2,9 +2,10 @@
 % Please edit documentation in R/SIR.R
 \name{sir_c}
 \alias{sir_c}
+\alias{sir}
 \title{SIR model with cumulative infections and incidence output}
 \usage{
-sir_c(time, state, parms)
+sir(time, state, parms)
 }
 \arguments{
 \item{time}{Numeric scalar. Current time \eqn{t} at which derivatives are
@@ -62,7 +63,7 @@ and the ODE system is:
 \frac{dS}{dt} &= -\lambda(t) \\
 \frac{dI}{dt} &= \lambda(t) - \gamma I(t) \\
 \frac{dR}{dt} &= \gamma I(t) \\
-\frac{dC}{dt} &= \lambda(t) \\22222
+\frac{dC}{dt} &= \lambda(t) \\
 \end{aligned}
 }
 The function returns a list with the derivatives and an additional named output

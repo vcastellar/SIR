@@ -71,7 +71,7 @@
 #' plot(out[, "time"], out[, "incidence"], type = "l", xlab = "Days", ylab = "Incidence")
 #'
 #' @export
-sir_c <- function(time, state, parms) {
+sir <- function(time, state, parms) {
   with(as.list(c(state, parms)), {
     N <- S + I + R
     lambda <- beta * S * I / N          # incidencia (nuevas infecciones / día)
@@ -79,6 +79,23 @@ sir_c <- function(time, state, parms) {
     dI <-  lambda - gamma * I
     dR <-  gamma * I
     dC <-  lambda                        # acumulado de infecciones
+    list(c(dS, dI, dR, dC), incidence = lambda)
+  })
+}
+
+
+#' SIRS model with cumulative infections and incidence output
+#' @export
+sirs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+    N <- S + I + R
+    lambda <- beta * S * I / N
+
+    dS <- -lambda + omega * R
+    dI <-  lambda - gamma * I
+    dR <-  gamma * I - omega * R
+    dC <-  lambda
+
     list(c(dS, dI, dR, dC), incidence = lambda)
   })
 }

@@ -1,12 +1,37 @@
 Package: SIR
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Type: Package
+Title: Simulation and Inference for Deterministic Epidemic Models
+Version: 0.1.1
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person(given = "Vicente",
+           family = "Castellar",
+           role = c("aut", "cre"),
+           email = "vicente.castellar@example.com")
+Description: 
+    Tools for simulating and analyzing deterministic compartmental epidemic
+    models using ordinary differential equations. The package currently
+    supports classical SIR and SIRS models, including cumulative infection
+    tracking and stochastic observation processes based on Poisson or
+    negative binomial likelihoods. The output of simulations is returned as
+    a dedicated S3 object with associated plotting and summary methods,
+    facilitating reproducible epidemic modeling workflows.
+License: MIT + file LICENSE
 Encoding: UTF-8
+LazyData: true
+Depends: 
+    R (>= 4.1.0)
+Imports:
+    deSolve,
+    stats
+Suggests:
+    ggplot2,
+    devtools,
+    roxygen2,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-Imports: deSolve
+URL: https://github.com/vcastellar/SIR
+BugReports: https://github.com/vcastellar/SIR/issues
+
