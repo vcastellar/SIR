@@ -140,3 +140,74 @@ summary.epi_sim <- function(object, ...) {
     )
   })
 }
+
+
+#' Print a simulated epidemic
+#'
+#' @name print.sim_epi
+#'
+#' @description
+#' Print method for objects of class \code{"sim_epi"} as returned by
+#' \code{\link{simulate_epi}}. The function provides a concise, human-readable
+#' summary of the simulated epidemic, including the model type, time horizon,
+#' key parameters, and basic outcome metrics.
+#'
+#' @details
+#' This method is automatically called when an object of class \code{"sim_epi"}
+#' is printed. It is intended to give a quick overview without displaying the
+#' full internal structure of the object.
+#'
+#' @param x Object of class \code{"sim_epi"} as returned by
+#'   \code{\link{simulate_epi}}.
+#' @param ... Currently unused; included for compatibility with generic dispatch.
+#'
+#' @return
+#' Invisibly returns the input object \code{x}.
+#'
+#' @seealso
+#' \code{\link{simulate_epi}}, \code{\link{summary.sim_epi}}, \code{\link{plot.sim_epi}}
+#'
+#' @examples
+#' sim <- simulate_epi(n_days = 200, model = "sirs",
+#'                     beta = 0.30, gamma = 0.10, omega = 1/180)
+#'
+#' sim
+#'
+#' @export
+print.sim_epi <- function(x, ...) {
+
+  if (!inherits(x, "sim_epi")) {
+    stop("Object must be of class 'sim_epi'.")
+  }
+
+  p  <- x$params
+  st <- x$states
+
+  cat("Epidemic simulation\n")
+  cat("-------------------\n")
+
+  cat("Model:            ", toupper(p$model), "\n", sep = "")
+  cat("Time horizon:     ", max(st$time), " days\n", sep = "")
+  cat("Population (N):   ", format(p$N, scientific = TRUE), "\n", sep = "")
+
+  cat("\nParameters\n")
+  cat("  beta  (transmission): ", signif(p$beta, 4), "\n", sep = "")
+  cat("  gamma (recovery):     ", signif(p$gamma, 4), "\n", sep = "")
+
+  if (!is.null(p$omega) && p$model == "sirs") {
+    cat("  omega (immunity loss):", signif(p$omega, 4),
+        " (mean duration = ", signif(1 / p$omega, 4), " days)\n", sep = "")
+  }
+
+  cat("\nOutcomes\n")
+
+  peak_I  <- max(st$I, na.rm = TRUE)
+  time_pk <- st$time[which.max(st$I)]
+  total_C <- max(st$C, na.rm = TRUE)
+
+  cat("  Peak infectious:      ", format(round(peak_I), big.mark = ","), "\n", sep = "")
+  cat("  Time of peak:         ", time_pk, " days\n", sep = "")
+  cat("  Total infections (C): ", format(round(total_C), big.mark = ","), "\n", sep = "")
+
+  invisible(x)
+}
