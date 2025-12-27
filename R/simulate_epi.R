@@ -93,6 +93,8 @@
 #'   I0 = 20, rho = 0.25, obs = "negbin", size = 15, seed = 1
 #' )
 #' plot(sim_sir)
+#' summary(sim_sir)
+#' print(sim_sir)
 #'
 #' # SIRS simulation (average immunity duration ~ 180 days)
 #' sim_sirs <- simulate_epi(
@@ -101,6 +103,8 @@
 #'   I0 = 20, rho = 0.25, obs = "poisson", seed = 1
 #' )
 #' plot(sim_sirs)
+#' summary(sim_sirs)
+#' print(sim_sirs)
 #' @export
 simulate_epi <- function(
     n_days = 200,
