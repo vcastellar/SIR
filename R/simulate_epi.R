@@ -115,7 +115,6 @@
 #' \code{\link{new_epi_model}}, \code{\link{deSolve::ode}}
 #'
 #' @export
-
 simulate_epi <- function(model,
                          n_days = 200,
                          parms = NULL,
