@@ -1,3 +1,31 @@
+objeticve_epi <- function(theta) {
+  names(theta) <- model$par_names
+
+  out <- deSolve::ode(y = ini0,
+                      times = times,
+                      func = sir,
+                      parms = theta,
+                      method = "lsoda")
+  mu <- diff(as.data.frame(out)[['C']])
+  eps <- 1e-8
+  mu <- pmax(mu, eps)
+
+  verosimilitud <- switch(
+    distr,
+    negbin  = -sum(stats::dnbinom(x, mu = mu, size = 10, log = TRUE)),
+    poisson = -sum(stats::dpois(x, lambda = mu, log = TRUE))
+  )
+
+
+  return(verosimilitud)
+
+}
+
+
+
+
+
+
 #' Fit an SIR model to incidence data via likelihood
 #'
 #' @name fit_sir_model
@@ -64,10 +92,16 @@
 #'
 #' @examples
 #' # Simulate data and fit the model
-#' sim <- simulate_epi(n_days = 200, model = "sir", N = 1e6,
-#'                     beta = 0.30, gamma = 0.10, rho = 1,
-#'                     obs = "negbin", size = 20, seed = 1)
-#' x <- sim$incidence_obs$inc
+#' sim <- simulate_epi(
+#'   model = SIR_MODEL,
+#'   n_days = 200,
+#'   parms = c(beta = 0.30, gamma = 0.10),
+#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
+#'   rho = 0.3,
+#'   obs = "poisson",
+#'   seed = 1
+#' )
+#' x <- sim$states$I
 #'
 #' fit_pois <- fit_sir_model(x, distr = "poisson", init = list(I = 10, N = 1e6))
 #' fit_nb   <- fit_sir_model(x, distr = "negbin",  init = list(I = 10, N = 1e6))
@@ -76,7 +110,8 @@
 #' fit_nb
 #'
 #' @export
-fit_sir_model <- function(x, distr = c("negbin", "poisson"), init = list(I = 10, N = 1e6), ...) {
+fit_sir_model <- function(x, model = NULL,
+                          distr = c("negbin", "poisson"), init = list(I = 10, N = 1e6), ...) {
 
   distr <- match.arg(distr)
 
@@ -120,10 +155,9 @@ fit_sir_model <- function(x, distr = c("negbin", "poisson"), init = list(I = 10,
       if (is.finite(opt$value) && opt$value < best$value) {
         best <- list(value=opt$value, par=opt$par, opt=opt)
       }
-    return(best)
+      return(best)
     }
   }
-
   best_init_parms <- multi_start_optim(fn = rss)
 
   opt <- optim(
@@ -139,3 +173,6 @@ fit_sir_model <- function(x, distr = c("negbin", "poisson"), init = list(I = 10,
 
   return(opt_par)
 }
+
+
+
