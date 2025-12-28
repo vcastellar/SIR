@@ -2,151 +2,152 @@
 % Please edit documentation in R/simulate_epi.R
 \name{simulate_epi}
 \alias{simulate_epi}
-\title{Simulate an epidemic model (SIR or SIRS) and generate observed incidence}
+\title{Simulate an epidemic model defined by an \code{epi_model} object}
 \usage{
 simulate_epi(
+  model,
   n_days = 200,
-  model = c("sir", "sirs"),
-  N = 1e+06,
-  beta = 0.35,
-  gamma = 0.1,
-  omega = 0,
-  I0 = 10,
-  R0 = 0,
+  parms = NULL,
+  init = NULL,
+  init_args = list(N = 1e+06, I0 = 10, R0 = 0),
+  times = NULL,
   rho = 1,
-  obs = c("negbin", "poisson"),
+  obs = c("negbin", "poisson", "none"),
   size = 20,
-  seed = NULL
+  seed = NULL,
+  method = "lsoda"
 )
 }
 \arguments{
-\item{n_days}{Integer. Number of days to simulate (output will include day 0 to
-day \code{n_days}).}
+\item{model}{An object of class \code{"epi_model"} defining the epidemic model
+to simulate (e.g. SIR, SIRS).}
 
-\item{model}{Character. Epidemic model to simulate. One of \code{"sir"} or
-\code{"sirs"}.}
+\item{n_days}{Integer. Number of days to simulate. Ignored if \code{times} is
+provided.}
 
-\item{N}{Numeric. Total population size.}
+\item{parms}{Named numeric vector of model parameters. Must match
+\code{model$par_names}. Any missing parameters are taken from
+\code{model$defaults}, if available.}
 
-\item{beta}{Numeric. Transmission rate (per day).}
+\item{init}{Named numeric vector with initial state values. If \code{NULL}
+(default), the function uses \code{model$make_init} together with
+\code{init_args}.}
 
-\item{gamma}{Numeric. Recovery/removal rate (per day).}
+\item{init_args}{Named list of arguments passed to \code{model$make_init} to
+construct the initial state (e.g. \code{N}, \code{I0}, \code{R0}).}
 
-\item{omega}{Numeric. Loss-of-immunity rate (per day). Only used when
-\code{model = "sirs"}. Setting \eqn{\omega = 0} recovers SIR-like behavior.}
+\item{times}{Optional numeric vector of time points at which to solve the ODE
+system. If supplied, it overrides \code{n_days}.}
 
-\item{I0}{Numeric. Initial number of infectious individuals at day 0.}
+\item{rho}{Numeric in \eqn{[0,1]}. Reporting fraction mapping true incidence to
+expected observed incidence.}
 
-\item{R0}{Numeric. Initial number of removed/recovered individuals at day 0.}
-
-\item{rho}{Numeric in \eqn{[0, 1]}. Reporting fraction mapping true incidence to
-expected observed cases.}
-
-\item{obs}{Character. Observation model for reported incidence. Either
-\code{"poisson"} or \code{"negbin"}.}
+\item{obs}{Character string specifying the observation model. One of
+\code{"poisson"}, \code{"negbin"}, or \code{"none"}.}
 
 \item{size}{Numeric. Dispersion (size) parameter for the negative binomial
 observation model. Larger values imply less overdispersion.}
 
 \item{seed}{Optional integer. If provided, sets the random seed for reproducible
 observation draws.}
+
+\item{method}{Character string. Integration method passed to
+\code{deSolve::ode()} (default: \code{"lsoda"}).}
 }
 \value{
-A named list with:
+A named list with the following components:
 \describe{
-\item{params}{A list with the simulation parameters used (including \code{model}).}
-\item{states}{A data frame with columns \code{time}, \code{S}, \code{I},
-\code{R}, and \code{C} (cumulative infection events).}
-\item{incidence_true}{A data frame with columns \code{time} and \code{inc}
-(latent incidence \eqn{\lambda(t)}).}
-\item{incidence_obs}{A data frame with columns \code{time} and \code{inc}
-(reported incidence sampled from the observation model).}
-\item{cumulative_obs}{A data frame with columns \code{time} and
-\code{cases_cum} (cumulative reported cases).}
+\item{model}{Name of the epidemic model.}
+\item{params}{List of model parameters used in the simulation.}
+\item{states}{Data frame with columns \code{time} and the model state
+variables (e.g. \code{S}, \code{I}, \code{R}, \code{C}).}
+\item{incidence_true}{Data frame with columns \code{time} and \code{inc}
+containing the latent model incidence.}
+\item{incidence_obs}{Data frame with columns \code{time} and \code{inc}
+containing the observed (reported) incidence counts.}
+\item{cumulative_obs}{Data frame with columns \code{time} and
+\code{cases_cum} containing cumulative observed cases.}
 }
 }
 \description{
-Simulates a deterministic compartmental epidemic model solved as an ODE system
-(via \code{deSolve::ode()}) and produces both the latent epidemic trajectories
-and a simple observation process for reported cases.
+Simulates a deterministic compartmental epidemic model (e.g. SIR, SIRS, or any
+user-defined extension) specified via an \code{epi_model} object. The model is
+solved as an ODE system using \code{deSolve::ode()}, and can optionally include
+an observation process to generate reported incidence counts.
 
-The function supports \strong{SIR} and \strong{SIRS} dynamics, selected via
-the \code{model} argument. The model is extended with an auxiliary compartment
-\eqn{C(t)} that tracks the cumulative number of \emph{infection events} through
-the incidence \eqn{\lambda(t)}.
+The function is model-agnostic: all model-specific information (state variables,
+parameters, ODE right-hand side, bounds, and output conventions) is read from
+the supplied \code{epi_model}.
 }
 \details{
-\subsection{Models}{
+\subsection{Model structure}{
 
-Let \eqn{N = S(t) + I(t) + R(t)} and define the incidence (new infections per day):
-\deqn{\lambda(t) = \beta \frac{S(t) I(t)}{N}}
-\subsection{SIR (\code{model = "sir"})}{
+The \code{model} argument must be an object of class \code{"epi_model"}, typically
+created with \code{new_epi_model()}. At minimum, the model must define:
+\itemize{
+\item a right-hand side ODE function (\code{model$rhs});
+\item the required state variables (\code{model$state_names});
+\item the model parameters (\code{model$par_names}).
+}
 
-\deqn{
-\begin{aligned}
-\frac{dS}{dt} &= -\lambda(t) \\
-\frac{dI}{dt} &= \lambda(t) - \gamma I(t) \\
-\frac{dR}{dt} &= \gamma I(t)
-\end{aligned}
+Optionally, the model may also define:
+\itemize{
+\item default parameter values (\code{model$defaults});
+\item parameter bounds (\code{model$lower}, \code{model$upper});
+\item a helper function to construct initial conditions
+(\code{model$make_init});
+\item standard output column names for incidence and cumulative infections
+(\code{model$output}).
 }
 }
 
-\subsection{SIRS (\code{model = "sirs"})}{
+\subsection{Time grid}{
 
-In SIRS, recovered individuals lose immunity at rate \eqn{\omega} and return to
-the susceptible compartment:
-\deqn{
-\begin{aligned}
-\frac{dS}{dt} &= -\lambda(t) + \omega R(t) \\
-\frac{dI}{dt} &= \lambda(t) - \gamma I(t) \\
-\frac{dR}{dt} &= \gamma I(t) - \omega R(t)
-\end{aligned}
-}
-}
-
-}
-
-\subsection{Cumulative infections}{
-
-To provide a cumulative infection curve, the model includes:
-\deqn{\frac{dC}{dt} = \lambda(t)}
-so that \eqn{C(t)} accumulates infection events over time (continuous-time
-analogue of cumulative incidence). Under \code{model = "sirs"}, reinfections are
-possible, so \eqn{C(t)} may exceed \eqn{N}.
+By default, the model is simulated on a daily grid from day 0 to
+\code{n_days}. Alternatively, a custom numeric vector of times can be supplied
+via \code{times}.
 }
 
 \subsection{Observation model}{
 
-The function converts the latent incidence \eqn{\lambda(t)} into expected reported
-counts using a reporting fraction \eqn{\rho}:
-\deqn{\mu(t) = \rho \lambda(t)}
-and then samples:
-\itemize{
-\item \code{obs = "poisson"}: \eqn{Y(t) \sim \mathrm{Poisson}(\mu(t))}
-\item \code{obs = "negbin"}: \eqn{Y(t) \sim \mathrm{NegBin}(\mu(t), size)}
+The latent incidence produced by the ODE model can be converted into reported
+incidence counts using a simple observation model:
+\describe{
+\item{\code{obs = "poisson"}}{Reported counts are drawn from a Poisson
+distribution with mean \eqn{\mu(t) = \rho \lambda(t)}.}
+\item{\code{obs = "negbin"}}{Reported counts are drawn from a negative binomial
+distribution with mean \eqn{\mu(t) = \rho \lambda(t)} and dispersion
+parameter \code{size}.}
+\item{\code{obs = "none"}}{No observation process is applied; observed
+incidence and cumulative counts are returned as \code{NA}.}
 }
-
-The observed cumulative cases are computed as \code{cumsum(inc_obs)}.
 }
 }
 \examples{
-# SIR simulation
-sim_sir <- simulate_epi(
-  n_days = 300, model = "sir",
-  N = 1e6, beta = 0.30, gamma = 0.10,
-  I0 = 20, rho = 0.25, obs = "negbin", size = 15, seed = 1
+## SIR simulation
+sim <- simulate_epi(
+  model = SIR_MODEL,
+  n_days = 200,
+  parms = c(beta = 0.30, gamma = 0.10),
+  init_args = list(N = 1e6, I0 = 20, R0 = 0),
+  rho = 0.3,
+  obs = "poisson",
+  seed = 1
 )
-plot(sim_sir)
-summary(sim_sir)
-print(sim_sir)
 
-# SIRS simulation (average immunity duration ~ 180 days)
-sim_sirs <- simulate_epi(
-  n_days = 600, model = "sirs",
-  N = 1e6, beta = 0.30, gamma = 0.10, omega = 1/180,
-  I0 = 20, rho = 0.25, obs = "poisson", seed = 1
+plot(sim)
+
+## SIRS simulation
+sim2 <- simulate_epi(
+  model = SIRS_MODEL,
+  n_days = 200,
+  parms = c(beta = 0.30, gamma = 0.10, omega = 0.02),
+  init_args = list(N = 1e6, I0 = 20, R0 = 0),
+  obs = "none"
 )
-plot(sim_sirs)
-summary(sim_sirs)
-print(sim_sirs)
+plot(sim2)
+
+}
+\seealso{
+\code{\link{new_epi_model}}, \code{\link{deSolve::ode}}
 }
