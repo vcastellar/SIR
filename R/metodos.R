@@ -56,15 +56,15 @@ plot.sim_epi <- function(x, what = c("states", "incidence"), ...) {
          type = "l", lwd = 2,
          xlab = "Time (days)",
          ylab = "Number of individuals",
-         main = paste("Simulation:", x$params$model),
+         main = paste("Simulation:", x$model),
          ylim = c(0, ymax),
          ...)
 
     lines(st$time, st$I, col = "red",  lwd = 2, lty = 2)
     lines(st$time, st$R, col = "blue", lwd = 2, lty = 3)
 
-    legend("right",
-           legend = c("Susceptible (S)", "Infectious (I)", "Recovered (R)"),
+    legend("topright",
+           legend = c("(S) Susceptible", "(I)   Infectious", "(R) Recovered"),
            col    = c("black", "red", "blue"),
            lty    = c(1, 2, 3),
            lwd    = 2,
@@ -80,7 +80,7 @@ plot.sim_epi <- function(x, what = c("states", "incidence"), ...) {
          type = "h",
          xlab = "Time (days)",
          ylab = "Observed incidence",
-         main = paste("Observed incidence:", x$params$model),
+         main = paste("Observed incidence:", x$model),
          ...)
   }
 
@@ -191,13 +191,10 @@ print.sim_epi <- function(x, ...) {
   cat("Population (N):   ", format(p$N, scientific = TRUE), "\n", sep = "")
 
   cat("\nParameters\n")
-  cat("  beta  (transmission): ", signif(p$beta, 4), "\n", sep = "")
-  cat("  gamma (recovery):     ", signif(p$gamma, 4), "\n", sep = "")
-
-  if (!is.null(p$omega) && p$model == "sirs") {
-    cat("  omega (immunity loss):", signif(p$omega, 4),
-        " (mean duration = ", signif(1 / p$omega, 4), " days)\n", sep = "")
+  for (nm in names(p)) {
+    cat(nm, ": ", p[[nm]], "\n", sep = "")
   }
+
 
   cat("\nOutcomes\n")
 
