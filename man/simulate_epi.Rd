@@ -143,7 +143,7 @@ sim2 <- simulate_epi(
   n_days = 200,
   parms = c(beta = 0.30, gamma = 0.10, omega = 0.02),
   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-  obs = "none"
+  obs = "poisson"
 )
 plot(sim2)
 
