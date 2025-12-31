@@ -88,13 +88,14 @@ new_epi_model <- function(name,
                           upper = NULL,
                           defaults = NULL,
                           make_init = NULL,
-                          output = list(incidence_col = "incidence", cumulative_col = "C")) {
+                          output = list(incidence_col = "incidence", cumulative_col = "C"),
+                          equations = NULL) {
+
   stopifnot(is.character(name), length(name) == 1)
   stopifnot(is.function(rhs))
   stopifnot(is.character(state_names), length(state_names) >= 1)
   stopifnot(is.character(par_names), length(par_names) >= 1)
 
-  # bounds (opcionales, pero si vienen deben ser named y consistentes)
   if (!is.null(lower)) {
     stopifnot(is.numeric(lower), all(par_names %in% names(lower)))
     lower <- lower[par_names]
@@ -112,6 +113,10 @@ new_epi_model <- function(name,
     defaults <- defaults[par_names]
   }
 
+  if (!is.null(equations)) {
+    stopifnot(is.character(equations))
+  }
+
   structure(
     list(
       name = name,
@@ -122,11 +127,13 @@ new_epi_model <- function(name,
       upper = upper,
       defaults = defaults,
       make_init = make_init,
-      output = output
+      output = output,
+      equations = equations
     ),
     class = "epi_model"
   )
 }
+
 
 #' Print method for epidemic model objects
 #' @name print.epi_model
@@ -152,10 +159,26 @@ print.epi_model <- function(x, ...) {
   cat("<epi_model>", x$name, "\n")
   cat("  States: ", paste(x$state_names, collapse = ", "), "\n", sep = "")
   cat("  Params: ", paste(x$par_names, collapse = ", "), "\n", sep = "")
+
   if (!is.null(x$lower) && !is.null(x$upper)) {
     cat("  Bounds:\n")
     b <- cbind(lower = x$lower, upper = x$upper)
     print(b)
   }
+
+  # --- NUEVO: ecuaciones del modelo (si existen) ---
+  if (!is.null(x$equations) && length(x$equations) > 0) {
+    cat("  Equations:\n")
+    for (ln in x$equations) cat("   ", ln, "\n", sep = "")
+  } else {
+    # fallback: mostrar el rhs "como código" si no hay ecuaciones guardadas
+    cat("  Equations (rhs):\n")
+    rhs_txt <- deparse(x$rhs)
+    # quita líneas vacías por estética
+    rhs_txt <- rhs_txt[nzchar(trimws(rhs_txt))]
+    for (ln in rhs_txt) cat("   ", ln, "\n", sep = "")
+  }
+
   invisible(x)
 }
+
