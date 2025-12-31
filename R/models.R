@@ -23,9 +23,6 @@ make_init_sir <- function(N, I0 = 10, R0 = 0) {
 }
 
 
-
-
-
 #' SIR epidemic model with cumulative infections
 #' @name SIR_MODEL
 #' @description
@@ -224,4 +221,137 @@ SIRS_MODEL <- new_epi_model(
   defaults = c(beta = 0.3, gamma = 0.1, omega = 0.02),
   make_init = make_init_sirs
 )
+
+
+
+
+#-------------------------------------------------------------------------------
+# modelo SEIR
+#-------------------------------------------------------------------------------
+#' @keywords internal
+#' @noRd
+sirs_rhs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+    N <- S + E + I + R
+    lambda <- beta * S * I / N
+    dS <- -beta * lambda
+    dE <-  beta * lambda - sigma * E
+    dI <-  sigma * E - gamma * I
+    dR <-  gamma * I
+    dC <-  sigma * E
+    list(c(dS, dE, dI, dR, dC), incidence = sigma * E)
+  })
+}
+
+#' @keywords internal
+#' @noRd
+make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
+  c(
+    S = N - E0 - I0 - R0,
+    E = E0,
+    I = I0,
+    R = R0,
+    C = I0 + R0
+  )
+}
+
+#' SEIR epidemic model with latent (exposed) period
+#' @name SEIR_MODEL
+#' @description
+#' An \code{epi_model} object representing a deterministic **SEIR**
+#' (Susceptible–Exposed–Infectious–Recovered) compartmental epidemic model
+#' with a latent period. Individuals become infected at rate \eqn{\lambda(t)}
+#' and enter the exposed compartment \code{E}. Exposed individuals progress
+#' to the infectious compartment at rate \code{sigma}.
+#'
+#' The model is extended with an auxiliary state variable \code{C(t)} that
+#' tracks the cumulative number of **cases** over time (defined as transitions
+#' from \code{E} to \code{I}), and it provides the instantaneous incidence
+#' as an additional model output.
+#'
+#' @details
+#' ## State variables
+#' The model is defined in terms of the following state variables:
+#' \describe{
+#'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
+#'   \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
+#'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
+#'   \item{R(t)}{Number of recovered (immune) individuals at time \eqn{t}.}
+#'   \item{C(t)}{Cumulative number of **cases** up to time \eqn{t} (entries into \code{I}).}
+#' }
+#'
+#' The total population size is given by
+#' \deqn{N = S(t) + E(t) + I(t) + R(t),}
+#' which is conserved by the model dynamics.
+#'
+#' ## Parameters
+#' The SEIR model depends on the following parameters:
+#' \describe{
+#'   \item{beta}{Transmission rate (per day).}
+#'   \item{sigma}{Rate of progression from \code{E} to \code{I} (per day), so \eqn{1/\sigma} is the mean latent period.}
+#'   \item{gamma}{Recovery/removal rate from \code{I} to \code{R} (per day), so \eqn{1/\gamma} is the mean infectious period.}
+#' }
+#'
+#' ## Model equations
+#' New infections occur at rate
+#' \deqn{\lambda(t) = \beta \frac{S(t)\, I(t)}{N}.}
+#'
+#' Progression from exposed to infectious occurs at rate
+#' \deqn{\text{incidence}(t) = \sigma E(t).}
+#'
+#' The system of ordinary differential equations is:
+#' \deqn{
+#' \begin{aligned}
+#' \frac{dS}{dt} &= -\lambda(t), \\
+#' \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
+#' \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
+#' \frac{dR}{dt} &= \gamma I(t), \\
+#' \frac{dC}{dt} &= \sigma E(t).
+#' \end{aligned}
+#' }
+#'
+#' The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
+#' **case** incidence (entries into \code{I}). This choice aligns the model with
+#' common daily case-count time series.
+#'
+#' ## Usage
+#' This predefined model object is intended to be used with generic utilities
+#' such as \code{\link{simulate_epi}} and model-fitting functions that operate
+#' on \code{epi_model} objects.
+#'
+#' @format
+#' An object of class \code{"epi_model"}.
+#'
+#' @examples
+#' ## Simulate a SEIR epidemic without an observation model
+#' sim <- simulate_epi(
+#'   model = SEIR_MODEL,
+#'   n_days = 200,
+#'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
+#'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
+#'   obs = "none"
+#' )
+#'
+#' matplot(sim$states$time,
+#'         sim$states[, c("S","E","I","R")],
+#'         type = "l", lty = 1,
+#'         xlab = "Days", ylab = "Count",
+#'         main = "SEIR model: compartment trajectories")
+#' legend("right", legend = c("S","E","I","R"), lty = 1, bty = "n")
+#'
+#' @seealso
+#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#'
+#' @export
+SEIR_MODEL <- new_epi_model(
+  name = "SEIR",
+  rhs = seir_rhs,
+  state_names = c("S", "E", "I", "R", "C"),
+  par_names = c("beta", "gamma", "sigma"),
+  lower = c(beta = 1e-8,   gamma = 1e-8, sigma = 1e-8),
+  upper = c(beta = 5,      gamma = 2,     sigma = 2),
+  defaults = c(beta = 0.3, gamma = 0.2,  sigma = 0.14),
+  make_init = make_init_sirs
+)
+
 
