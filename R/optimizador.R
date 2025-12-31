@@ -51,7 +51,7 @@ multi_start_optim <- function(model,
                               x, ini0,
                               n = 30,
                               distr = c("poisson", "negbin"),
-                              control = list(maxit = 200),
+                              control = list(maxit = 50),
                               seed = NULL) {
 
   if (!is.null(seed)) set.seed(seed)
@@ -239,9 +239,9 @@ fit_epi_model <- function(x,
                            model = SIR_MODEL,
                            distr = c("poisson", "negbin"),
                            init = list(I = 10, N = 1e6),
-                           control = list(maxit = 500),
+                           control = list(maxit = 5000),
                            n_starts = 30,
-                           control_ms = list(maxit = 100),
+                           control_ms = list(maxit = 50),
                            seed = 1,
                            ...) {
 
