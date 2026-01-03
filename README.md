@@ -159,4 +159,3 @@ classDiagram
 - Wikipedia contributors. *Modelo SIR*. Wikipedia, The Free Encyclopedia.  
  [Modelo SIR](https://es.wikipedia.org/wiki/Modelo_SIR)
  [SIR Model Foundation](https://mat.uab.cat/matmat_antiga/PDFv2013/v2013n03.pdf)
-
