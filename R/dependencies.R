@@ -3,6 +3,7 @@ suppressPackageStartupMessages({
   library(deSolve)
 })
 
+# library(dplyr)
 # infectedCV <- read.csv("data/infectedCV.csv")
 # x <- infectedCV %>% group_by(fecha) %>% summarise(N = sum(CasosAcum))
 # x <- diff(x$N)[1:350]

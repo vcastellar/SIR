@@ -31,7 +31,7 @@
 #' \code{\link{simulate_epi}}, \code{\link{summary.epi_sim}}
 #'
 #' @examples
-#' sim <- simulate_epi(n_days = 200, model = "sir", seed = 1)
+#' sim <- simulate_epi(n_days = 200, model = "SIR_MODEL", seed = 1)
 #'
 #' # Plot S, I, R trajectories
 #' plot(sim)
@@ -40,8 +40,13 @@
 #' plot(sim, what = "incidence")
 #'
 #' @export
-plot.sim_epi <- function(x, what = c("states", "incidence"), ...) {
-  what <- match.arg(what)
+plot.sim_epi <- function(x,
+                         what = c("states", "incidence"),
+                         include_C = FALSE,
+                         scale = c("auto", "full", "small", "log"),
+                         ...) {
+  what  <- match.arg(what)
+  scale <- match.arg(scale)
 
   if (!is.list(x) || is.null(x$states)) {
     stop("Invalid 'sim_epi' object: missing $states.")
@@ -50,24 +55,102 @@ plot.sim_epi <- function(x, what = c("states", "incidence"), ...) {
   if (what == "states") {
     st <- x$states
 
-    ymax <- max(st$S, st$I, st$R, na.rm = TRUE)
+    # estados disponibles típicos
+    base_states <- c("S", "E", "I", "R")
+    states <- intersect(base_states, names(st))
 
-    plot(st$time, st$S,
-         type = "l", lwd = 2,
+    if (include_C && "C" %in% names(st)) states <- c(states, "C")
+    if (length(states) == 0) stop("No plottable states found in x$states.")
+
+    # datos a graficar
+    y <- st[, states, drop = FALSE]
+
+    # elección de escala automática:
+    # si S domina mucho, hacemos zoom a (E,I,R) o (I,R) si no hay E
+    if (scale == "auto") {
+      if ("S" %in% states) {
+        others <- setdiff(states, c("S", "C"))
+        if (length(others) > 0) {
+          ratio <- max(st$S, na.rm = TRUE) / max(st[, others, drop = FALSE], na.rm = TRUE)
+          scale <- if (is.finite(ratio) && ratio > 100) "small" else "full"
+        } else {
+          scale <- "full"
+        }
+      } else {
+        scale <- "full"
+      }
+    }
+
+    # define qué se muestra en cada escala
+    if (scale == "small") {
+      states_to_plot <- setdiff(states, c("S", "C"))
+      if (length(states_to_plot) == 0) states_to_plot <- setdiff(states, "S")
+      yplot <- st[, states_to_plot, drop = FALSE]
+      ylim <- range(yplot, finite = TRUE)
+      ylab <- "Individuals (zoomed)"
+      log_arg <- ""
+    } else if (scale == "log") {
+      states_to_plot <- setdiff(states, "C")   # C en log suele estorbar
+      yplot <- st[, states_to_plot, drop = FALSE]
+      yplot[yplot <= 0] <- NA_real_
+      ylim <- range(yplot, finite = TRUE)
+      ylab <- "Individuals (log scale)"
+      log_arg <- "y"
+    } else { # full
+      states_to_plot <- states
+      yplot <- st[, states_to_plot, drop = FALSE]
+      ylim <- c(0, max(yplot, na.rm = TRUE))
+      ylab <- "Number of individuals"
+      log_arg <- ""
+    }
+
+    # estilos por estado (fijos, no dependen del orden)
+    col_map <- c(S = "black", E = "darkgreen", I = "red", R = "blue", C = "grey40")
+    lty_map <- c(S = 1,       E = 4,          I = 2,     R = 3,      C = 1)
+    lwd_map <- c(S = 2,       E = 2,          I = 2,     R = 2,      C = 1)
+
+    cols <- col_map[states_to_plot]
+    ltys <- lty_map[states_to_plot]
+    lwds <- lwd_map[states_to_plot]
+
+    # plot
+    first <- states_to_plot[1]
+    plot(st$time, yplot[[first]],
+         type = "l",
+         col = cols[[1]],
+         lty = ltys[[1]],
+         lwd = lwds[[1]],
          xlab = "Time (days)",
-         ylab = "Number of individuals",
+         ylab = ylab,
          main = paste("Simulation:", x$model),
-         ylim = c(0, ymax),
+         ylim = ylim,
+         log = log_arg,
          ...)
 
-    lines(st$time, st$I, col = "red",  lwd = 2, lty = 2)
-    lines(st$time, st$R, col = "blue", lwd = 2, lty = 3)
+    if (length(states_to_plot) > 1) {
+      for (k in 2:length(states_to_plot)) {
+        nm <- states_to_plot[k]
+        lines(st$time, yplot[[nm]],
+              col = cols[[k]],
+              lty = ltys[[k]],
+              lwd = lwds[[k]])
+      }
+    }
+
+    # leyenda
+    label_map <- c(
+      S = "(S) Susceptible",
+      E = "(E) Exposed",
+      I = "(I) Infectious",
+      R = "(R) Recovered",
+      C = "(C) Cumulative"
+    )
 
     legend("topright",
-           legend = c("(S) Susceptible", "(I)   Infectious", "(R) Recovered"),
-           col    = c("black", "red", "blue"),
-           lty    = c(1, 2, 3),
-           lwd    = 2,
+           legend = unname(label_map[states_to_plot]),
+           col    = unname(cols),
+           lty    = unname(ltys),
+           lwd    = unname(lwds),
            bty    = "n")
 
   } else {
@@ -88,10 +171,9 @@ plot.sim_epi <- function(x, what = c("states", "incidence"), ...) {
 }
 
 
-
 #' Summarize a simulated epidemic
 #'
-#' @name summary.epi_sim
+#' @name summary.sim_epi
 #'
 #' @description
 #' Summary method for objects of class \code{"sim_epi"} as returned by
@@ -130,7 +212,7 @@ plot.sim_epi <- function(x, what = c("states", "incidence"), ...) {
 #' summary(sim)
 #'
 #' @export
-summary.epi_sim <- function(object, ...) {
+summary.sim_epi <- function(object, ...) {
   with(object, {
     list(
       model = params$model,

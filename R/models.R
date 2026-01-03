@@ -18,7 +18,7 @@ sir_rhs <- function(time, state, parms) {
 
 #' @keywords internal
 #' @noRd
-make_init_sir <- function(N, I0 = 10, R0 = 0) {
+make_init_sir <- function(N, I0 = 10, R0 = 0, ...) {
   c(S = N - I0 - R0, I = I0, R = R0, C = I0 + R0)
 }
 
@@ -129,7 +129,7 @@ sirs_rhs <- function(time, state, parms) {
 
 #' @keywords internal
 #' @noRd
-make_init_sirs <- function(N, I0 = 10, R0 = 0) {
+make_init_sirs <- function(N, I0 = 10, R0 = 0, ...) {
   c(S = N - I0 - R0, I = I0, R = R0, C = I0 + R0)
 }
 
@@ -230,22 +230,28 @@ SIRS_MODEL <- new_epi_model(
 #-------------------------------------------------------------------------------
 #' @keywords internal
 #' @noRd
-sirs_rhs <- function(time, state, parms) {
+seir_rhs <- function(time, state, parms) {
   with(as.list(c(state, parms)), {
     N <- S + E + I + R
+
+    # fuerza de infección (nuevas infecciones S->E por día)
     lambda <- beta * S * I / N
-    dS <- -beta * lambda
-    dE <-  beta * lambda - sigma * E
+
+    dS <- -lambda
+    dE <-  lambda - sigma * E
     dI <-  sigma * E - gamma * I
     dR <-  gamma * I
+
+    # si "casos" = entradas en I (E->I), el acumulado y la incidencia son sigma*E
     dC <-  sigma * E
+
     list(c(dS, dE, dI, dR, dC), incidence = sigma * E)
   })
 }
 
 #' @keywords internal
 #' @noRd
-make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
+make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
   c(
     S = N - E0 - I0 - R0,
     E = E0,
@@ -329,15 +335,10 @@ make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
 #'   n_days = 200,
 #'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
 #'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
-#'   obs = "none"
+#'   obs = "poisson"
 #' )
 #'
-#' matplot(sim$states$time,
-#'         sim$states[, c("S","E","I","R")],
-#'         type = "l", lty = 1,
-#'         xlab = "Days", ylab = "Count",
-#'         main = "SEIR model: compartment trajectories")
-#' legend("right", legend = c("S","E","I","R"), lty = 1, bty = "n")
+#' plot(sim)
 #'
 #' @seealso
 #' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
@@ -347,11 +348,11 @@ SEIR_MODEL <- new_epi_model(
   name = "SEIR",
   rhs = seir_rhs,
   state_names = c("S", "E", "I", "R", "C"),
-  par_names = c("beta", "gamma", "sigma"),
-  lower = c(beta = 1e-8,   gamma = 1e-8, sigma = 1e-8),
-  upper = c(beta = 5,      gamma = 2,     sigma = 2),
-  defaults = c(beta = 0.3, gamma = 0.2,  sigma = 0.14),
-  make_init = make_init_sirs
+  par_names = c("beta", "sigma", "gamma"),
+  lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8),
+  upper = c(beta = 5,    sigma = 2,    gamma = 2),
+  defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
+  make_init = make_init_seir
 )
 
 

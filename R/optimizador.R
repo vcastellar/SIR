@@ -198,9 +198,9 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' \dontrun{
 #' ## Simulate a SIRS epidemic and fit the model to observed incidence
 #' sim2 <- simulate_epi(
-#'   model = SIRS_MODEL,
+#'   model = SIR_MODEL,
 #'   n_days = 200,
-#'   parms = c(beta = 0.30, gamma = 0.10, omega = 0.02),
+#'   parms = c(beta = 0.30, gamma = 0.10),
 #'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
 #'   obs = "poisson",
 #'   rho = 1,
