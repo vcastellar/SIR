@@ -61,6 +61,100 @@ El script descarga los casos confirmados de COVID-19 y estima los parámetros de
 - Gráficas de la serie de infectados y del ajuste del modelo SIR.
 - Estimaciones de los parámetros `beta`, `gamma` y del número de reproducción básico (`R0`).
 
+```mermaid
+classDiagram
+  direction LR
+
+  class epi_model {
+    <<S3 class>>
+    +name : character(1)
+    +rhs : function(time, state, parms)
+    +state_names : character[]
+    +par_names : character[]
+    +lower : numeric[]?
+    +upper : numeric[]?
+    +defaults : numeric[]?
+    +make_init : function(...)?
+    +output : list(incidence_col, cumulative_col)
+    +equations : character[]?
+    --
+    +print()
+  }
+
+  class SIR_MODEL {
+    <<epi_model instance>>
+  }
+  class SIRS_MODEL {
+    <<epi_model instance>>
+  }
+  class SEIR_MODEL {
+    <<epi_model instance>>
+  }
+
+  epi_model <|.. SIR_MODEL
+  epi_model <|.. SIRS_MODEL
+  epi_model <|.. SEIR_MODEL
+
+  class sim_epi {
+    <<S3 class>>
+    +model : character(1)
+    +params : list
+    +states : data.frame(time, states...)
+    +incidence_true : data.frame(time, inc)
+    +incidence_obs : data.frame(time, inc)
+    +cumulative_obs : data.frame(time, cases_cum)
+    --
+    +print()
+    +plot()
+    +summary()
+  }
+
+  class fit_epi_model {
+    <<S3 class>>
+    +model : epi_model
+    +par : named numeric[]
+    +optim : optim_result
+    +value : numeric
+    +convergence : integer
+    +message : character?
+    +distr : character
+    +init : list
+    +ini0 : named numeric[]
+    +x_len : integer
+    +best_start : list?
+    +control : list?
+    --
+    +print()
+    +predict()
+  }
+
+  %% relaciones funcionales
+  epi_model --> sim_epi : simulate_epi(model)
+  epi_model --> fit_epi_model : fit_epi_model(model, x)
+  fit_epi_model --> sim_epi : predict(...) returns\nstates/incidence
+
+  %% métodos/“servicios” (no clases) como notas
+  class simulate_epi {
+    <<function>>
+    +simulate_epi(model: epi_model, ...) sim_epi
+  }
+  class fit_epi_model_fn {
+    <<function>>
+    +fit_epi_model(x, model: epi_model, ...) fit_epi_model
+  }
+  class predict_fit {
+    <<S3 method>>
+    +predict.fit_epi_model(object: fit_epi_model, ...) states|incidence|both
+  }
+
+  simulate_epi ..> epi_model : uses rhs/make_init/output
+  simulate_epi ..> sim_epi : constructs
+  fit_epi_model_fn ..> epi_model : uses rhs/par_names/bounds
+  fit_epi_model_fn ..> fit_epi_model : constructs
+  predict_fit ..> fit_epi_model : uses model+par
+```
+
+
 ## Referencias
 - Wikipedia contributors. *Modelo SIR*. Wikipedia, The Free Encyclopedia.  
  [Modelo SIR](https://es.wikipedia.org/wiki/Modelo_SIR)
