@@ -37,6 +37,7 @@
 #'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
 #'   obs = "poisson"
 #' )
+#' plot(sim)
 #' x <- sim$incidence_obs$inc
 #' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
 #' fit <- fit_epi_model(x, model = SIRS_MODEL, init = list(I = 6, N = 1e6))

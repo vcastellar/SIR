@@ -108,6 +108,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
       distr = distr,
       init = init,
       ini0 = ini0,
+      x = x,
       x_len = length(x),
       best_start = best_start,
       control = control
@@ -197,7 +198,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' @examples
 #' \dontrun{
 #' ## Simulate a SIRS epidemic and fit the model to observed incidence
-#' sim2 <- simulate_epi(
+#' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
@@ -206,14 +207,13 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'   rho = 1,
 #'   seed = 22
 #' )
-#' plot(sim2)
+#' plot(sim)
 #'
-#' x <- sim2$incidence_obs$inc
+#' x <- sim$incidence_obs$inc
 #' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
 #'
 #' fit <- fit_epi_model(x, model = SIRS_MODEL, init = list(I = 10, N = 1e6))
 #' fit
-#' fit$par
 #'
 #' ## Compare fitted incidence to observed incidence
 #' times <- 0:length(x)
@@ -236,13 +236,13 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'
 #' @export
 fit_epi_model <- function(x,
-                           model = SIR_MODEL,
-                           distr = c("poisson", "negbin"),
-                           init = list(I = 10, N = 1e6),
-                           control = list(maxit = 5000),
-                           n_starts = 30,
-                           control_ms = list(maxit = 50),
-                           seed = 1,
+                          model = SIR_MODEL,
+                          distr = c("poisson", "negbin"),
+                          init = list(I = 10, N = 1e6),
+                          control = list(maxit = 5000),
+                          n_starts = 30,
+                          control_ms = list(maxit = 50),
+                          seed = 1,
                            ...) {
 
   distr <- match.arg(distr)
@@ -290,8 +290,37 @@ fit_epi_model <- function(x,
   )
 }
 
-#' @keywords internal
-#' @noRd
+#' Print a fitted epidemic model
+#'
+#' @name print.fit_epi_model
+#'
+#' @description
+#' S3 print method for objects of class \code{"fit_epi_model"} as returned by
+#' \code{\link{fit_epi_model}}. The function displays a concise, human-readable
+#' summary of the fitted epidemic model, including the model name, likelihood
+#' distribution, optimization diagnostics, and estimated parameters.
+#'
+#' This method is automatically invoked when a \code{"fit_epi_model"} object
+#' is printed at the console.
+#'
+#' @param x An object of class \code{"fit_epi_model"}.
+#' @param ... Further arguments passed to or from other methods (currently ignored).
+#'
+#' @return
+#' Invisibly returns the input object \code{x}.
+#'
+#' @examples
+#' \dontrun{
+#' fit <- fit_epi_model(x, model = SIR_MODEL)
+#' print(fit)
+#' }
+#'
+#' @seealso
+#' \code{\link{fit_epi_model}},
+#' \code{\link{predict.fit_epi_model}},
+#' \code{\link{summary.fit_epi_model}}
+#'
+#' @export
 print.fit_epi_model <- function(x, ...) {
   cat("<fit_epi_model>\n")
   cat("  Model: ", x$model$name, "\n", sep = "")
