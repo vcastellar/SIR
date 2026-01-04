@@ -250,7 +250,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' @export
 fit_epi_model <- function(x,
                           model = SIR_MODEL,
-                          distr = c("poisson", "negbin"),
+                          distr = c("negbin", "poisson"),
                           init = list(N = 1e6, I0 = 10, R0 = 0),
                           rho = 1,
                           size = 10,

@@ -7,27 +7,16 @@
 #' Computes forward predictions from a fitted epidemic model by solving the
 #' underlying ODE system using the estimated parameters.
 #'
-#' The prediction is deterministic and represents the expected epidemic
-#' trajectory conditional on the fitted parameters.
-#'
 #' @param object An object of class \code{"fit_epi_model"}.
 #' @param n_days Integer. Number of days to predict ahead.
-#' @param init Named numeric vector of initial states (e.g. \code{S, I, R, C}).
-#'   If \code{NULL}, initial conditions are constructed using \code{init_args}.
-#' @param init_args Named list passed to \code{model$make_init()} (e.g.
-#'   \code{list(N = 1e6, I0 = 10, R0 = 0)}).
+#' @param init Named numeric vector of initial states. If \code{NULL}, the initial
+#'   state is reconstructed using \code{object$ini0}.
 #' @param times Optional numeric vector of time points. Overrides \code{n_days}.
-#' @param type Character. One of \code{"states"}, \code{"incidence"}, or \code{"both"}.
 #' @param method Integration method passed to \code{deSolve::ode()}.
 #' @param ... Currently unused.
 #'
 #' @return
-#' A list containing predicted epidemic quantities:
-#' \describe{
-#'   \item{states}{Predicted compartment trajectories.}
-#'   \item{incidence}{Predicted incidence time series.}
-#' }
-#'
+#' An object of class \code{"epi_model_predict"}.
 #' @examples
 #' \dontrun{
 #' sim <- simulate_epi(
@@ -38,96 +27,153 @@
 #'   obs = "poisson"
 #' )
 #' plot(sim)
-#' x <- sim$incidence_obs$inc
+#' x <- sim$incidence_obs$inc(N = 1e6, I = tail(sim$incidence_obs, n = 1)
 #' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
 #' fit <- fit_epi_model(x, model = SIRS_MODEL, init = list(I = 6, N = 1e6))
-#' ini0 <- fit$ini0
-#' out <- deSolve::ode(
-#'   y = ini0,
-#'   times = 1:fit$x_len,
-#'   func = SIR_MODEL$rhs,
-#'   parms = fit$par,
-#'   method = "lsoda"
-#' )
-#' fin <- tail(out, n = 1)
-#' iniF <- c(S = fin[2], I = fin[3], R = fin[4], C = fin[5])
+#' init <- tail(sim$states, n = 1)[-1]
 #' pred <- predict(
 #'   object = fit,
 #'   n_days = 300,
-#'   init = iniF,
+#'   init = init,
 #'   type = "both"
 #' )
-#'
+#' plot(pred)
 #' plot(pred$states$time, pred$states$I, type = "l", ylim = c(0, max(c(pred$states$I, pred$states$IR, pred$states$S))))
 #' lines(pred$states$R, col = "red", lty = 2)
 #' lines(pred$states$S, col = "blue", lty = 2)
 #' }
 #'
 #' @export
+#' Predict epidemic dynamics from a fitted epidemic model
+#'
+#' @name predict.fit_epi_model
+#' @method predict fit_epi_model
+#'
+#' @description
+#' Computes forward predictions from a fitted epidemic model by solving the
+#' underlying ODE system using the estimated parameters.
+#'
+#' @param object An object of class \code{"fit_epi_model"}.
+#' @param n_days Integer. Number of days to predict ahead.
+#' @param init Named numeric vector of initial states. If \code{NULL}, the initial
+#'   state is reconstructed using \code{object$ini0}.
+#' @param times Optional numeric vector of time points. Overrides \code{n_days}.
+#' @param method Integration method passed to \code{deSolve::ode()}.
+#' @param ... Currently unused.
+#'
+#' @return
+#' An object of class \code{"epi_model_predict"}.
+#'
+#' @export
 predict.fit_epi_model <- function(object,
                                   n_days,
                                   init = NULL,
-                                  init_args = NULL,
                                   times = NULL,
-                                  type = c("both", "states", "incidence"),
                                   method = "lsoda",
                                   ...) {
 
   stopifnot(inherits(object, "fit_epi_model"))
-  type <- match.arg(type)
 
   model <- object$model
   parms <- object$par
+  x     <- object$x
 
-  # 1) Time grid
+  # 1) time grids
   if (is.null(times)) {
-    stopifnot(length(n_days) == 1, n_days >= 1)
-    times <- 0:n_days
+    times_pred <- seq_len(n_days)
+  } else {
+    times_pred <- times
   }
 
-  # 2) Initial state
+  times_obs <- seq_len(length(x))
+
+  # 2) initial state
   if (is.null(init)) {
-    if (is.null(init_args)) {
-      stop("Either `init` or `init_args` must be provided.")
-    }
-    if (!is.function(model$make_init)) {
-      stop("Model does not define `make_init()`.")
-    }
-    init <- do.call(model$make_init, init_args)
-  }
-
-  if (is.null(names(init))) {
-    stop("`init` must be a named numeric vector.")
+    init <- object$ini0
   }
 
   init <- init[model$state_names]
 
-  # 3) ODE integration
+  # 3) integrate ODE
   out <- deSolve::ode(
-    y = init,
-    times = times,
+    y = as.numeric(init),
+    times = times_pred,
     func = model$rhs,
     parms = parms,
-    method = "lsoda"
+    method = method
   )
-
   out <- as.data.frame(out)
 
-  # 4) Extract outputs
   inc_col <- model$output$incidence_col %||% "incidence"
+  if (!inc_col %in% names(out)) {
+    stop("ODE output does not contain incidence column '", inc_col, "'.")
+  }
 
-  res_states <- out[, c("time", model$state_names), drop = FALSE]
-  res_inc <- data.frame(
-    time = out$time,
-    inc = out[[inc_col]]
+  res <- list(
+    model      = model,
+    par        = parms,
+    x          = x,
+    times_obs  = times_obs,
+    times_pred = out$time,
+    incidence  = out[[inc_col]],
+    states     = out[, c("time", model$state_names), drop = FALSE]
   )
 
-  # 5) Return according to type
-  switch(
-    type,
-    states = res_states,
-    incidence = res_inc,
-    both = list(states = res_states, incidence = res_inc)
-  )
+  class(res) <- "epi_model_predict"
+  res
+}
+
+
+#' Plot predictions from a fitted epidemic model
+#'
+#' @name plot.epi_model_predict
+#'
+#' @description
+#' Plot method for objects of class \code{"epi_model_predict"}.
+#' The function displays the observed incidence data used for fitting together
+#' with the model-predicted incidence trajectory.
+#'
+#' @param x An object of class \code{"epi_model_predict"}.
+#' @param type_obs Plot type for observed data (default: \code{"h"}).
+#' @param col_obs Color for observed incidence.
+#' @param col_pred Color for predicted incidence.
+#' @param lwd_pred Line width for predicted incidence.
+#' @param ... Further graphical parameters passed to \code{\link{plot}}.
+#'
+#' @return
+#' Invisibly returns the input object \code{x}.
+#'
+#' @export
+plot.epi_model_predict <- function(x,
+                                   type_obs = "h",
+                                   col_obs = "black",
+                                   col_pred = "red",
+                                   lwd_pred = 2,
+                                   ...) {
+
+  stopifnot(inherits(x, "epi_model_predict"))
+
+  # observed
+  plot(x$times_obs, x$x,
+       type = type_obs,
+       col = col_obs,
+       xlab = "Time",
+       ylab = "Incidence",
+       main = paste("Observed vs predicted incidence –", x$model$name),
+       ...)
+
+  # predicted
+  lines(x$times_pred, x$incidence,
+        col = col_pred,
+        lwd = lwd_pred)
+
+  legend("topright",
+         legend = c("Observed", "Predicted"),
+         col    = c(col_obs, col_pred),
+         lty    = c(1, 1),
+         lwd    = c(1, lwd_pred),
+         bty    = "n")
+
+  invisible(x)
 }
 
