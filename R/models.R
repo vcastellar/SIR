@@ -18,7 +18,7 @@ sir_rhs <- function(time, state, parms) {
 
 #' @keywords internal
 #' @noRd
-make_init_sir <- function(N, I0 = 10, R0 = 0, ...) {
+make_init_sir <- function(N, I0 = 10, R0 = 0) {
   c(S = N - I0 - R0, I = I0, R = R0, C = I0 + R0)
 }
 
@@ -129,7 +129,7 @@ sirs_rhs <- function(time, state, parms) {
 
 #' @keywords internal
 #' @noRd
-make_init_sirs <- function(N, I0 = 10, R0 = 0, ...) {
+make_init_sirs <- function(N, I0 = 10, R0 = 0) {
   c(S = N - I0 - R0, I = I0, R = R0, C = I0 + R0)
 }
 
@@ -251,7 +251,7 @@ seir_rhs <- function(time, state, parms) {
 
 #' @keywords internal
 #' @noRd
-make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
+make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
   c(
     S = N - E0 - I0 - R0,
     E = E0,
