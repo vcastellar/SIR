@@ -223,6 +223,5 @@ simulate_epi <- function(model,
   return(res)
 }
 
-# helper: operador "si NULL entonces"
-`%||%` <- function(a, b) if (is.null(a)) b else a
+
 

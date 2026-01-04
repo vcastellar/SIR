@@ -3,6 +3,9 @@ suppressPackageStartupMessages({
   library(deSolve)
 })
 
+# helper: operador "si NULL entonces"
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
 # library(dplyr)
 # infectedCV <- read.csv("data/infectedCV.csv")
 # x <- infectedCV %>% group_by(fecha) %>% summarise(N = sum(CasosAcum))
