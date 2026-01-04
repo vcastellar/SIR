@@ -99,6 +99,30 @@ multi_start_optim <- function(model,
   best
 }
 
+#' @keywords internal
+#' @noRd
+new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
+                              best_start = NULL, control = NULL) {
+  structure(
+    list(
+      model = model,
+      par = par,
+      optim = optim,
+      value = optim$value,
+      convergence = optim$convergence,
+      message = optim$message,
+      distr = distr,
+      init = init,
+      ini0 = ini0,
+      x = x,
+      x_len = length(x),
+      best_start = best_start,
+      control = control
+    ),
+    class = "fit_epi_model"
+  )
+}
+
 
 #' Fit an \code{epi_model} to incidence data by likelihood minimization
 #' @name fit_epi_model
