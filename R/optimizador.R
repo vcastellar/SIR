@@ -1,11 +1,19 @@
 
 #' @keywords internal
 #' @noRd
-objective_epi <- function(model, x, ini0,
-                          distr = c("poisson", "negbin"),
-                          eps = 1e-8) {
+# objective using incidence_col directly
+objective_epi_incidence <- function(model, x, ini0,
+                                    distr = c("poisson", "negbin"),
+                                    eps = 1e-8,
+                                    rho = 1,
+                                    size = 10) {
   distr <- match.arg(distr)
-  times <- 0:length(x)
+
+  # time grid: ensure incidence vector aligns with x
+  # We integrate on 1:length(x) so output length matches x
+  times <- seq_len(length(x))
+
+  inc_col <- (model$output$incidence_col %||% "incidence")
 
   function(theta) {
     names(theta) <- model$par_names
@@ -20,27 +28,25 @@ objective_epi <- function(model, x, ini0,
       ),
       silent = TRUE
     )
-
     if (inherits(out, "try-error")) return(1e30)
 
     out <- as.data.frame(out)
-    C <- out[["C"]]
-    if (any(!is.finite(C))) return(1e30)
 
-    mu <- diff(C)
+    if (!inc_col %in% names(out)) return(1e30)
 
-    # mu debe ser finita y >=0 para conteos
+    mu <- out[[inc_col]]
+
+    # basic validity for counts
     if (any(!is.finite(mu))) return(1e30)
     if (any(mu < 0)) return(1e30)
 
-    mu <- pmax(mu, eps)
+    mu <- pmax(rho * mu, eps)
 
     val <- switch(
       distr,
-      negbin  = -sum(stats::dnbinom(x, mu = mu, size = 10, log = TRUE)),
-      poisson = -sum(stats::dpois(x, lambda = mu, log = TRUE))
+      poisson = -sum(stats::dpois(x, lambda = mu, log = TRUE)),
+      negbin  = -sum(stats::dnbinom(x, mu = mu, size = size, log = TRUE))
     )
-
     if (!is.finite(val)) 1e30 else val
   }
 }
@@ -93,36 +99,13 @@ multi_start_optim <- function(model,
   best
 }
 
-#' @keywords internal
-#' @noRd
-new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
-                              best_start = NULL, control = NULL) {
-  structure(
-    list(
-      model = model,
-      par = par,
-      optim = optim,
-      value = optim$value,
-      convergence = optim$convergence,
-      message = optim$message,
-      distr = distr,
-      init = init,
-      ini0 = ini0,
-      x = x,
-      x_len = length(x),
-      best_start = best_start,
-      control = control
-    ),
-    class = "fit_epi_model"
-  )
-}
 
 #' Fit an \code{epi_model} to incidence data by likelihood minimization
 #' @name fit_epi_model
 #' @description
 #' Fits a deterministic compartmental epidemic model (an object of class
-#' \code{"epi_model"}, such as \code{SIR_MODEL} or \code{SIRS_MODEL}) to observed
-#' **incidence count data** by minimizing a **negative log-likelihood**.
+#' \code{"epi_model"}, such as \code{SIR_MODEL}, \code{SIRS_MODEL}, or \code{SEIR_MODEL})
+#' to observed **incidence count data** by minimizing a **negative log-likelihood**.
 #'
 #' The function returns a fitted model object of class \code{"fit_epi_model"},
 #' which contains the estimated parameters together with additional information
@@ -131,48 +114,57 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'
 #' @details
 #' ## Fitting approach
-#' Internally, the function constructs an objective function using an internal
-#' helper (see \code{objective_epi}, not exported) that:
+#' Internally, the function constructs an objective function (not exported) that:
 #' \itemize{
-#'   \item solves the model ODE system using \code{deSolve::ode()} and
-#'     \code{model$rhs};
-#'   \item computes expected incidence as increments of the cumulative state
-#'     \eqn{C(t)} via \code{diff(C)};
+#'   \item solves the model ODE system using \code{deSolve::ode()} and \code{model$rhs};
+#'   \item extracts the model-implied incidence directly from the ODE output
+#'     column specified by \code{model$output$incidence_col} (default: \code{"incidence"});
 #'   \item evaluates a Poisson or Negative Binomial log-likelihood for the
 #'     observed incidence vector \code{x}.
 #' }
 #'
 #' To improve numerical stability and reduce sensitivity to initial values,
 #' the optimization is initialized via an internal **multi-start** strategy
-#' (see \code{multi_start_optim}, not exported), which samples random initial
-#' parameter vectors within the bounds defined by the model and retains the
-#' best solution as the starting point for the final optimization.
+#' (random initial parameter vectors sampled within the bounds defined by the model),
+#' and the best multi-start solution is used to initialize the final optimization.
 #'
 #' ## Data and time grid
 #' The input vector \code{x} must represent incidence counts on an equally spaced
-#' time grid (typically daily). The internal objective uses a time grid
-#' \code{times = 0:length(x)} so that \code{diff(C)} has the same length as
-#' \code{x}.
+#' time grid (typically daily). The internal objective integrates the model on a
+#' grid \code{times = 1:length(x)} so the extracted incidence time series aligns
+#' with \code{x}.
+#'
+#' ## Initial conditions
+#' Initial state values are constructed via \code{model$make_init()} using the
+#' named list \code{init}. The function performs a minimal validation to ensure
+#' that \code{init} includes all required (non-default) arguments of
+#' \code{model$make_init()} and that the returned state vector contains the
+#' required \code{model$state_names}.
 #'
 #' ## Model requirements
 #' The supplied \code{model} must:
 #' \itemize{
 #'   \item be an object of class \code{"epi_model"};
-#'   \item provide an ODE right-hand side function compatible with
-#'     \code{deSolve::ode()};
+#'   \item provide an ODE right-hand side function compatible with \code{deSolve::ode()};
 #'   \item define parameter names via \code{model$par_names};
 #'   \item define parameter bounds via \code{model$lower} and \code{model$upper};
-#'   \item include a cumulative state variable \code{C(t)} in the ODE output.
+#'   \item define \code{model$output$incidence_col} and return that column in the ODE output;
+#'   \item provide \code{model$make_init()} returning a named numeric state vector
+#'     containing at least \code{model$state_names}.
 #' }
 #'
 #' @param x Numeric vector of observed incidence counts (e.g. daily cases).
-#' @param model An \code{epi_model} object to be fitted (e.g. \code{SIR_MODEL} or
-#'   \code{SIRS_MODEL}). Defaults to \code{SIR_MODEL}.
+#' @param model An \code{epi_model} object to be fitted (e.g. \code{SIR_MODEL},
+#'   \code{SIRS_MODEL}, \code{SEIR_MODEL}). Defaults to \code{SIR_MODEL}.
 #' @param distr Character string specifying the observation distribution used in
 #'   the likelihood. One of \code{"poisson"} or \code{"negbin"}.
-#' @param init Named list defining the initial conditions through
-#'   \code{init$N} (population size) and \code{init$I} (initial number of
-#'   infectious individuals).
+#' @param init Named list of arguments passed to \code{model$make_init()} to build
+#'   the initial state vector (e.g. \code{list(N = 1e6, I0 = 10, R0 = 0)} or
+#'   \code{list(N = 1e6, E0 = 0, I0 = 10, R0 = 0)} for SEIR).
+#' @param rho Numeric in \eqn{[0,1]}. Reporting fraction mapping true model incidence
+#'   to expected observed incidence (\eqn{\mu(t) = \rho \, \text{incidence}(t)}).
+#' @param size Numeric. Dispersion (size) parameter for the Negative Binomial
+#'   likelihood (used when \code{distr = "negbin"}).
 #' @param n_starts Integer. Number of random starting points used in the
 #'   multi-start initialization.
 #' @param control_ms List of control parameters passed to \code{optim()} during
@@ -180,6 +172,8 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' @param control List of control parameters passed to \code{optim()} in the final
 #'   optimization.
 #' @param seed Optional integer seed for reproducible multi-start initialization.
+#' @param eps Small positive constant used to avoid log-likelihood issues when
+#'   the model-implied mean incidence is zero.
 #' @param ... Reserved for future extensions.
 #'
 #' @return
@@ -193,11 +187,12 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'   \item{message}{Optional convergence message from \code{optim()}.}
 #'   \item{init}{List of initial condition arguments supplied by the user.}
 #'   \item{ini0}{Named numeric vector of initial state values used internally.}
+#'   \item{x}{Observed incidence vector used for fitting.}
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' ## Simulate a SIRS epidemic and fit the model to observed incidence
+#' ## Simulate a SIR epidemic and fit the model to observed incidence
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   n_days = 200,
@@ -207,71 +202,121 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'   rho = 1,
 #'   seed = 22
 #' )
-#' plot(sim)
 #'
 #' x <- sim$incidence_obs$inc
-#' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
-#'
-#' fit <- fit_epi_model(x, model = SIRS_MODEL, init = list(I = 10, N = 1e6))
-#' fit
+#' fit <- fit_epi_model(
+#'   x = x,
+#'   model = SIR_MODEL,
+#'   distr = "poisson",
+#'   init = list(N = 1e6, I0 = 20, R0 = 0)
+#' )
+#' print(fit)
 #'
 #' ## Compare fitted incidence to observed incidence
-#' times <- 0:length(x)
-#' ini0  <- c(S = 1e6 - 10, I = 10, R = 0, C = 10)
-#'
-#' out <- deSolve::ode(
-#'   y = ini0,
-#'   times = times,
-#'   func = SIRS_MODEL$rhs,
-#'   parms = fit$par,
-#'   method = "lsoda"
-#' )
-#'
-#' lines(as.data.frame(out)$incidence, col = "red")
+#' pred <- predict(fit, n_days = length(x), init_args = list(N = 1e6, I0 = 20, R0 = 0))
+#' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
+#' lines(pred$incidence$time, pred$incidence$inc, col = "red", lty = 2)
 #' }
 #'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{SIR_MODEL}}, \code{\link{SIRS_MODEL}},
+#' \code{\link{simulate_epi}}, \code{\link{predict.fit_epi_model}},
+#' \code{\link{SIR_MODEL}}, \code{\link{SIRS_MODEL}}, \code{\link{SEIR_MODEL}},
 #' \code{\link[stats]{optim}}, \code{\link[deSolve]{ode}}
 #'
 #' @export
 fit_epi_model <- function(x,
                           model = SIR_MODEL,
                           distr = c("poisson", "negbin"),
-                          init = list(I = 10, N = 1e6),
+                          init = list(N = 1e6, I0 = 10, R0 = 0),
+                          rho = 1,
+                          size = 10,
                           control = list(maxit = 5000),
                           n_starts = 30,
                           control_ms = list(maxit = 50),
                           seed = 1,
-                           ...) {
+                          eps = 1e-8,
+                          ...) {
 
+  stopifnot(inherits(model, "epi_model"))
   distr <- match.arg(distr)
 
-  ini0 <- c(S = init$N - init$I, I = init$I, R = 0, C = init$I)
+  # 1) make_init required
+  if (!is.function(model$make_init)) {
+    stop("Model does not define `make_init()`. Please provide `model$make_init` or pass `ini0` externally.")
+  }
+  if (!is.list(init) || is.null(names(init))) {
+    stop("`init` must be a named list with arguments for `model$make_init()`.")
+  }
 
-  best <- multi_start_optim(
+  # 2) minimal validation: required args of make_init() are present
+  fml <- formals(model$make_init)
+  req <- names(fml)[vapply(fml, function(z) identical(z, quote(expr = )), logical(1))]
+  miss <- setdiff(req, names(init))
+  if (length(miss) > 0) {
+    stop("`init` is missing required argument(s) for `model$make_init()`: ",
+         paste(miss, collapse = ", "))
+  }
+
+  # 3) build ini0 via make_init and validate state_names
+  ini0 <- do.call(model$make_init, init)
+
+  if (!is.numeric(ini0) || is.null(names(ini0))) {
+    stop("`model$make_init()` must return a named numeric vector.")
+  }
+  miss_state <- setdiff(model$state_names, names(ini0))
+  if (length(miss_state) > 0) {
+    stop("`model$make_init()` output is missing state(s): ", paste(miss_state, collapse = ", "))
+  }
+  ini0 <- ini0[model$state_names]
+
+  # 4) build objective
+  fn <- objective_epi_incidence(
     model = model,
     x = x,
     ini0 = ini0,
-    n = n_starts,
     distr = distr,
-    control = control_ms,
-    seed = seed
+    eps = eps,
+    rho = rho,
+    size = size
   )
 
-  fn <- objective_epi(
-    model = model,
-    x = x,
-    ini0 = ini0,
-    distr = distr
-  )
+  # 5) multi-start (assumes your existing multi_start_optim uses objective_epi-like signature)
+  # Here we implement a minimal multi-start inline to avoid dependence on diff(C)
+  if (!is.null(seed)) set.seed(seed)
 
+  lower <- unname(model$lower[model$par_names])
+  upper <- unname(model$upper[model$par_names])
+
+  best <- list(value = Inf, opt = NULL)
+
+  for (i in seq_len(n_starts)) {
+    par0 <- stats::runif(length(model$par_names), min = lower, max = upper)
+
+    opt_i <- optim(
+      par = par0,
+      fn  = fn,
+      method = "L-BFGS-B",
+      lower = lower,
+      upper = upper,
+      control = control_ms
+    )
+
+    if (is.finite(opt_i$value) && opt_i$value < best$value) {
+      best <- list(value = opt_i$value, opt = opt_i)
+    }
+  }
+
+  if (is.null(best$opt)) {
+    stop("Multi-start failed: no finite objective value found. Try different `init`, bounds, or `control_ms`.")
+  }
+
+  # 6) final optimization from best start
   opt <- optim(
     par = unname(best$opt$par),
     fn  = fn,
     method = "L-BFGS-B",
-    lower = unname(model$lower[model$par_names]),
-    upper = unname(model$upper[model$par_names]),
+    lower = lower,
+    upper = upper,
     control = control
   )
 
@@ -289,7 +334,6 @@ fit_epi_model <- function(x,
     control = control
   )
 }
-
 #' Print a fitted epidemic model
 #'
 #' @name print.fit_epi_model
