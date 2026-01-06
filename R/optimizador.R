@@ -1,21 +1,39 @@
 
 #' @keywords internal
 #' @noRd
+# objective using incidence_col directly (optimizing in log-parameter space)
+#' @keywords internal
+#' @noRd
 # objective using incidence_col directly
+# returns a function of log(theta)
 objective_epi_incidence <- function(model, x, ini0,
+                                    loss = c("mle", "rmse", "logrmse"),
                                     distr = c("poisson", "negbin"),
                                     eps = 1e-8,
-                                    rho = 1,
-                                    size = 10) {
+                                    size = 10,
+                                    times = NULL,
+                                    rmse_eps = 0) {
+
+  loss  <- match.arg(loss)
   distr <- match.arg(distr)
 
-  # time grid: ensure incidence vector aligns with x
-  # We integrate on 1:length(x) so output length matches x
-  times <- seq_len(length(x))
+  if (is.null(times)) {
+    # si x son conteos diarios, esto representa días 0,1,2,...,T-1
+    times <- 0:(length(x) - 1)
+  } else {
+    stopifnot(length(times) == length(x))
+  }
 
   inc_col <- (model$output$incidence_col %||% "incidence")
 
-  function(theta) {
+  # NOTA: la función devuelta espera log(theta)
+  function(log_theta) {
+
+    # Validación básica del punto en espacio log
+    if (any(!is.finite(log_theta))) return(1e30)
+
+    # Transformación a escala natural
+    theta <- exp(log_theta)
     names(theta) <- model$par_names
 
     out <- try(
@@ -31,73 +49,45 @@ objective_epi_incidence <- function(model, x, ini0,
     if (inherits(out, "try-error")) return(1e30)
 
     out <- as.data.frame(out)
-
     if (!inc_col %in% names(out)) return(1e30)
 
     mu <- out[[inc_col]]
 
-    # basic validity for counts
+    # basic validity
     if (any(!is.finite(mu))) return(1e30)
     if (any(mu < 0)) return(1e30)
 
-    mu <- pmax(rho * mu, eps)
+    # --- objective ---
+    if (loss == "mle") {
 
-    val <- switch(
-      distr,
-      poisson = -sum(stats::dpois(x, lambda = mu, log = TRUE)),
-      negbin  = -sum(stats::dnbinom(x, mu = mu, size = size, log = TRUE))
-    )
+      mu <- pmax(mu, eps)
+      mu <- pmin(mu, 1e12)  # anti-overflow
+
+      val <- switch(
+        distr,
+        poisson = -sum(stats::dpois(x, lambda = mu, log = TRUE)),
+        negbin  = -sum(stats::dnbinom(x, mu = mu, size = size, log = TRUE))
+      )
+
+    } else if (loss == "rmse") { # loss == "rmse"
+
+      # RMSE (opcionalmente con un pequeño eps si quieres estabilizar cuando mu~0)
+      mu2 <- if (rmse_eps > 0) pmax(mu, rmse_eps) else mu
+      # Nota: RMSE y SSE tienen el mismo óptimo; RMSE escala mejor para interpretar.
+      val <- sqrt(mean((x - mu2)^2))
+
+      # si quieres una versión más suave y típica para optimizadores:
+      # val <- mean((x - mu2)^2)  # MSE (sin sqrt)
+    } else if (loss == "logrmse") {
+        val <- sqrt(mean((log1p(x) - log1p(mu))^2))
+        }
+
     if (!is.finite(val)) 1e30 else val
   }
 }
 
-#' @keywords internal
-#' @noRd
-multi_start_optim <- function(model,
-                              x, ini0,
-                              n = 30,
-                              distr = c("poisson", "negbin"),
-                              control = list(maxit = 50),
-                              seed = NULL) {
 
-  if (!is.null(seed)) set.seed(seed)
 
-  fn <- objective_epi(
-    model = model,
-    x = x,
-    ini0 = ini0,
-    distr = distr
-  )
-
-  lower <- unname(model$lower[model$par_names])
-  upper <- unname(model$upper[model$par_names])
-
-  best <- list(value = Inf, par = NULL, opt = NULL)
-
-  for (i in seq_len(n)) {
-    print(paste("paso: ", i))
-    par0 <- stats::runif(length(model$par_names), min = lower, max = upper)
-
-    opt <- optim(
-      par = par0,
-      fn  = fn,
-      method = "L-BFGS-B",
-      lower = lower,
-      upper = upper,
-      control = control
-    )
-
-    if (is.finite(opt$value) && opt$value < best$value) {
-      best <- list(
-        value = opt$value,
-        par   = setNames(opt$par, model$par_names),
-        opt   = opt
-      )
-    }
-  }
-
-  best
-}
 
 #' @keywords internal
 #' @noRd
@@ -185,8 +175,6 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' @param init Named list of arguments passed to \code{model$make_init()} to build
 #'   the initial state vector (e.g. \code{list(N = 1e6, I0 = 10, R0 = 0)} or
 #'   \code{list(N = 1e6, E0 = 0, I0 = 10, R0 = 0)} for SEIR).
-#' @param rho Numeric in \eqn{[0,1]}. Reporting fraction mapping true model incidence
-#'   to expected observed incidence (\eqn{\mu(t) = \rho \, \text{incidence}(t)}).
 #' @param size Numeric. Dispersion (size) parameter for the Negative Binomial
 #'   likelihood (used when \code{distr = "negbin"}).
 #' @param n_starts Integer. Number of random starting points used in the
@@ -213,7 +201,6 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'   \item{ini0}{Named numeric vector of initial state values used internally.}
 #'   \item{x}{Observed incidence vector used for fitting.}
 #' }
-#'
 #' @examples
 #' \dontrun{
 #' ## Simulate a SIR epidemic and fit the model to observed incidence
@@ -250,9 +237,9 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' @export
 fit_epi_model <- function(x,
                           model = SIR_MODEL,
+                          loss = c("mle", "rmse", "logrmse"),
                           distr = c("negbin", "poisson"),
                           init = list(N = 1e6, I0 = 10, R0 = 0),
-                          rho = 1,
                           size = 10,
                           control = list(maxit = 5000),
                           n_starts = 30,
@@ -289,39 +276,56 @@ fit_epi_model <- function(x,
   }
   miss_state <- setdiff(model$state_names, names(ini0))
   if (length(miss_state) > 0) {
-    stop("`model$make_init()` output is missing state(s): ", paste(miss_state, collapse = ", "))
+    stop("`model$make_init()` output is missing state(s): ",
+         paste(miss_state, collapse = ", "))
   }
   ini0 <- ini0[model$state_names]
 
-  # 4) build objective
+  # 4) objective (expects log(theta))
   fn <- objective_epi_incidence(
     model = model,
+    loss = loss,
     x = x,
     ini0 = ini0,
     distr = distr,
     eps = eps,
-    rho = rho,
     size = size
   )
 
-  # 5) multi-start (assumes your existing multi_start_optim uses objective_epi-like signature)
-  # Here we implement a minimal multi-start inline to avoid dependence on diff(C)
-  if (!is.null(seed)) set.seed(seed)
-
+  # 5) bounds in natural space -> transform to log space
   lower <- unname(model$lower[model$par_names])
   upper <- unname(model$upper[model$par_names])
+
+  if (any(!is.finite(lower)) || any(!is.finite(upper))) {
+    stop("Model bounds (lower/upper) must be finite for log-optimization.")
+  }
+  if (any(lower <= 0)) {
+    stop("All lower bounds must be > 0 to optimize in log-space.")
+  }
+  if (any(lower >= upper)) {
+    stop("Invalid bounds: some lower >= upper.")
+  }
+
+  lower_log <- log(lower)
+  upper_log <- log(upper)
+
+  # 6) multi-start in log-space
+  if (!is.null(seed)) set.seed(seed)
 
   best <- list(value = Inf, opt = NULL)
 
   for (i in seq_len(n_starts)) {
+
+    # sample uniformly in natural space then log-transform (simple and ok)
     par0 <- stats::runif(length(model$par_names), min = lower, max = upper)
+    par0_log <- log(par0)
 
     opt_i <- optim(
-      par = par0,
+      par = par0_log,
       fn  = fn,
       method = "L-BFGS-B",
-      lower = lower,
-      upper = upper,
+      lower = lower_log,
+      upper = upper_log,
       control = control_ms
     )
 
@@ -334,22 +338,27 @@ fit_epi_model <- function(x,
     stop("Multi-start failed: no finite objective value found. Try different `init`, bounds, or `control_ms`.")
   }
 
-  # 6) final optimization from best start
+  # 7) final optimization from best log-start
   opt <- optim(
     par = unname(best$opt$par),
     fn  = fn,
     method = "L-BFGS-B",
-    lower = lower,
-    upper = upper,
+    lower = lower_log,
+    upper = upper_log,
     control = control
   )
 
-  par_hat <- setNames(opt$par, model$par_names)
+  # 8) back-transform to natural parameter scale
+  par_hat <- setNames(exp(opt$par), model$par_names)
+
+  # (opcional pero recomendable) guardar también el óptimo en log-escala
+  opt_nat <- opt
+  opt_nat$par <- par_hat
 
   new_fit_epi_model(
     model = model,
     par = par_hat,
-    optim = opt,
+    optim = opt_nat,
     x = x,
     init = init,
     ini0 = ini0,
@@ -358,6 +367,7 @@ fit_epi_model <- function(x,
     control = control
   )
 }
+
 #' Print a fitted epidemic model
 #'
 #' @name print.fit_epi_model

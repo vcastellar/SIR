@@ -13,7 +13,8 @@ new_epi_model(
   upper = NULL,
   defaults = NULL,
   make_init = NULL,
-  output = list(incidence_col = "incidence", cumulative_col = "C")
+  output = list(incidence_col = "incidence", cumulative_col = "C"),
+  equations = NULL
 )
 }
 \arguments{

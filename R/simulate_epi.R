@@ -94,7 +94,6 @@
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
 #'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-#'   rho = 0.3,
 #'   obs = "poisson",
 #'   seed = 1
 #' )
@@ -111,6 +110,15 @@
 #' )
 #' plot(sim2)
 #'
+#' ## SEIRS simulation
+#' sim3 <- simulate_epi(
+#'   model = SEIRS_MODEL,
+#'   n_days = 300,
+#'   parms = c(sigma = 0.2, beta = 0.3, gamma = 0.10, omega = 1/180),
+#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
+#'   obs = "poisson"
+#' )
+#' plot(sim3)
 #' @seealso
 #' \code{\link{new_epi_model}}, \code{\link{deSolve::ode}}
 #'
@@ -119,7 +127,7 @@ simulate_epi <- function(model,
                          n_days = 200,
                          parms = NULL,
                          init = NULL,
-                         init_args = list(N = 1e6, I0 = 10, R0 = 0, ...),
+                         init_args = NULL,
                          times = NULL,
                          rho = 1,
                          obs = c("negbin", "poisson", "none"),
@@ -133,6 +141,7 @@ simulate_epi <- function(model,
 
   # 1) Tiempos
   if (is.null(times)) times <- 0:n_days
+
 
   # 2) Parámetros: defaults + user override, ordenados por par_names
   theta <- model$defaults

@@ -4,7 +4,13 @@
 \alias{plot.sim_epi}
 \title{Plot a simulated epidemic}
 \usage{
-\method{plot}{sim_epi}(x, what = c("states", "incidence"), ...)
+\method{plot}{sim_epi}(
+  x,
+  what = c("states", "incidence"),
+  include_C = FALSE,
+  scale = c("auto", "full", "small", "log"),
+  ...
+)
 }
 \arguments{
 \item{x}{Object of class \code{"sim_epi"} as returned by
@@ -36,7 +42,7 @@ This method is automatically dispatched when calling \code{plot()} on an
 object of class \code{"sim_epi"}.
 }
 \examples{
-sim <- simulate_epi(n_days = 200, model = "sir", seed = 1)
+sim <- simulate_epi(n_days = 200, model = "SIR_MODEL", seed = 1)
 
 # Plot S, I, R trajectories
 plot(sim)

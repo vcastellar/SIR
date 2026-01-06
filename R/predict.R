@@ -27,42 +27,25 @@
 #'   obs = "poisson"
 #' )
 #' plot(sim)
-#' x <- sim$incidence_obs$inc(N = 1e6, I = tail(sim$incidence_obs, n = 1)
-#' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
-#' fit <- fit_epi_model(x, model = SIRS_MODEL, init = list(I = 6, N = 1e6))
+#' inc_obs <- sim$incidence_obs$inc
+#' plot(inc_obs, type = "l", xlab = "Day", ylab = "Incidence")
+#' fit <- fit_epi_model(inc_obs,
+#'                      loss = "logrmse",
+#'                      model = SIRS_MODEL,
+#'                      init = list(I = 6, N = 1e6))
 #' init <- tail(sim$states, n = 1)[-1]
 #' pred <- predict(
 #'   object = fit,
-#'   n_days = 300,
+#'   n_days = 1000,
 #'   init = init,
 #'   type = "both"
 #' )
 #' plot(pred)
-#' plot(pred$states$time, pred$states$I, type = "l", ylim = c(0, max(c(pred$states$I, pred$states$IR, pred$states$S))))
-#' lines(pred$states$R, col = "red", lty = 2)
+#' plot(sim)
+#' plot(pred$states$time, pred$states$I)
+#' plot(pred$states$I, col = "red", lty = 2)
 #' lines(pred$states$S, col = "blue", lty = 2)
 #' }
-#'
-#' @export
-#' Predict epidemic dynamics from a fitted epidemic model
-#'
-#' @name predict.fit_epi_model
-#' @method predict fit_epi_model
-#'
-#' @description
-#' Computes forward predictions from a fitted epidemic model by solving the
-#' underlying ODE system using the estimated parameters.
-#'
-#' @param object An object of class \code{"fit_epi_model"}.
-#' @param n_days Integer. Number of days to predict ahead.
-#' @param init Named numeric vector of initial states. If \code{NULL}, the initial
-#'   state is reconstructed using \code{object$ini0}.
-#' @param times Optional numeric vector of time points. Overrides \code{n_days}.
-#' @param method Integration method passed to \code{deSolve::ode()}.
-#' @param ... Currently unused.
-#'
-#' @return
-#' An object of class \code{"epi_model_predict"}.
 #'
 #' @export
 predict.fit_epi_model <- function(object,
@@ -92,11 +75,12 @@ predict.fit_epi_model <- function(object,
     init <- object$ini0
   }
 
-  init <- init[model$state_names]
+  init <- as.numeric(init[model$state_names])
+  names(init) <- model$state_names
 
   # 3) integrate ODE
   out <- deSolve::ode(
-    y = as.numeric(init),
+    y = init,
     times = times_pred,
     func = model$rhs,
     parms = parms,
@@ -153,6 +137,9 @@ plot.epi_model_predict <- function(x,
 
   stopifnot(inherits(x, "epi_model_predict"))
 
+  xtime <- seq(1, length(x$times_obs) + length(x$times_pred))
+  xtime_pred <- setdiff(xtime, x$times_obs)
+
   # observed
   plot(x$times_obs, x$x,
        type = type_obs,
@@ -160,10 +147,11 @@ plot.epi_model_predict <- function(x,
        xlab = "Time",
        ylab = "Incidence",
        main = paste("Observed vs predicted incidence –", x$model$name),
-       ...)
+       xlim = c(0, length(xtime)))
 
   # predicted
-  lines(x$times_pred, x$incidence,
+  incidencia <- diff(x$states$C)
+  lines(xtime_pred, x$incidence,
         col = col_pred,
         lwd = lwd_pred)
 

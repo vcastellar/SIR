@@ -356,3 +356,126 @@ SEIR_MODEL <- new_epi_model(
 )
 
 
+
+#-------------------------------------------------------------------------------
+# modelo SEIRS
+#-------------------------------------------------------------------------------
+#' @keywords internal
+#' @noRd
+seirs_rhs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+    N <- S + E + I + R
+
+    # fuerza de infección (nuevas infecciones S->E por día)
+    lambda <- beta * S * I / N
+
+    dS <- -lambda + omega * R
+    dE <-  lambda - sigma * E
+    dI <-  sigma * E - gamma * I
+    dR <-  gamma * I - omega * R
+
+    # si "casos" = entradas en I (E->I), el acumulado y la incidencia son sigma*E
+    dC <-  sigma * E
+
+    list(c(dS, dE, dI, dR, dC), incidence = sigma * E)
+  })
+}
+
+#' @keywords internal
+#' @noRd
+make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
+  c(
+    S = N - E0 - I0 - R0,
+    E = E0,
+    I = I0,
+    R = R0,
+    C = I0 + R0
+  )
+}
+
+#' SEIRS epidemic model with latent period and waning immunity
+#' @name SEIRS_MODEL
+#' @description
+#' An \code{epi_model} object representing a deterministic **SEIRS**
+#' (Susceptible–Exposed–Infectious–Recovered–Susceptible) compartmental epidemic
+#' model with a latent period and waning immunity. Individuals become infected
+#' at rate \eqn{\lambda(t)} and enter the exposed compartment \code{E}. Exposed
+#' individuals progress to \code{I} at rate \code{sigma}. Recovered individuals
+#' lose immunity at rate \code{omega} and return to \code{S}.
+#'
+#' The model includes an auxiliary state variable \code{C(t)} that tracks the
+#' cumulative number of **cases** over time, defined as transitions from \code{E}
+#' to \code{I}, and it provides the instantaneous incidence as an additional
+#' model output.
+#'
+#' @details
+#' ## State variables
+#' \describe{
+#'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
+#'   \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
+#'   \item{I(t)}{Number of infectious individuals at time \eqn{t}.}
+#'   \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
+#'   \item{C(t)}{Cumulative number of **cases** up to time \eqn{t} (entries into \code{I}).}
+#' }
+#'
+#' The total population size is
+#' \deqn{N = S(t) + E(t) + I(t) + R(t),}
+#' which is conserved by the model dynamics.
+#'
+#' ## Parameters
+#' \describe{
+#'   \item{beta}{Transmission rate (per day).}
+#'   \item{sigma}{Rate of progression from \code{E} to \code{I} (per day); \eqn{1/\sigma} is the mean latent period.}
+#'   \item{gamma}{Recovery/removal rate from \code{I} to \code{R} (per day); \eqn{1/\gamma} is the mean infectious period.}
+#'   \item{omega}{Rate of waning immunity from \code{R} back to \code{S} (per day); \eqn{1/\omega} is the mean immunity duration.}
+#' }
+#'
+#' ## Model equations
+#' New infections occur at rate
+#' \deqn{\lambda(t) = \beta \frac{S(t)\, I(t)}{N}.}
+#'
+#' Case incidence (entries into \code{I}) occurs at rate
+#' \deqn{\text{incidence}(t) = \sigma E(t).}
+#'
+#' The ODE system is:
+#' \deqn{
+#' \begin{aligned}
+#' \frac{dS}{dt} &= -\lambda(t) + \omega R(t), \\
+#' \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
+#' \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
+#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t), \\
+#' \frac{dC}{dt} &= \sigma E(t).
+#' \end{aligned}
+#' }
+#'
+#' @format An object of class \code{"epi_model"}.
+#'
+#' @examples
+#' ## Simulate a SEIRS epidemic
+#' sim <- simulate_epi(
+#'   model = SEIRS_MODEL,
+#'   n_days = 300,
+#'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 1/180),
+#'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
+#'   obs = "poisson"
+#' )
+#' plot(sim)
+#'
+#' @seealso
+#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#'
+#' @export
+SEIRS_MODEL <- new_epi_model(
+  name = "SEIRS",
+  rhs = seirs_rhs,
+  state_names = c("S", "E", "I", "R", "C"),
+  par_names = c("beta", "sigma", "gamma", "omega"),
+  lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8, omega = 1e-8),
+  upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 2),
+  defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 1/180),
+  make_init = make_init_seirs,
+  output = list(incidence_col = "incidence", cumulative_col = "C")
+)
+
+
+

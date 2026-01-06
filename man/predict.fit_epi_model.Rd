@@ -4,49 +4,28 @@
 \alias{predict.fit_epi_model}
 \title{Predict epidemic dynamics from a fitted epidemic model}
 \usage{
-\method{predict}{fit_epi_model}(
-  object,
-  n_days,
-  init = NULL,
-  init_args = NULL,
-  times = NULL,
-  type = c("both", "states", "incidence"),
-  method = "lsoda",
-  ...
-)
+\method{predict}{fit_epi_model}(object, n_days, init = NULL, times = NULL, method = "lsoda", ...)
 }
 \arguments{
 \item{object}{An object of class \code{"fit_epi_model"}.}
 
 \item{n_days}{Integer. Number of days to predict ahead.}
 
-\item{init}{Named numeric vector of initial states (e.g. \code{S, I, R, C}).
-If \code{NULL}, initial conditions are constructed using \code{init_args}.}
-
-\item{init_args}{Named list passed to \code{model$make_init()} (e.g.
-\code{list(N = 1e6, I0 = 10, R0 = 0)}).}
+\item{init}{Named numeric vector of initial states. If \code{NULL}, the initial
+state is reconstructed using \code{object$ini0}.}
 
 \item{times}{Optional numeric vector of time points. Overrides \code{n_days}.}
-
-\item{type}{Character. One of \code{"states"}, \code{"incidence"}, or \code{"both"}.}
 
 \item{method}{Integration method passed to \code{deSolve::ode()}.}
 
 \item{...}{Currently unused.}
 }
 \value{
-A list containing predicted epidemic quantities:
-\describe{
-\item{states}{Predicted compartment trajectories.}
-\item{incidence}{Predicted incidence time series.}
-}
+An object of class \code{"epi_model_predict"}.
 }
 \description{
 Computes forward predictions from a fitted epidemic model by solving the
 underlying ODE system using the estimated parameters.
-
-The prediction is deterministic and represents the expected epidemic
-trajectory conditional on the fitted parameters.
 }
 \examples{
 \dontrun{
@@ -57,28 +36,24 @@ sim <- simulate_epi(
   init_args = list(N = 1e6, I0 = 20, R0 = 0),
   obs = "poisson"
 )
-x <- sim$incidence_obs
-plot(x, type = "l", xlab = "Day", ylab = "Incidence")
-fit <- fit_epi_model(x, model = SIRS_MODEL, init = list(I = 6, N = 1e6))
-ini0 <- fit$ini0
-out <- deSolve::ode(
-  y = ini0,
-  times = 1:fit$x_len,
-  func = SIR_MODEL$rhs,
-  parms = fit$par,
-  method = "lsoda"
-)
-fin <- tail(out, n = 1)
-iniF <- c(S = fin[2], I = fin[3], R = fin[4], C = fin[5])
+plot(sim)
+inc_obs <- sim$incidence_obs$inc
+plot(inc_obs, type = "l", xlab = "Day", ylab = "Incidence")
+fit <- fit_epi_model(inc_obs,
+                     loss = "logrmse",
+                     model = SIRS_MODEL,
+                     init = list(I = 6, N = 1e6))
+init <- tail(sim$states, n = 1)[-1]
 pred <- predict(
   object = fit,
-  n_days = 300,
-  init = iniF,
+  n_days = 1000,
+  init = init,
   type = "both"
 )
-
-plot(pred$states$time, pred$states$I, type = "l", ylim = c(0, max(c(pred$states$I, pred$states$IR, pred$states$S))))
-lines(pred$states$R, col = "red", lty = 2)
+plot(pred)
+plot(sim)
+plot(pred$states$time, pred$states$I)
+plot(pred$states$I, col = "red", lty = 2)
 lines(pred$states$S, col = "blue", lty = 2)
 }
 
