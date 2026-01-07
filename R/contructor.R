@@ -179,6 +179,16 @@ print.epi_model <- function(x, ...) {
     for (ln in rhs_txt) cat("   ", ln, "\n", sep = "")
   }
 
+  # --- Función make_init ---
+  if (!is.null(x$make_init) && is.function(x$make_init)) {
+    cat("  Initial conditions (make_init):\n")
+    mi_txt <- deparse(x$make_init)
+    mi_txt <- mi_txt[nzchar(trimws(mi_txt))]
+    for (ln in mi_txt) cat("   ", ln, "\n", sep = "")
+  } else {
+    cat("  Initial conditions: <none>\n")
+  }
+
   invisible(x)
 }
 
