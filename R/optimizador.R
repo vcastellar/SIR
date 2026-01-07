@@ -145,7 +145,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' ## Data and time grid
 #' The input vector \code{x} must represent incidence counts on an equally spaced
 #' time grid (typically daily). The internal objective integrates the model on a
-#' grid \code{times = 1:length(x)} so the extracted incidence time series aligns
+#' grid \code{times = 0:(length(x) - 1)} so the extracted incidence time series aligns
 #' with \code{x}.
 #'
 #' ## Initial conditions
@@ -170,6 +170,8 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' @param x Numeric vector of observed incidence counts (e.g. daily cases).
 #' @param model An \code{epi_model} object to be fitted (e.g. \code{SIR_MODEL},
 #'   \code{SIRS_MODEL}, \code{SEIR_MODEL}). Defaults to \code{SIR_MODEL}.
+#' @param loss Character string specifying the loss function. One of
+#'   \code{"mle"}, \code{"rmse"}, or \code{"logrmse"}.
 #' @param distr Character string specifying the observation distribution used in
 #'   the likelihood. One of \code{"poisson"} or \code{"negbin"}.
 #' @param init Named list of arguments passed to \code{model$make_init()} to build
@@ -207,7 +209,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' sim <- simulate_epi(
 #'   model = SIRS_MODEL,
 #'   n_days = 200,
-#'   parms = SIRS_MODEL$default,
+#'   parms = SIRS_MODEL$defaults,
 #'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
 #'   obs = "negbin",
 #'   rho = 1,
@@ -225,7 +227,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' print(fit)
 #'
 #' ## Compare fitted incidence to observed incidence
-#' pred <- predict(fit, n_days = length(x), init_args = list(N = 1e6, I0 = 20, R0 = 0))
+#' pred <- predict(fit, n_days = length(x), init = tail(sim$states, n = 1)[-1])
 #' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
 #' lines(pred$times_obs, pred$incidence, col = "red", lty = 2)
 #' }
@@ -234,7 +236,7 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #'   x = x,
 #'   model = SIRS_MODEL,
 #'   loss = "mle",
-#'   obs = "negbin",
+#'   distr = "negbin",
 #'   init = list(N = 1e6, I0 = 20, R0 = 0)
 #' )
 #' print(fit2)
@@ -422,5 +424,3 @@ print.fit_epi_model <- function(x, ...) {
   for (nm in names(x$par)) cat("    ", nm, ": ", x$par[[nm]], "\n", sep = "")
   invisible(x)
 }
-
-

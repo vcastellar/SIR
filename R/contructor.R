@@ -33,6 +33,7 @@
 #'   \item lower and upper bounds for parameters (\code{lower}, \code{upper});
 #'   \item default parameter values (\code{defaults});
 #'   \item a function to construct initial conditions (\code{make_init});
+#'   \item a character vector of model equations for display (\code{equations});
 #'   \item conventions for output columns such as incidence and cumulative counts
 #'     (\code{output}).
 #' }
@@ -57,6 +58,9 @@
 #'   matching \code{state_names}.
 #' @param output Optional list defining output conventions. By default,
 #'   \code{list(incidence_col = "incidence", cumulative_col = "C")}.
+#' @param equations Optional character vector listing model equations for display
+#'   in \code{print.epi_model}. When \code{NULL}, the right-hand side function
+#'   source is printed instead.
 #'
 #' @return
 #' An object of class \code{"epi_model"}, implemented as a named list.
@@ -191,4 +195,3 @@ print.epi_model <- function(x, ...) {
 
   invisible(x)
 }
-
