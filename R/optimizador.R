@@ -205,20 +205,21 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' \dontrun{
 #' ## Simulate a SIR epidemic and fit the model to observed incidence
 #' sim <- simulate_epi(
-#'   model = SIR_MODEL,
+#'   model = SIRS_MODEL,
 #'   n_days = 200,
-#'   parms = c(beta = 0.30, gamma = 0.10),
+#'   parms = SIRS_MODEL$default,
 #'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-#'   obs = "poisson",
+#'   obs = "negbin",
 #'   rho = 1,
 #'   seed = 22
 #' )
-#'
+#' plot(sim)
 #' x <- sim$incidence_obs$inc
+#' plot(x)
 #' fit <- fit_epi_model(
 #'   x = x,
-#'   model = SIR_MODEL,
-#'   distr = "poisson",
+#'   model = SIRS_MODEL,
+#'   loss = "logrmse",
 #'   init = list(N = 1e6, I0 = 20, R0 = 0)
 #' )
 #' print(fit)
@@ -226,8 +227,17 @@ new_fit_epi_model <- function(model, par, optim, x, init, ini0, distr,
 #' ## Compare fitted incidence to observed incidence
 #' pred <- predict(fit, n_days = length(x), init_args = list(N = 1e6, I0 = 20, R0 = 0))
 #' plot(x, type = "l", xlab = "Day", ylab = "Incidence")
-#' lines(pred$incidence$time, pred$incidence$inc, col = "red", lty = 2)
+#' lines(pred$times_obs, pred$incidence, col = "red", lty = 2)
 #' }
+#'
+#' fit2 <- fit_epi_model(
+#'   x = x,
+#'   model = SIRS_MODEL,
+#'   loss = "mle",
+#'   obs = "negbin",
+#'   init = list(N = 1e6, I0 = 20, R0 = 0)
+#' )
+#' print(fit2)
 #'
 #' @seealso
 #' \code{\link{simulate_epi}}, \code{\link{predict.fit_epi_model}},
