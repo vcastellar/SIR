@@ -93,7 +93,7 @@
 #'   model = SIR_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
-#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
+#'   init_args = list(N= 1e6),
 #'   obs = "poisson",
 #'   seed = 1
 #' )
@@ -133,7 +133,8 @@ simulate_epi <- function(model,
                          obs = c("negbin", "poisson", "none"),
                          size = 20,
                          seed = NULL,
-                         method = "lsoda") {
+                         method = "lsoda",
+                         ...) {
   stopifnot(inherits(model, "epi_model"))
 
   obs <- match.arg(obs)
