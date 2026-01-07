@@ -6,7 +6,7 @@ Authors@R:
     person(given = "Vicente",
            family = "Castellar",
            role = c("aut", "cre"),
-           email = "vicente.castellar@example.com")
+           email = "vic.castellar@gmail.com")
 Description: 
     Tools for simulating and analyzing deterministic compartmental epidemic
     models using ordinary differential equations. The package currently
