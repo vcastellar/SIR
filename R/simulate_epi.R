@@ -76,7 +76,8 @@
 #' @return A named list with the following components:
 #' \describe{
 #'   \item{model}{Name of the epidemic model.}
-#'   \item{params}{List of model parameters used in the simulation.}
+#'   \item{params}{List of model parameters used in the simulation, including
+#'     the model name (\code{model}) and total population size (\code{N}).}
 #'   \item{states}{Data frame with columns \code{time} and the model state
 #'     variables (e.g. \code{S}, \code{I}, \code{R}, \code{C}).}
 #'   \item{incidence_true}{Data frame with columns \code{time} and \code{inc}
@@ -219,9 +220,16 @@ simulate_epi <- function(model,
 
   cum_obs <- if (obs == "none") rep(NA_real_, length(inc_true)) else cumsum(inc_obs)
 
+  base_states <- intersect(c("S", "E", "I", "R"), names(init))
+  pop_states <- if (length(base_states) > 0) base_states else names(init)
+  pop_total <- sum(init[pop_states], na.rm = TRUE)
+
   res <- list(
     model = model$name,
-    params = as.list(theta),
+    params = c(
+      list(model = model$name, N = pop_total),
+      as.list(theta)
+    ),
     states = out[, c("time", model$state_names), drop = FALSE],
     incidence_true = data.frame(time = out$time, inc = inc_true),
     incidence_obs  = data.frame(time = out$time, inc = inc_obs),
@@ -232,6 +240,5 @@ simulate_epi <- function(model,
   class(res) <- "sim_epi"
   return(res)
 }
-
 
 
