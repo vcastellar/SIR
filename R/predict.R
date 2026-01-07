@@ -34,13 +34,12 @@
 #' fit <- fit_epi_model(inc_obs,
 #'                      loss = "logrmse",
 #'                      model = SIRS_MODEL,
-#'                      init = list(I = 6, N = 1e6))
+#'                      init = list(I0 = 6, N = 1e6))
 #' init <- tail(sim$states, n = 1)[-1]
 #' pred <- predict(
 #'   object = fit,
 #'   n_days = 1000,
-#'   init = init,
-#'   type = "both"
+#'   init = init
 #' )
 #' plot(pred)
 #' plot(sim)
