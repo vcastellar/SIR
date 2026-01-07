@@ -12,6 +12,7 @@
 #' @param init Named numeric vector of initial states. If \code{NULL}, the initial
 #'   state is reconstructed using \code{object$ini0}.
 #' @param times Optional numeric vector of time points. Overrides \code{n_days}.
+#'   Defaults to \code{0:(n_days - 1)} when \code{NULL}.
 #' @param method Integration method passed to \code{deSolve::ode()}.
 #' @param ... Currently unused.
 #'
@@ -28,7 +29,8 @@
 #' )
 #' plot(sim)
 #' inc_obs <- sim$incidence_obs$inc
-#' plot(inc_obs, type = "l", xlab = "Day", ylab = "Incidence")
+#' plot(seq_along(inc_obs) - 1, inc_obs,
+#'      type = "l", xlab = "Day", ylab = "Incidence")
 #' fit <- fit_epi_model(inc_obs,
 #'                      loss = "logrmse",
 #'                      model = SIRS_MODEL,
@@ -63,12 +65,12 @@ predict.fit_epi_model <- function(object,
 
   # 1) time grids
   if (is.null(times)) {
-    times_pred <- seq_len(n_days)
+    times_pred <- 0:(n_days - 1)
   } else {
     times_pred <- times
   }
 
-  times_obs <- seq_len(length(x))
+  times_obs <- 0:(length(x) - 1)
 
   # 2) initial state
   if (is.null(init)) {
@@ -137,8 +139,7 @@ plot.epi_model_predict <- function(x,
 
   stopifnot(inherits(x, "epi_model_predict"))
 
-  xtime <- seq(1, length(x$times_obs) + length(x$times_pred))
-  xtime_pred <- setdiff(xtime, x$times_obs)
+  xlim <- range(c(x$times_obs, x$times_pred))
 
   # observed
   plot(x$times_obs, x$x,
@@ -147,11 +148,11 @@ plot.epi_model_predict <- function(x,
        xlab = "Time",
        ylab = "Incidence",
        main = paste("Observed vs predicted incidence –", x$model$name),
-       xlim = c(0, length(xtime)))
+       xlim = xlim)
 
   # predicted
   incidencia <- diff(x$states$C)
-  lines(xtime_pred, x$incidence,
+  lines(x$times_pred, x$incidence,
         col = col_pred,
         lwd = lwd_pred)
 
@@ -164,4 +165,3 @@ plot.epi_model_predict <- function(x,
 
   invisible(x)
 }
-
