@@ -2,159 +2,63 @@
 % Please edit documentation in R/optimizador.R
 \name{fit_epi_model}
 \alias{fit_epi_model}
-\title{Fit an \code{epi_model} to incidence data by likelihood minimization}
+\title{Fit an epidemic model by trajectory matching}
 \usage{
 fit_epi_model(
   x,
   model = SIR_MODEL,
-  loss = c("mle", "rmse", "logrmse"),
-  distr = c("negbin", "poisson"),
+  loss = c("logrmse", "rmse"),
   init = list(N = 1e+06, I0 = 10, R0 = 0),
-  size = 10,
-  control = list(maxit = 5000),
-  n_starts = 30,
-  control_ms = list(maxit = 50),
-  seed = 1,
-  eps = 1e-08,
-  ...
+  n_starts = 20,
+  control = list(maxit = 500),
+  seed = NULL,
+  eps = 1e-06
 )
 }
 \arguments{
-\item{x}{Numeric vector of observed incidence counts (e.g. daily cases).}
+\item{x}{Numeric vector of observed incidence.}
 
-\item{model}{An \code{epi_model} object to be fitted (e.g. \code{SIR_MODEL},
-\code{SIRS_MODEL}, \code{SEIR_MODEL}). Defaults to \code{SIR_MODEL}.}
+\item{model}{An \code{epi_model} object.}
 
-\item{distr}{Character string specifying the observation distribution used in
-the likelihood. One of \code{"poisson"} or \code{"negbin"}.}
+\item{loss}{Loss function: \code{"logrmse"} (default) or \code{"rmse"}.}
 
-\item{init}{Named list of arguments passed to \code{model$make_init()} to build
-the initial state vector (e.g. \code{list(N = 1e6, I0 = 10, R0 = 0)} or
-\code{list(N = 1e6, E0 = 0, I0 = 10, R0 = 0)} for SEIR).}
+\item{init}{Named list passed to \code{model$make_init()}.}
 
-\item{size}{Numeric. Dispersion (size) parameter for the Negative Binomial
-likelihood (used when \code{distr = "negbin"}).}
+\item{n_starts}{Number of random multi-start initializations.}
 
-\item{control}{List of control parameters passed to \code{optim()} in the final
-optimization.}
+\item{control}{Control list passed to \code{optim()}.}
 
-\item{n_starts}{Integer. Number of random starting points used in the
-multi-start initialization.}
-
-\item{control_ms}{List of control parameters passed to \code{optim()} during
-the multi-start phase.}
-
-\item{seed}{Optional integer seed for reproducible multi-start initialization.}
-
-\item{eps}{Small positive constant used to avoid log-likelihood issues when
-the model-implied mean incidence is zero.}
-
-\item{...}{Reserved for future extensions.}
+\item{seed}{Optional random seed.}
 }
 \value{
-An object of class \code{"fit_epi_model"} with components including:
-\describe{
-\item{par}{Named numeric vector of fitted model parameters.}
-\item{model}{The \code{epi_model} object that was fitted.}
-\item{optim}{The full object returned by \code{stats::optim()}.}
-\item{value}{Final value of the negative log-likelihood.}
-\item{convergence}{Convergence code returned by \code{optim()}.}
-\item{message}{Optional convergence message from \code{optim()}.}
-\item{init}{List of initial condition arguments supplied by the user.}
-\item{ini0}{Named numeric vector of initial state values used internally.}
-\item{x}{Observed incidence vector used for fitting.}
-}
+An object of class \code{"fit_epi_model"}.
 }
 \description{
-Fits a deterministic compartmental epidemic model (an object of class
-\code{"epi_model"}, such as \code{SIR_MODEL}, \code{SIRS_MODEL}, or \code{SEIR_MODEL})
-to observed \strong{incidence count data} by minimizing a \strong{negative log-likelihood}.
-
-The function returns a fitted model object of class \code{"fit_epi_model"},
-which contains the estimated parameters together with additional information
-about the optimization process, the model definition, and the initial
-conditions used for fitting.
-}
-\details{
-\subsection{Fitting approach}{
-
-Internally, the function constructs an objective function (not exported) that:
-\itemize{
-\item solves the model ODE system using \code{deSolve::ode()} and \code{model$rhs};
-\item extracts the model-implied incidence directly from the ODE output
-column specified by \code{model$output$incidence_col} (default: \code{"incidence"});
-\item evaluates a Poisson or Negative Binomial log-likelihood for the
-observed incidence vector \code{x}.
-}
-
-To improve numerical stability and reduce sensitivity to initial values,
-the optimization is initialized via an internal \strong{multi-start} strategy
-(random initial parameter vectors sampled within the bounds defined by the model),
-and the best multi-start solution is used to initialize the final optimization.
-}
-
-\subsection{Data and time grid}{
-
-The input vector \code{x} must represent incidence counts on an equally spaced
-time grid (typically daily). The internal objective integrates the model on a
-grid \code{times = 1:length(x)} so the extracted incidence time series aligns
-with \code{x}.
-}
-
-\subsection{Initial conditions}{
-
-Initial state values are constructed via \code{model$make_init()} using the
-named list \code{init}. The function performs a minimal validation to ensure
-that \code{init} includes all required (non-default) arguments of
-\code{model$make_init()} and that the returned state vector contains the
-required \code{model$state_names}.
-}
-
-\subsection{Model requirements}{
-
-The supplied \code{model} must:
-\itemize{
-\item be an object of class \code{"epi_model"};
-\item provide an ODE right-hand side function compatible with \code{deSolve::ode()};
-\item define parameter names via \code{model$par_names};
-\item define parameter bounds via \code{model$lower} and \code{model$upper};
-\item define \code{model$output$incidence_col} and return that column in the ODE output;
-\item provide \code{model$make_init()} returning a named numeric state vector
-containing at least \code{model$state_names}.
-}
-}
+Fits a deterministic epidemic model to incidence data by minimizing a
+trajectory-matching loss (RMSE or log-RMSE) between observed and simulated
+incidence.
 }
 \examples{
 \dontrun{
-## Simulate a SIR epidemic and fit the model to observed incidence
+## Simulate a SIRS epidemic and fit the model to observed incidence
 sim <- simulate_epi(
-  model = SIR_MODEL,
+  model = SIRS_MODEL,
   n_days = 200,
-  parms = c(beta = 0.30, gamma = 0.10),
+  parms = SIRS_MODEL$defaults,
   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-  obs = "poisson",
+  obs = "negbin",
   rho = 1,
   seed = 22
-)
-
+ )
+plot(sim)
 x <- sim$incidence_obs$inc
-fit <- fit_epi_model(
+## Fit with log-RMSE (no likelihood, size ignored)
+fit_rmse <- fit_epi_model(
   x = x,
-  model = SIR_MODEL,
-  distr = "poisson",
+  model = SIRS_MODEL,
+  loss = "logrmse",
   init = list(N = 1e6, I0 = 20, R0 = 0)
-)
-print(fit)
-
-## Compare fitted incidence to observed incidence
-pred <- predict(fit, n_days = length(x), init_args = list(N = 1e6, I0 = 20, R0 = 0))
-plot(x, type = "l", xlab = "Day", ylab = "Incidence")
-lines(pred$incidence$time, pred$incidence$inc, col = "red", lty = 2)
+  )
+print(fit_rmse)
 }
-
-}
-\seealso{
-\code{\link{simulate_epi}}, \code{\link{predict.fit_epi_model}},
-\code{\link{SIR_MODEL}}, \code{\link{SIRS_MODEL}}, \code{\link{SEIR_MODEL}},
-\code{\link[stats]{optim}}, \code{\link[deSolve]{ode}}
 }

@@ -12,10 +12,7 @@ SIR_MODEL
 }
 \description{
 An \code{epi_model} object representing a deterministic \strong{SIR}
-(Susceptible–Infectious–Recovered) compartmental epidemic model. The model is
-extended with an auxiliary state variable \code{C(t)} that tracks the cumulative
-number of infections over time, and it provides the instantaneous incidence as
-an additional model output.
+(Susceptible–Infectious–Recovered) compartmental epidemic model.
 }
 \details{
 \subsection{State variables}{
@@ -25,11 +22,10 @@ The model is defined in terms of the following state variables:
 \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 \item{R(t)}{Number of removed/recovered individuals at time \eqn{t}.}
-\item{C(t)}{Cumulative number of infections up to time \eqn{t}.}
 }
 
 The total population size is given by
-\deqn{N = S(t) + I(t) + R(t),}
+\deqn{N = S(t) + I(t) + R(t)}
 which is conserved by the model dynamics.
 }
 
@@ -53,13 +49,8 @@ The system of ordinary differential equations is:
 \frac{dS}{dt} &= -\lambda(t), \\
 \frac{dI}{dt} &= \lambda(t) - \gamma I(t), \\
 \frac{dR}{dt} &= \gamma I(t), \\
-\frac{dC}{dt} &= \lambda(t).
 \end{aligned}
 }
-
-The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
-incidence and is useful for linking the latent epidemic dynamics to
-discrete-time observation models.
 }
 
 \subsection{Usage}{

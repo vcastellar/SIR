@@ -111,11 +111,11 @@
 #' )
 #' plot(sim2)
 #'
-#' ## SEIRS simulation
+#' ## SEIR simulation
 #' sim3 <- simulate_epi(
-#'   model = SEIRS_MODEL,
+#'   model = SEIR_MODEL,
 #'   n_days = 300,
-#'   parms = c(sigma = 0.2, beta = 0.3, gamma = 0.10, omega = 1/180),
+#'   parms = SEIR_MODEL$defaults,
 #'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
 #'   obs = "poisson"
 #' )
@@ -131,63 +131,42 @@ simulate_epi <- function(model,
                          init_args = NULL,
                          times = NULL,
                          rho = 1,
-                         obs = c("negbin", "poisson", "none"),
+                         obs = c("none", "poisson", "negbin"),
                          size = 20,
                          seed = NULL,
-                         method = "lsoda",
-                         ...) {
-  stopifnot(inherits(model, "epi_model"))
+                         method = "lsoda") {
 
+  stopifnot(inherits(model, "epi_model"))
   obs <- match.arg(obs)
   if (!is.null(seed)) set.seed(seed)
 
-  # 1) Tiempos
+  # tiempos
   if (is.null(times)) times <- 0:n_days
 
-
-  # 2) Parámetros: defaults + user override, ordenados por par_names
+  # parámetros (defaults + override)
   theta <- model$defaults
-  if (is.null(theta)) theta <- setNames(rep(NA_real_, length(model$par_names)), model$par_names)
-
+  if (is.null(theta)) {
+    theta <- setNames(rep(NA_real_, length(model$par_names)), model$par_names)
+  }
   if (!is.null(parms)) {
-    stopifnot(is.numeric(parms))
-    if (is.null(names(parms))) stop("`parms` debe ser un vector *nombrado* con parámetros del modelo.")
-    unknown <- setdiff(names(parms), model$par_names)
-    if (length(unknown) > 0) stop("Parámetros desconocidos: ", paste(unknown, collapse = ", "))
     theta[names(parms)] <- parms
   }
-
   if (any(is.na(theta))) {
-    miss <- names(theta)[is.na(theta)]
-    stop("Faltan parámetros: ", paste(miss, collapse = ", "),
-         ". Pásalos en `parms` o define `defaults` en el modelo.")
+    stop("Missing parameters: ",
+         paste(names(theta)[is.na(theta)], collapse = ", "))
   }
   theta <- theta[model$par_names]
 
-  # 3) Bounds (si están)
-  if (!is.null(model$lower)) {
-    bad <- theta < model$lower[model$par_names]
-    if (any(bad)) stop("Parámetros por debajo del lower: ", paste(names(theta)[bad], collapse = ", "))
-  }
-  if (!is.null(model$upper)) {
-    bad <- theta > model$upper[model$par_names]
-    if (any(bad)) stop("Parámetros por encima del upper: ", paste(names(theta)[bad], collapse = ", "))
-  }
-
-  # 4) Estado inicial
+  # estado inicial
   if (is.null(init)) {
     if (!is.function(model$make_init)) {
-      stop("No se proporcionó `init` y el modelo no tiene `make_init`.")
+      stop("Provide `init` or define `model$make_init()`.")
     }
     init <- do.call(model$make_init, init_args)
   }
-
-  if (is.null(names(init))) stop("`init` debe ser un vector *nombrado*.")
-  miss_state <- setdiff(model$state_names, names(init))
-  if (length(miss_state) > 0) stop("Faltan estados en `init`: ", paste(miss_state, collapse = ", "))
   init <- init[model$state_names]
 
-  # 5) Integración ODE
+  # integración ODE
   out <- deSolve::ode(
     y = init,
     times = times,
@@ -197,18 +176,17 @@ simulate_epi <- function(model,
   )
   out <- as.data.frame(out)
 
-  # 6) Extraer incidencia y acumulado de forma estándar (según el modelo)
+  # incidencia latente
   inc_col <- model$output$incidence_col %||% "incidence"
-  cum_col <- model$output$cumulative_col %||% "C"
-
-  if (!inc_col %in% names(out)) stop("La salida ODE no contiene la columna de incidencia '", inc_col, "'.")
-  if (!cum_col %in% names(out)) warning("La salida ODE no contiene la columna acumulada '", cum_col, "'.")
-
+  if (!inc_col %in% names(out)) {
+    stop("ODE output does not contain incidence column.")
+  }
   inc_true <- out[[inc_col]]
 
-  # 7) Modelo de observación (opcional)
+  # observación
   if (obs == "none") {
     inc_obs <- rep(NA_integer_, length(inc_true))
+    cum_obs <- rep(NA_real_, length(inc_true))
   } else {
     mu <- pmax(rho * inc_true, 0)
     inc_obs <- switch(
@@ -216,29 +194,20 @@ simulate_epi <- function(model,
       poisson = stats::rpois(length(mu), lambda = mu),
       negbin  = stats::rnbinom(length(mu), mu = mu, size = size)
     )
+    cum_obs <- cumsum(inc_obs)
   }
-
-  cum_obs <- if (obs == "none") rep(NA_real_, length(inc_true)) else cumsum(inc_obs)
-
-  base_states <- intersect(c("S", "E", "I", "R"), names(init))
-  pop_states <- if (length(base_states) > 0) base_states else names(init)
-  pop_total <- sum(init[pop_states], na.rm = TRUE)
 
   res <- list(
     model = model$name,
-    params = c(
-      list(model = model$name, N = pop_total),
-      as.list(theta)
-    ),
+    params = as.list(theta),
     states = out[, c("time", model$state_names), drop = FALSE],
     incidence_true = data.frame(time = out$time, inc = inc_true),
     incidence_obs  = data.frame(time = out$time, inc = inc_obs),
     cumulative_obs = data.frame(time = out$time, cases_cum = cum_obs)
   )
 
-
   class(res) <- "sim_epi"
-  return(res)
+  res
 }
 
 

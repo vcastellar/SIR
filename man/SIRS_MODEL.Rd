@@ -15,10 +15,6 @@ An \code{epi_model} object representing a deterministic \strong{SIRS}
 (Susceptible–Infectious–Recovered–Susceptible) compartmental epidemic model
 with waning immunity. Individuals who recover from infection lose immunity
 at rate \code{omega} and return to the susceptible compartment.
-
-The model is extended with an auxiliary state variable \code{C(t)} that
-tracks the cumulative number of infections over time, and it provides
-the instantaneous incidence as an additional model output.
 }
 \details{
 \subsection{State variables}{
@@ -28,7 +24,6 @@ The model is defined in terms of the following state variables:
 \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
-\item{C(t)}{Cumulative number of infections up to time \eqn{t}.}
 }
 
 The total population size is given by
@@ -56,14 +51,9 @@ The system of ordinary differential equations is:
 \begin{aligned}
 \frac{dS}{dt} &= -\lambda(t) + \omega R(t), \\
 \frac{dI}{dt} &= \lambda(t) - \gamma I(t), \\
-\frac{dR}{dt} &= \gamma I(t) - \omega R(t), \\
-\frac{dC}{dt} &= \lambda(t).
+\frac{dR}{dt} &= \gamma I(t) - \omega R(t). \\
 \end{aligned}
 }
-
-The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
-incidence and is useful for linking the latent epidemic dynamics to
-discrete-time observation models.
 }
 
 \subsection{Usage}{

@@ -27,7 +27,7 @@ is printed. It is intended to give a quick overview without displaying the
 full internal structure of the object.
 }
 \examples{
-sim <- simulate_epi(n_days = 200, model = "sirs",
+sim <- simulate_epi(n_days = 200, model = SIRS_MODEL,
                     beta = 0.30, gamma = 0.10, omega = 1/180)
 
 sim

@@ -17,11 +17,6 @@ model with a latent period and waning immunity. Individuals become infected
 at rate \eqn{\lambda(t)} and enter the exposed compartment \code{E}. Exposed
 individuals progress to \code{I} at rate \code{sigma}. Recovered individuals
 lose immunity at rate \code{omega} and return to \code{S}.
-
-The model includes an auxiliary state variable \code{C(t)} that tracks the
-cumulative number of \strong{cases} over time, defined as transitions from \code{E}
-to \code{I}, and it provides the instantaneous incidence as an additional
-model output.
 }
 \details{
 \subsection{State variables}{
@@ -31,7 +26,6 @@ model output.
 \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
 \item{I(t)}{Number of infectious individuals at time \eqn{t}.}
 \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
-\item{C(t)}{Cumulative number of \strong{cases} up to time \eqn{t} (entries into \code{I}).}
 }
 
 The total population size is
@@ -63,8 +57,7 @@ The ODE system is:
 \frac{dS}{dt} &= -\lambda(t) + \omega R(t), \\
 \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-\frac{dR}{dt} &= \gamma I(t) - \omega R(t), \\
-\frac{dC}{dt} &= \sigma E(t).
+\frac{dR}{dt} &= \gamma I(t) - \omega R(t). \\
 \end{aligned}
 }
 }
@@ -74,7 +67,7 @@ The ODE system is:
 sim <- simulate_epi(
   model = SEIRS_MODEL,
   n_days = 300,
-  parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 1/180),
+  parms = SEIRS_MODEL$default,
   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
   obs = "poisson"
 )

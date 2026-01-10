@@ -14,7 +14,8 @@
 \item{init}{Named numeric vector of initial states. If \code{NULL}, the initial
 state is reconstructed using \code{object$ini0}.}
 
-\item{times}{Optional numeric vector of time points. Overrides \code{n_days}.}
+\item{times}{Optional numeric vector of time points. Overrides \code{n_days}.
+Defaults to \code{0:(n_days - 1)} when \code{NULL}.}
 
 \item{method}{Integration method passed to \code{deSolve::ode()}.}
 
@@ -38,17 +39,17 @@ sim <- simulate_epi(
 )
 plot(sim)
 inc_obs <- sim$incidence_obs$inc
-plot(inc_obs, type = "l", xlab = "Day", ylab = "Incidence")
+plot(seq_along(inc_obs) - 1, inc_obs,
+     type = "l", xlab = "Day", ylab = "Incidence")
 fit <- fit_epi_model(inc_obs,
                      loss = "logrmse",
                      model = SIRS_MODEL,
-                     init = list(I = 6, N = 1e6))
+                     init = list(I0 = 6, N = 1e6))
 init <- tail(sim$states, n = 1)[-1]
 pred <- predict(
   object = fit,
   n_days = 1000,
-  init = init,
-  type = "both"
+  init = init
 )
 plot(pred)
 plot(sim)

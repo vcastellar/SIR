@@ -11,15 +11,14 @@ sir_rhs <- function(time, state, parms) {
     dS <- -lambda
     dI <-  lambda - gamma * I
     dR <-  gamma * I
-    dC <-  lambda
-    list(c(dS, dI, dR, dC), incidence = lambda)
+    list(c(dS, dI, dR), incidence = lambda)
   })
 }
 
 #' @keywords internal
 #' @noRd
 make_init_sir <- function(N, I0 = 10, R0 = 0) {
-  c(S = N - I0 - R0, I = I0, R = R0, C = I0 + R0)
+  c(S = N - I0 - R0, I = I0, R = R0)
 }
 
 
@@ -27,10 +26,7 @@ make_init_sir <- function(N, I0 = 10, R0 = 0) {
 #' @name SIR_MODEL
 #' @description
 #' An \code{epi_model} object representing a deterministic **SIR**
-#' (Susceptible–Infectious–Recovered) compartmental epidemic model. The model is
-#' extended with an auxiliary state variable \code{C(t)} that tracks the cumulative
-#' number of infections over time, and it provides the instantaneous incidence as
-#' an additional model output.
+#' (Susceptible–Infectious–Recovered) compartmental epidemic model.
 #'
 #' @details
 #' ## State variables
@@ -39,11 +35,10 @@ make_init_sir <- function(N, I0 = 10, R0 = 0) {
 #'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 #'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 #'   \item{R(t)}{Number of removed/recovered individuals at time \eqn{t}.}
-#'   \item{C(t)}{Cumulative number of infections up to time \eqn{t}.}
 #' }
 #'
 #' The total population size is given by
-#' \deqn{N = S(t) + I(t) + R(t),}
+#' \deqn{N = S(t) + I(t) + R(t)}
 #' which is conserved by the model dynamics.
 #'
 #' ## Parameters
@@ -63,13 +58,9 @@ make_init_sir <- function(N, I0 = 10, R0 = 0) {
 #' \frac{dS}{dt} &= -\lambda(t), \\
 #' \frac{dI}{dt} &= \lambda(t) - \gamma I(t), \\
 #' \frac{dR}{dt} &= \gamma I(t), \\
-#' \frac{dC}{dt} &= \lambda(t).
 #' \end{aligned}
 #' }
 #'
-#' The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
-#' incidence and is useful for linking the latent epidemic dynamics to
-#' discrete-time observation models.
 #'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
@@ -100,13 +91,13 @@ make_init_sir <- function(N, I0 = 10, R0 = 0) {
 SIR_MODEL <- new_epi_model(
   name = "SIR",
   rhs = sir_rhs,
-  state_names = c("S", "I", "R", "C"),
+  state_names = c("S", "I", "R"),
   par_names = c("beta", "gamma"),
   lower = c(beta = 1e-8, gamma = 1e-8),
   upper = c(beta = 2,    gamma = 1),
   defaults = c(beta = 0.3, gamma = 0.1),
   make_init = make_init_sir,
-  output = list(incidence_col = "incidence", cumulative_col = "C")
+  output = list(incidence_col = "incidence")
 )
 
 
@@ -122,15 +113,14 @@ sirs_rhs <- function(time, state, parms) {
     dS <- -lambda + omega * R
     dI <-  lambda - gamma * I
     dR <-  gamma * I - omega * R
-    dC <-  lambda
-    list(c(dS, dI, dR, dC), incidence = lambda)
+    list(c(dS, dI, dR), incidence = lambda)
   })
 }
 
 #' @keywords internal
 #' @noRd
 make_init_sirs <- function(N, I0 = 10, R0 = 0) {
-  c(S = N - I0 - R0, I = I0, R = R0, C = I0 + R0)
+  c(S = N - I0 - R0, I = I0, R = R0)
 }
 
 #' SIRS epidemic model with waning immunity
@@ -141,9 +131,6 @@ make_init_sirs <- function(N, I0 = 10, R0 = 0) {
 #' with waning immunity. Individuals who recover from infection lose immunity
 #' at rate \code{omega} and return to the susceptible compartment.
 #'
-#' The model is extended with an auxiliary state variable \code{C(t)} that
-#' tracks the cumulative number of infections over time, and it provides
-#' the instantaneous incidence as an additional model output.
 #'
 #' @details
 #' ## State variables
@@ -152,7 +139,6 @@ make_init_sirs <- function(N, I0 = 10, R0 = 0) {
 #'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 #'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 #'   \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
-#'   \item{C(t)}{Cumulative number of infections up to time \eqn{t}.}
 #' }
 #'
 #' The total population size is given by
@@ -176,14 +162,10 @@ make_init_sirs <- function(N, I0 = 10, R0 = 0) {
 #' \begin{aligned}
 #' \frac{dS}{dt} &= -\lambda(t) + \omega R(t), \\
 #' \frac{dI}{dt} &= \lambda(t) - \gamma I(t), \\
-#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t), \\
-#' \frac{dC}{dt} &= \lambda(t).
+#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t). \\
 #' \end{aligned}
 #' }
 #'
-#' The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
-#' incidence and is useful for linking the latent epidemic dynamics to
-#' discrete-time observation models.
 #'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
@@ -214,7 +196,7 @@ make_init_sirs <- function(N, I0 = 10, R0 = 0) {
 SIRS_MODEL <- new_epi_model(
   name = "SIRS",
   rhs = sirs_rhs,
-  state_names = c("S", "I", "R", "C"),
+  state_names = c("S", "I", "R"),
   par_names = c("beta", "gamma", "omega"),
   lower = c(beta = 1e-8, gamma = 1e-8, omega = 1e-8),
   upper = c(beta = 2,    gamma = 1,    omega = 1),
@@ -232,9 +214,9 @@ SIRS_MODEL <- new_epi_model(
 #' @noRd
 seir_rhs <- function(time, state, parms) {
   with(as.list(c(state, parms)), {
+
     N <- S + E + I + R
 
-    # fuerza de infección (nuevas infecciones S->E por día)
     lambda <- beta * S * I / N
 
     dS <- -lambda
@@ -242,10 +224,7 @@ seir_rhs <- function(time, state, parms) {
     dI <-  sigma * E - gamma * I
     dR <-  gamma * I
 
-    # si "casos" = entradas en I (E->I), el acumulado y la incidencia son sigma*E
-    dC <-  sigma * E
-
-    list(c(dS, dE, dI, dR, dC), incidence = sigma * E)
+    list(c(dS, dE, dI, dR), incidence = sigma * E)
   })
 }
 
@@ -256,8 +235,7 @@ make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
     S = N - E0 - I0 - R0,
     E = E0,
     I = I0,
-    R = R0,
-    C = I0 + R0
+    R = R0
   )
 }
 
@@ -347,12 +325,16 @@ make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
 SEIR_MODEL <- new_epi_model(
   name = "SEIR",
   rhs = seir_rhs,
-  state_names = c("S", "E", "I", "R", "C"),
+  state_names = c("S", "E", "I", "R"),
   par_names = c("beta", "sigma", "gamma"),
   lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8),
   upper = c(beta = 5,    sigma = 2,    gamma = 2),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
-  make_init = make_init_seir
+  make_init = make_init_seir,
+  output = list(
+    incidence_col = "incidence",
+    incidence_desc = "entries into I (cases)"
+  )
 )
 
 
@@ -364,9 +346,9 @@ SEIR_MODEL <- new_epi_model(
 #' @noRd
 seirs_rhs <- function(time, state, parms) {
   with(as.list(c(state, parms)), {
+
     N <- S + E + I + R
 
-    # fuerza de infección (nuevas infecciones S->E por día)
     lambda <- beta * S * I / N
 
     dS <- -lambda + omega * R
@@ -374,22 +356,22 @@ seirs_rhs <- function(time, state, parms) {
     dI <-  sigma * E - gamma * I
     dR <-  gamma * I - omega * R
 
-    # si "casos" = entradas en I (E->I), el acumulado y la incidencia son sigma*E
-    dC <-  sigma * E
-
-    list(c(dS, dE, dI, dR, dC), incidence = sigma * E)
+    list(
+      c(dS, dE, dI, dR),
+      incidence = sigma * E
+    )
   })
 }
 
+
 #' @keywords internal
 #' @noRd
-make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
+make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0) {
   c(
     S = N - E0 - I0 - R0,
     E = E0,
     I = I0,
-    R = R0,
-    C = I0 + R0
+    R = R0
   )
 }
 
@@ -403,11 +385,6 @@ make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
 #' individuals progress to \code{I} at rate \code{sigma}. Recovered individuals
 #' lose immunity at rate \code{omega} and return to \code{S}.
 #'
-#' The model includes an auxiliary state variable \code{C(t)} that tracks the
-#' cumulative number of **cases** over time, defined as transitions from \code{E}
-#' to \code{I}, and it provides the instantaneous incidence as an additional
-#' model output.
-#'
 #' @details
 #' ## State variables
 #' \describe{
@@ -415,7 +392,6 @@ make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
 #'   \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
 #'   \item{I(t)}{Number of infectious individuals at time \eqn{t}.}
 #'   \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
-#'   \item{C(t)}{Cumulative number of **cases** up to time \eqn{t} (entries into \code{I}).}
 #' }
 #'
 #' The total population size is
@@ -443,8 +419,7 @@ make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
 #' \frac{dS}{dt} &= -\lambda(t) + \omega R(t), \\
 #' \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 #' \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t), \\
-#' \frac{dC}{dt} &= \sigma E(t).
+#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t). \\
 #' \end{aligned}
 #' }
 #'
@@ -455,7 +430,7 @@ make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
 #' sim <- simulate_epi(
 #'   model = SEIRS_MODEL,
 #'   n_days = 300,
-#'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 1/180),
+#'   parms = SEIRS_MODEL$default,
 #'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
 #'   obs = "poisson"
 #' )
@@ -468,14 +443,18 @@ make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0, ...) {
 SEIRS_MODEL <- new_epi_model(
   name = "SEIRS",
   rhs = seirs_rhs,
-  state_names = c("S", "E", "I", "R", "C"),
+  state_names = c("S", "E", "I", "R"),
   par_names = c("beta", "sigma", "gamma", "omega"),
   lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8, omega = 1e-8),
-  upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 2),
-  defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 1/180),
+  upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 1),
+  defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
   make_init = make_init_seirs,
-  output = list(incidence_col = "incidence", cumulative_col = "C")
+  output = list(
+    incidence_col = "incidence",
+    incidence_desc = "entries into I (cases)"
+  )
 )
+
 
 
 

@@ -76,8 +76,7 @@ The package currently provides the following predefined models:
 
 ### `SIR_MODEL`
 
-Susceptible–Infectious–Recovered model with an auxiliary cumulative infections
-variable `C(t)`.
+Susceptible–Infectious–Recovered model.
 
 ### `SIRS_MODEL`
 
@@ -88,9 +87,6 @@ Extension of SIR with waning immunity, allowing transitions from `R` back to
 
 Susceptible–Exposed–Infectious–Recovered model with a latent period. In this
 model, incidence corresponds to transitions from `E` to `I`.
-
-All built-in models include a cumulative state `C(t)` so that daily incidence is
-consistently defined as `diff(C)` and can be directly linked to count data.
 
 ---
 

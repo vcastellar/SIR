@@ -92,7 +92,7 @@ new_epi_model <- function(name,
                           upper = NULL,
                           defaults = NULL,
                           make_init = NULL,
-                          output = list(incidence_col = "incidence", cumulative_col = "C"),
+                          output = list(incidence_col = "incidence"),
                           equations = NULL) {
 
   stopifnot(is.character(name), length(name) == 1)
@@ -109,7 +109,7 @@ new_epi_model <- function(name,
     upper <- upper[par_names]
   }
   if (!is.null(lower) && !is.null(upper)) {
-    if (any(lower >= upper)) stop("Bounds inválidos: hay lower >= upper.")
+    if (any(lower >= upper)) stop("Invalid bounds: lower >= upper.")
   }
 
   if (!is.null(defaults)) {
@@ -137,7 +137,6 @@ new_epi_model <- function(name,
     class = "epi_model"
   )
 }
-
 
 #' Print method for epidemic model objects
 #' @name print.epi_model

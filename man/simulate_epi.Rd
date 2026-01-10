@@ -12,7 +12,7 @@ simulate_epi(
   init_args = NULL,
   times = NULL,
   rho = 1,
-  obs = c("negbin", "poisson", "none"),
+  obs = c("none", "poisson", "negbin"),
   size = 20,
   seed = NULL,
   method = "lsoda"
@@ -58,7 +58,8 @@ observation draws.}
 A named list with the following components:
 \describe{
 \item{model}{Name of the epidemic model.}
-\item{params}{List of model parameters used in the simulation.}
+\item{params}{List of model parameters used in the simulation, including
+the model name (\code{model}) and total population size (\code{N}).}
 \item{states}{Data frame with columns \code{time} and the model state
 variables (e.g. \code{S}, \code{I}, \code{R}, \code{C}).}
 \item{incidence_true}{Data frame with columns \code{time} and \code{inc}
@@ -129,7 +130,7 @@ sim <- simulate_epi(
   model = SIR_MODEL,
   n_days = 200,
   parms = c(beta = 0.30, gamma = 0.10),
-  init_args = list(N = 1e6, I0 = 20, R0 = 0),
+  init_args = list(N= 1e6),
   obs = "poisson",
   seed = 1
 )
@@ -146,11 +147,11 @@ sim2 <- simulate_epi(
 )
 plot(sim2)
 
-## SEIRS simulation
+## SEIR simulation
 sim3 <- simulate_epi(
-  model = SEIRS_MODEL,
+  model = SEIR_MODEL,
   n_days = 300,
-  parms = c(sigma = 0.2, beta = 0.3, gamma = 0.10, omega = 1/180),
+  parms = SEIR_MODEL$defaults,
   init_args = list(N = 1e6, I0 = 20, R0 = 0),
   obs = "poisson"
 )

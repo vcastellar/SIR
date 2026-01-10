@@ -37,7 +37,7 @@ This method is automatically dispatched when calling \code{summary()} on an
 object of class \code{"sim_epi"}.
 }
 \examples{
-sim <- simulate_epi(n_days = 300, model = "sirs", omega = 1/180, seed = 1)
+sim <- simulate_epi(n_days = 300, model = SIRS_MODEL, omega = 1/180, seed = 1)
 
 summary(sim)
 
