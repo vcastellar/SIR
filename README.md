@@ -1,161 +1,247 @@
-# SIR
-modelo epidemiológico SIR
+# SIR — A Minimal Framework for Deterministic Epidemic Models in R
 
-## ¿Qué es el modelo SIR?
-El modelo **SIR** es un sistema de ecuaciones diferenciales:
+**SIR** is an R package for defining, simulating, fitting, and predicting
+deterministic compartmental epidemic models based on systems of ordinary
+differential equations (ODEs).
 
-$$
-\begin{aligned}
-\frac{dS}{dt} &= -\beta \cdot \frac{S \cdot I}{N}, \\
-\frac{dI}{dt} &= \beta \cdot \frac{S \cdot I}{N} - \gamma \cdot I, \\
-\frac{dR}{dt} &= \gamma \cdot I,
-\end{aligned}
-\qquad
-N = S(t)+I(t)+R(t)
-$$
+The package is model-agnostic and revolves around a single abstraction:
+the `epi_model` object. All model-specific information (states, parameters,
+equations, bounds, defaults, and output conventions) is stored in this object
+and consumed by generic simulation, inference, and visualization tools.
 
-que divide a la población en tres compartimentos: 
+The current implementation includes built-in **SIR**, **SIRS**, and **SEIR**
+models, likelihood-based parameter estimation from incidence data, forward
+prediction, and plotting and summary methods.
 
-- **susceptibles (S)**: individuos sin inmunidad al agente infeccioso, y que por tanto puede ser infectada si es expuesta al agente infeccioso
-- **infectados (I)**: individuos que están infectados en un momento dado y pueden transmitir la infección a individuos de la población susceptible con la que entran en contacto
-- **recuperados (R)**: individuos que son inmunes a la infección (o fallecidos), y consecuentemente no afectan a la transmisión cuando entran en contacto con otros individuos
+---
 
-- $\beta > 0$ representa el ratio de transmisión
-- $\gamma > 0$ representa el ratio de recuperación. En otras palabras, $D = 1/\gamma$ representa la duración de la infeccion 
+## Features
 
-Los susceptibles pueden infectarse con una tasa de transmisión `beta`, los infectados se recuperan con una tasa `gamma`, y la población total se mantiene constante. En este proyecto el script `R/modelo.R` resuelve el sistema con `deSolve`, estima `beta` y `gamma` mediante mínimos cuadrados y calcula el número de reproducción básico `R0 = beta / gamma` a partir de los casos confirmados de COVID-19 en España.
+- Unified abstraction for epidemic models via the `epi_model` class
+- Deterministic simulation using `deSolve::ode()`
+- Built-in SIR, SIRS, and SEIR compartmental models
+- Explicit incidence and cumulative-count handling via auxiliary state `C(t)`
+- Observation models for incidence (Poisson and Negative Binomial)
+- Likelihood-based parameter estimation with multi-start optimization
+- Forward prediction from fitted models
+- Base R plotting, printing, and summary methods
 
-## Cómo se ajustan los parámetros del modelo SIR
-1. **Preparar la serie de infectados**: el script descarga los casos confirmados, los convierte a formato largo, filtra el país y aplica un umbral mínimo de casos; la serie resultante (`infected`) se redondea y sirve como dato de entrenamiento.
-2. **Definir el sistema SIR**: se implementan las ecuaciones diferenciales con dos parámetros libres, `beta` (tasa de contagio) y `gamma` (tasa de recuperación), usando la población `N` para normalizar el contacto.
-3. **Configurar condiciones iniciales**: se calcula el vector de estado inicial `init` con susceptibles `S = población − infectados_iniciales`, infectados iniciales `I` y recuperados `R = 0`, sobre una secuencia temporal igual a la longitud de la serie observada.
-4. **Función objetivo (RSS)**: para un par candidato de parámetros, se resuelve el sistema SIR con `ode` y se extrae la serie simulada de infectados (`I`); luego se calcula el error cuadrático medio entre infectados observados y simulados. Esta función devuelve el valor a minimizar.
-5. **Optimización numérica**: se llama a `optim` con método Nelder-Mead y punto de arranque `(0.5, 0.5)` para encontrar los valores de `beta` y `gamma` que minimizan el RSS. El resultado se nombra y se guarda como `opt_par`.
-6. **Simulación con parámetros óptimos**: con los parámetros ajustados, se vuelve a integrar el modelo SIR en un horizonte extendido (`horizon_days + longitud_observada`) para generar trayectorias de `S`, `I` y `R` suavizadas y proyectadas.
-7. **Cálculo de métricas derivadas**: el número básico de reproducción `R0` se calcula como `beta/gamma` a partir de los parámetros óptimos; estos resultados, junto con la curva ajustada, se devuelven y se usan en las gráficas.
+---
 
-### Curva logística
-Además del modelo SIR, el script ajusta una curva logística simple sobre la serie de infectados confirmados. La logística modela un crecimiento inicial exponencial que se desacelera al aproximarse a una capacidad máxima (el parámetro de saturación) y se usa como alternativa parsimoniosa para representar la trayectoria acumulada de casos. El ajuste se realiza por mínimos cuadrados (función `fit_logistic_curve`) y se grafica junto con los datos observados.
+## Installation
 
-## Requisitos
-- R (>= 3.6)
-- Paquetes: `deSolve`
+This package is currently under development and not available on CRAN.
 
-Puedes instalarlos con:
+You can install it from source (for example, from GitHub):
 
 ```r
-install.packages("deSolve")
+# install.packages("remotes")
+remotes::install_github("vcastellar/SIR")
 ```
 
-## Cómo ejecutar el modelo
-1. Abre R en la raíz del proyecto.
-2. Ejecuta el script principal:
+## Dependencies
+
+- **deSolve**
+- **stats** (base R)
+
+---
+
+## Core Concepts
+
+### The `epi_model` class
+
+An `epi_model` object encapsulates everything required to define a deterministic
+compartmental epidemic model:
+
+- Model name
+- ODE right-hand side (`rhs`)
+- State variable names
+- Parameter names
+- Parameter bounds and default values (optional)
+- Initial-condition constructor (`make_init`, optional)
+- Output conventions (e.g. names of incidence and cumulative variables)
+- Optional human-readable equations
+
+Models are created with `new_epi_model()` and can then be passed unchanged to
+generic tools such as `simulate_epi()`, `fit_epi_model()`, and `predict()`.
+
+This design cleanly separates **model definition** from **simulation**,
+**inference**, and **visualization**.
+
+---
+
+## Built-in Models
+
+The package currently provides the following predefined models:
+
+### `SIR_MODEL`
+
+Susceptible–Infectious–Recovered model with an auxiliary cumulative infections
+variable `C(t)`.
+
+### `SIRS_MODEL`
+
+Extension of SIR with waning immunity, allowing transitions from `R` back to
+`S` at rate `omega`.
+
+### `SEIR_MODEL`
+
+Susceptible–Exposed–Infectious–Recovered model with a latent period. In this
+model, incidence corresponds to transitions from `E` to `I`.
+
+All built-in models include a cumulative state `C(t)` so that daily incidence is
+consistently defined as `diff(C)` and can be directly linked to count data.
+
+---
+
+## Simulation
+
+### Basic simulation
 
 ```r
-source("R/modelo.R")
+library(SIR)
+
+sim <- simulate_epi(
+  model = SIR_MODEL,
+  n_days = 200,
+  parms = c(beta = 0.3, gamma = 0.1),
+  init_args = list(N = 1e6, I0 = 20, R0 = 0),
+  obs = "poisson",
+  seed = 1
+)
+
+plot(sim)
+plot(sim, what = "incidence")
+summary(sim)
 ```
 
-El script descarga los casos confirmados de COVID-19 y estima los parámetros del modelo SIR para España.
+The simulation returns an object of class `sim_epi` containing:
 
-## Resultados esperados
-- Gráficas de la serie de infectados y del ajuste del modelo SIR.
-- Estimaciones de los parámetros `beta`, `gamma` y del número de reproducción básico (`R0`).
+- Deterministic state trajectories
+- True incidence derived from the cumulative state
+- Observed incidence generated by the observation model (if enabled)
 
-```mermaid
-classDiagram
-  direction LR
+---
 
-  class epi_model {
-    <<S3 class>>
-    +name : character(1)
-    +rhs : function(time, state, parms)
-    +state_names : character[]
-    +par_names : character[]
-    +lower : numeric[]?
-    +upper : numeric[]?
-    +defaults : numeric[]?
-    +make_init : function(...)?
-    +output : list(incidence_col, cumulative_col)
-    +equations : character[]?
-    --
-    +print()
-  }
+## Observation Models
 
-  class SIR_MODEL {
-    <<epi_model instance>>
-  }
-  class SIRS_MODEL {
-    <<epi_model instance>>
-  }
-  class SEIR_MODEL {
-    <<epi_model instance>>
-  }
+The latent epidemic dynamics can be mapped to reported incidence using a simple
+observation model:
 
-  epi_model <|.. SIR_MODEL
-  epi_model <|.. SIRS_MODEL
-  epi_model <|.. SEIR_MODEL
+- `"poisson"`: Poisson counts with mean `rho * incidence`
+- `"negbin"`: Negative Binomial counts with mean `rho * incidence`
+- `"none"`: no observation model (purely deterministic output)
 
-  class sim_epi {
-    <<S3 class>>
-    +model : character(1)
-    +params : list
-    +states : data.frame(time, states...)
-    +incidence_true : data.frame(time, inc)
-    +incidence_obs : data.frame(time, inc)
-    +cumulative_obs : data.frame(time, cases_cum)
-    --
-    +print()
-    +plot()
-    +summary()
-  }
+The reporting fraction `rho` controls under-reporting.
 
-  class fit_epi_model {
-    <<S3 class>>
-    +model : epi_model
-    +par : named numeric[]
-    +optim : optim_result
-    +value : numeric
-    +convergence : integer
-    +message : character?
-    +distr : character
-    +init : list
-    +ini0 : named numeric[]
-    +x_len : integer
-    +best_start : list?
-    +control : list?
-    --
-    +print()
-    +predict()
-  }
+---
 
-  %% relaciones funcionales
-  epi_model --> sim_epi : simulate_epi(model)
-  epi_model --> fit_epi_model : fit_epi_model(model, x)
-  fit_epi_model --> sim_epi : predict(...) returns\nstates/incidence
+## Model Fitting
 
-  %% métodos/“servicios” (no clases) como notas
-  class simulate_epi {
-    <<function>>
-    +simulate_epi(model: epi_model, ...) sim_epi
-  }
-  class fit_epi_model_fn {
-    <<function>>
-    +fit_epi_model(x, model: epi_model, ...) fit_epi_model
-  }
-  class predict_fit {
-    <<S3 method>>
-    +predict.fit_epi_model(object: fit_epi_model, ...) states|incidence|both
-  }
+Model parameters can be estimated from incidence count data by minimizing a
+negative log-likelihood.
 
-  simulate_epi ..> epi_model : uses rhs/make_init/output
-  simulate_epi ..> sim_epi : constructs
-  fit_epi_model_fn ..> epi_model : uses rhs/par_names/bounds
-  fit_epi_model_fn ..> fit_epi_model : constructs
-  predict_fit ..> fit_epi_model : uses model+par
+```r
+fit <- fit_epi_model(
+  x = sim$incidence_obs$inc,
+  model = SIR_MODEL,
+  distr = "poisson",
+  init = list(I = 10, N = 1e6),
+  n_starts = 40,
+  ms_strategy = "lhs",
+  seed = 1
+)
+
+fit
+fit$par
 ```
 
+## Fitting approach
 
-## Referencias
-- Wikipedia contributors. *Modelo SIR*. Wikipedia, The Free Encyclopedia.  
- [Modelo SIR](https://es.wikipedia.org/wiki/Modelo_SIR)
- [SIR Model Foundation](https://mat.uab.cat/matmat_antiga/PDFv2013/v2013n03.pdf)
+- Expected incidence is computed as increments of the cumulative state:  
+  `diff(C(t))`
+
+- Likelihood:
+  - Poisson
+  - Negative Binomial
+
+- Optimization:
+  - Multi-start initialization (Latin Hypercube, uniform, or jitter sampling)
+  - Final optimization via `optim(..., method = "L-BFGS-B")`
+
+- Parameter bounds are enforced throughout optimization
+
+The result is an object of class `fit_epi_model` containing parameter estimates,
+convergence information, and the fitted model definition.
+
+---
+
+## Prediction
+
+Forward deterministic predictions can be generated from a fitted model:
+
+```r
+pred <- predict(
+  fit,
+  n_days = 300,
+  init = fit$ini0,
+  type = "both"
+)
+
+head(pred$states)
+head(pred$incidence)
+```
+### Available prediction outputs
+
+- `"states"`: compartment trajectories
+- `"incidence"`: expected incidence time series
+- `"both"`: states and incidence
+
+---
+
+## Plotting and Summaries
+
+### Simulation objects (`sim_epi`)
+
+- `plot(sim)` — compartment trajectories
+- `plot(sim, what = "incidence")` — observed incidence
+- `summary(sim)` — epidemiological summary statistics
+- `print(sim)` — concise textual overview
+
+### Fitted models (`fit_epi_model`)
+
+- `print(fit)` — parameter estimates and convergence diagnostics
+- `predict()` — forward simulation using fitted parameters
+
+---
+
+## File Overview
+
+The package is currently composed of the following main source files:
+
+- `dependencies.R` — package dependencies
+- `constructor.R` — `new_epi_model()` and `epi_model` infrastructure
+- `models.R` — SIR, SIRS, and SEIR model definitions
+- `simulate_epi.R` — deterministic simulation and observation models
+- `optimizador.R` — likelihood objective and multi-start optimization
+- `predict.R` — forward prediction from fitted models
+- `metodos.R` — plotting, printing, and summary methods
+
+---
+
+## Design Philosophy
+
+- Keep the core minimal and transparent
+- Separate model definition from simulation and inference
+- Favor explicit likelihood-based inference over ad-hoc fitting
+- Use base R and a small dependency footprint
+- Provide sensible defaults without hiding assumptions
+
+---
+
+## Status
+
+This package is **experimental** and under active development.  
+The API may change as functionality evolves.
+
+
