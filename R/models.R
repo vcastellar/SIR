@@ -15,11 +15,11 @@ sir_rhs <- function(time, state, parms) {
   })
 }
 
-#' @keywords internal
-#' @noRd
-make_init_sir <- function(N, I0 = 10, R0 = 0) {
-  c(S = N - I0 - R0, I = I0, R = R0)
-}
+#' #' @keywords internal
+#' #' @noRd
+#' make_init_sir <- function(N, I0 = 10, R0 = 0) {
+#'   c(S = N - I0 - R0, I = I0, R = R0)
+#' }
 
 
 #' SIR epidemic model with cumulative infections
@@ -96,7 +96,7 @@ SIR_MODEL <- new_epi_model(
   lower = c(beta = 1e-8, gamma = 1e-8),
   upper = c(beta = 2,    gamma = 1),
   defaults = c(beta = 0.3, gamma = 0.1),
-  make_init = make_init_sir,
+  init = c("S" = 1e6, "I" = 10, "R" = 0),
   output = list(incidence_col = "incidence")
 )
 
@@ -117,11 +117,11 @@ sirs_rhs <- function(time, state, parms) {
   })
 }
 
-#' @keywords internal
-#' @noRd
-make_init_sirs <- function(N, I0 = 10, R0 = 0) {
-  c(S = N - I0 - R0, I = I0, R = R0)
-}
+#' #' @keywords internal
+#' #' @noRd
+#' make_init_sirs <- function(N, I0 = 10, R0 = 0) {
+#'   c(S = N - I0 - R0, I = I0, R = R0)
+#' }
 
 #' SIRS epidemic model with waning immunity
 #' @name SIRS_MODEL
@@ -181,7 +181,7 @@ make_init_sirs <- function(N, I0 = 10, R0 = 0) {
 #'   model = SIRS_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.3, gamma = 0.1, omega = 0.02),
-#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
+#'   init = list(N = 1e6, I0 = 20, R0 = 0),
 #'   obs = "none"
 #' )
 #'
@@ -201,7 +201,7 @@ SIRS_MODEL <- new_epi_model(
   lower = c(beta = 1e-8, gamma = 1e-8, omega = 1e-8),
   upper = c(beta = 2,    gamma = 1,    omega = 1),
   defaults = c(beta = 0.3, gamma = 0.1, omega = 0.02),
-  make_init = make_init_sirs
+  init = c("S" = 1e6, "I" = 20, "R" = 0)
 )
 
 
@@ -228,16 +228,16 @@ seir_rhs <- function(time, state, parms) {
   })
 }
 
-#' @keywords internal
-#' @noRd
-make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
-  c(
-    S = N - E0 - I0 - R0,
-    E = E0,
-    I = I0,
-    R = R0
-  )
-}
+#' #' @keywords internal
+#' #' @noRd
+#' make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
+#'   c(
+#'     S = N - E0 - I0 - R0,
+#'     E = E0,
+#'     I = I0,
+#'     R = R0
+#'   )
+#' }
 
 #' SEIR epidemic model with latent (exposed) period
 #' @name SEIR_MODEL
@@ -330,7 +330,7 @@ SEIR_MODEL <- new_epi_model(
   lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8),
   upper = c(beta = 5,    sigma = 2,    gamma = 2),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
-  make_init = make_init_seir,
+  init = c("S" = 1e6, "E" = 5, "I" = 10, "R" = 0),
   output = list(
     incidence_col = "incidence",
     incidence_desc = "entries into I (cases)"
@@ -364,16 +364,16 @@ seirs_rhs <- function(time, state, parms) {
 }
 
 
-#' @keywords internal
-#' @noRd
-make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0) {
-  c(
-    S = N - E0 - I0 - R0,
-    E = E0,
-    I = I0,
-    R = R0
-  )
-}
+#' #' @keywords internal
+#' #' @noRd
+#' make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0) {
+#'   c(
+#'     S = N - E0 - I0 - R0,
+#'     E = E0,
+#'     I = I0,
+#'     R = R0
+#'   )
+#' }
 
 #' SEIRS epidemic model with latent period and waning immunity
 #' @name SEIRS_MODEL
@@ -448,7 +448,7 @@ SEIRS_MODEL <- new_epi_model(
   lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8, omega = 1e-8),
   upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 1),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
-  make_init = make_init_seirs,
+  init = c("S" = 1e6, "I" = 10, "R" = 0, "E" = 0),
   output = list(
     incidence_col = "incidence",
     incidence_desc = "entries into I (cases)"

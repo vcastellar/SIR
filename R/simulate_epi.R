@@ -94,8 +94,7 @@
 #'   model = SIR_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
-#'   init_args = list(N= 1e6),
-#'   obs = "poisson",
+#'   init = SIR_MODEL$init,
 #'   seed = 1
 #' )
 #'
@@ -128,7 +127,6 @@ simulate_epi <- function(model,
                          n_days = 200,
                          parms = NULL,
                          init = NULL,
-                         init_args = NULL,
                          times = NULL,
                          rho = 1,
                          obs = c("none", "poisson", "negbin"),
@@ -159,11 +157,9 @@ simulate_epi <- function(model,
 
   # estado inicial
   if (is.null(init)) {
-    if (!is.function(model$make_init)) {
-      stop("Provide `init` or define `model$make_init()`.")
-    }
-    init <- do.call(model$make_init, init_args)
+      stop("Provide `init`.")
   }
+  init <- unlist(init)
   init <- init[model$state_names]
 
   # integración ODE

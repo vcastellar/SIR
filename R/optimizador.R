@@ -107,10 +107,10 @@ objective_logrmse <- function(model, x, ini0, times, eps = 1e-8) {
 #' \dontrun{
 #' ## Simulate a SIRS epidemic and fit the model to observed incidence
 #' sim <- simulate_epi(
-#'   model = SIRS_MODEL,
+#'   model = SIR_MODEL,
 #'   n_days = 200,
-#'   parms = SIRS_MODEL$defaults,
-#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
+#'   parms = SIR_MODEL$defaults,
+#'   init = list(S = 1e6, I = 20, R = 0),
 #'   obs = "negbin",
 #'   rho = 1,
 #'   seed = 22
@@ -120,9 +120,9 @@ objective_logrmse <- function(model, x, ini0, times, eps = 1e-8) {
 #' ## Fit with log-RMSE (no likelihood, size ignored)
 #' fit_rmse <- fit_epi_model(
 #'   x = x,
-#'   model = SIRS_MODEL,
+#'   model = SIR_MODEL,
 #'   loss = "logrmse",
-#'   init = list(N = 1e6, I0 = 20, R0 = 0)
+#'   init = list(S = 1e6, I= 5, R = 0)
 #'   )
 #' print(fit_rmse)
 #'}
@@ -130,7 +130,7 @@ objective_logrmse <- function(model, x, ini0, times, eps = 1e-8) {
 fit_epi_model <- function(x,
                           model = SIR_MODEL,
                           loss = c("logrmse", "rmse"),
-                          init = list(N = 1e6, I0 = 10, R0 = 0),
+                          init = NULL,
                           n_starts = 20,
                           control = list(maxit = 500),
                           seed = NULL,
@@ -139,11 +139,11 @@ fit_epi_model <- function(x,
   stopifnot(inherits(model, "epi_model"))
   loss <- match.arg(loss)
 
-  if (!is.function(model$make_init)) {
-    stop("Model does not define make_init().")
+  if (is.null(init)) {
+    stop("Model does not define init.")
   }
 
-  ini0 <- do.call(model$make_init, init)
+  ini0 <- unlist(init)
   ini0 <- ini0[model$state_names]
 
   times <- seq_along(x) - 1

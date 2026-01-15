@@ -91,7 +91,7 @@ new_epi_model <- function(name,
                           lower = NULL,
                           upper = NULL,
                           defaults = NULL,
-                          make_init = NULL,
+                          init = NULL,
                           output = list(incidence_col = "incidence"),
                           equations = NULL) {
 
@@ -130,7 +130,7 @@ new_epi_model <- function(name,
       lower = lower,
       upper = upper,
       defaults = defaults,
-      make_init = make_init,
+      init = init,
       output = output,
       equations = equations
     ),
