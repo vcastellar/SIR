@@ -1,105 +1,71 @@
 #' Create a new epidemic model object
 #'
 #' @name new_epi_model
-#'
 #' @description
-#' Constructs an object of class \code{"epi_model"} that encapsulates all the
-#' information required to define and simulate a deterministic compartmental
-#' epidemic model (such as SIR, SIRS, or user-defined extensions).
-#'
-#' An \code{epi_model} object stores the model equations (ODE right-hand side),
-#' state variables, parameters, parameter bounds, default values, and optional
-#' helpers for building initial conditions and interpreting model output.
+#' Constructs an object of class \code{"epi_model"} representing a deterministic
+#' compartmental epidemic model. In addition to the ODE system, the model must
+#' explicitly declare which output of the right-hand side corresponds to the
+#' latent incidence rate.
 #'
 #' @details
-#' The \code{epi_model} class provides a lightweight abstraction layer separating
-#' model definition from simulation, inference, and visualization. Generic tools
-#' such as \code{\link{simulate_epi}} operate on this object without requiring
-#' model-specific logic.
+#' ## Incidence
+#' The \code{rhs} function may return additional named outputs besides the state
+#' derivatives. One of these outputs must represent the **latent incidence rate**
+#' (e.g. force of infection or case-generation rate).
 #'
-#' ## Required components
-#' At minimum, a model must define:
-#' \itemize{
-#'   \item a name (\code{name});
-#'   \item a right-hand side ODE function compatible with \code{deSolve::ode()}
-#'     (\code{rhs});
-#'   \item the names of the state variables (\code{state_names});
-#'   \item the names of the model parameters (\code{par_names}).
-#' }
+#' The \code{incidence} argument specifies the name of this output. This makes the
+#' definition of epidemic cases explicit and allows generic functions such as
+#' \code{simulate_epi()}, \code{fit_epi_model()}, and \code{summary()} to operate
+#' consistently across models.
 #'
-#' ## Optional components
-#' Additional components may be provided to facilitate simulation and fitting:
-#' \itemize{
-#'   \item lower and upper bounds for parameters (\code{lower}, \code{upper});
-#'   \item default parameter values (\code{defaults});
-#'   \item a function to construct initial conditions (\code{make_init});
-#'   \item a character vector of model equations for display (\code{equations});
-#'   \item conventions for output columns such as incidence and cumulative counts
-#'     (\code{output}).
-#' }
-#'
-#' Parameter bounds and defaults, when supplied, must be named numeric vectors
-#' whose names match \code{par_names}.
-#'
-#' @param name Character scalar. Human-readable name of the model (e.g. \code{"SIR"},
-#'   \code{"SIRS"}).
-#' @param rhs Function defining the right-hand side of the ODE system. Must have
-#'   signature \code{function(time, state, parms)} and be compatible with
-#'   \code{deSolve::ode()}.
-#' @param state_names Character vector giving the names of the state variables
-#'   required by the model.
-#' @param par_names Character vector giving the names of the model parameters.
-#' @param lower Optional named numeric vector of lower bounds for parameters.
-#' @param upper Optional named numeric vector of upper bounds for parameters.
+#' @param name Character scalar. Human-readable name of the model (e.g. \code{"SIR"}).
+#' @param rhs Function defining the ODE system. Must have signature
+#'   \code{function(time, state, parms)} and return a list whose first element is
+#'   the vector of state derivatives.
+#' @param state_names Character vector of state variable names.
+#' @param par_names Character vector of parameter names.
+#' @param incidence Character scalar. Name of the \code{rhs} output corresponding
+#'   to the latent incidence rate.
+#' @param lower Optional named numeric vector of lower parameter bounds.
+#' @param upper Optional named numeric vector of upper parameter bounds.
 #' @param defaults Optional named numeric vector of default parameter values.
-#' @param make_init Optional function to construct the initial state vector.
-#'   Typically takes arguments such as population size and initial conditions
-#'   (e.g. \code{N}, \code{I0}, \code{R0}) and returns a named numeric vector
-#'   matching \code{state_names}.
-#' @param output Optional list defining output conventions. By default,
-#'   \code{list(incidence_col = "incidence", cumulative_col = "C")}.
-#' @param equations Optional character vector listing model equations for display
-#'   in \code{print.epi_model}. When \code{NULL}, the right-hand side function
-#'   source is printed instead.
+#' @param init Optional named numeric vector of default initial conditions.
 #'
 #' @return
-#' An object of class \code{"epi_model"}, implemented as a named list.
+#' An object of class \code{"epi_model"}.
 #'
 #' @examples
-#' ## Minimal example (structure only)
-#' dummy_rhs <- function(time, state, parms) {
-#'   list(rep(0, length(state)))
-#' }
-#'
-#' model <- new_epi_model(
-#'   name = "DUMMY",
-#'   rhs = dummy_rhs,
-#'   state_names = c("X"),
-#'   par_names = c("alpha")
+#' sir_model <- new_epi_model(
+#'   name = "SIR",
+#'   rhs = sir_rhs,
+#'   state_names = c("S", "I", "R"),
+#'   par_names = c("beta", "gamma"),
+#'   incidence = "incidence"
 #' )
-#'
-#' model
-#'
-#' @seealso
-#' \code{\link{simulate_epi}}
 #'
 #' @export
 new_epi_model <- function(name,
                           rhs,
                           state_names,
                           par_names,
+                          incidence,
                           lower = NULL,
                           upper = NULL,
                           defaults = NULL,
-                          init = NULL,
-                          output = list(incidence_col = "incidence"),
-                          equations = NULL) {
+                          init = NULL) {
 
   stopifnot(is.character(name), length(name) == 1)
   stopifnot(is.function(rhs))
   stopifnot(is.character(state_names), length(state_names) >= 1)
   stopifnot(is.character(par_names), length(par_names) >= 1)
 
+  ## --- incidence is mandatory -------------------------------------------------
+  if (missing(incidence)) {
+    stop("`incidence` must be provided and must name an output returned by `rhs`.")
+  }
+  stopifnot(is.character(incidence), length(incidence) == 1)
+
+  ## --- parameter bounds -------------------------------------------------------
   if (!is.null(lower)) {
     stopifnot(is.numeric(lower), all(par_names %in% names(lower)))
     lower <- lower[par_names]
@@ -112,13 +78,16 @@ new_epi_model <- function(name,
     if (any(lower >= upper)) stop("Invalid bounds: lower >= upper.")
   }
 
+  ## --- defaults ---------------------------------------------------------------
   if (!is.null(defaults)) {
     stopifnot(is.numeric(defaults), all(par_names %in% names(defaults)))
     defaults <- defaults[par_names]
   }
 
-  if (!is.null(equations)) {
-    stopifnot(is.character(equations))
+  ## --- init -------------------------------------------------------------------
+  if (!is.null(init)) {
+    stopifnot(is.numeric(init), all(state_names %in% names(init)))
+    init <- init[state_names]
   }
 
   structure(
@@ -127,26 +96,40 @@ new_epi_model <- function(name,
       rhs = rhs,
       state_names = state_names,
       par_names = par_names,
+      incidence = incidence,
       lower = lower,
       upper = upper,
       defaults = defaults,
-      init = init,
-      output = output,
-      equations = equations
+      init = init
     ),
     class = "epi_model"
   )
 }
 
+
 #' Print method for epidemic model objects
+#' Print an epidemic model object
+#'
 #' @name print.epi_model
 #' @description
-#' Provides a concise, human-readable summary of an \code{epi_model} object,
-#' including its name, state variables, parameters, and (when available)
-#' parameter bounds.
+#' Provides a concise, human-readable summary of an \code{epi_model} object.
+#' The printed output includes the model name, state variables, parameters,
+#' the declared definition of epidemic incidence, and the underlying system
+#' of differential equations.
 #'
-#' This method is automatically called when an \code{epi_model} object is printed
-#' at the console.
+#' This method is automatically called when an object of class
+#' \code{"epi_model"} is printed at the console.
+#'
+#' @details
+#' The \code{epi_model} class requires an explicit declaration of epidemic
+#' incidence via the \code{incidence} field, which specifies the name of the
+#' output returned by the model's right-hand side (\code{rhs}) corresponding
+#' to the latent incidence rate. This information is displayed by the
+#' \code{print()} method to make the epidemiological interpretation of the
+#' model explicit.
+#'
+#' Parameter bounds are shown when available. The model equations are printed
+#' by deparsing the \code{rhs} function for inspection.
 #'
 #' @param x An object of class \code{"epi_model"}.
 #' @param ... Further arguments (ignored).
@@ -159,38 +142,36 @@ new_epi_model <- function(name,
 #'
 #' @export
 print.epi_model <- function(x, ...) {
-  cat("<epi_model>", x$name, "\n")
-  cat("  States: ", paste(x$state_names, collapse = ", "), "\n", sep = "")
-  cat("  Params: ", paste(x$par_names, collapse = ", "), "\n", sep = "")
 
+  stopifnot(inherits(x, "epi_model"))
+
+  cat("<epi_model>", x$name, "\n")
+
+  cat("  States:    ", paste(x$state_names, collapse = ", "), "\n", sep = "")
+  cat("  Params:    ", paste(x$par_names, collapse = ", "), "\n", sep = "")
+
+  ## --- incidence --------------------------------------------------------------
+  if (!is.null(x$incidence)) {
+    cat("  Incidence: ", x$incidence, " (rhs output)\n", sep = "")
+  }
+
+  ## --- parameter bounds -------------------------------------------------------
   if (!is.null(x$lower) && !is.null(x$upper)) {
     cat("  Bounds:\n")
     b <- cbind(lower = x$lower, upper = x$upper)
     print(b)
   }
 
-  # --- NUEVO: ecuaciones del modelo (si existen) ---
-  if (!is.null(x$equations) && length(x$equations) > 0) {
-    cat("  Equations:\n")
-    for (ln in x$equations) cat("   ", ln, "\n", sep = "")
-  } else {
-    # fallback: mostrar el rhs "como código" si no hay ecuaciones guardadas
+  ## --- equations --------------------------------------------------------------
+  if (!is.null(x$rhs)) {
     cat("  Equations (rhs):\n")
     rhs_txt <- deparse(x$rhs)
-    # quita líneas vacías por estética
     rhs_txt <- rhs_txt[nzchar(trimws(rhs_txt))]
-    for (ln in rhs_txt) cat("   ", ln, "\n", sep = "")
-  }
-
-  # --- Función make_init ---
-  if (!is.null(x$make_init) && is.function(x$make_init)) {
-    cat("  Initial conditions (make_init):\n")
-    mi_txt <- deparse(x$make_init)
-    mi_txt <- mi_txt[nzchar(trimws(mi_txt))]
-    for (ln in mi_txt) cat("   ", ln, "\n", sep = "")
-  } else {
-    cat("  Initial conditions: <none>\n")
+    for (ln in rhs_txt) {
+      cat("   ", ln, "\n", sep = "")
+    }
   }
 
   invisible(x)
 }
+

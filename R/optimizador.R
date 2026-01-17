@@ -111,30 +111,30 @@ objective_logrmse <- function(model, x, ini0, times, eps = 1e-8) {
 #'   n_days = 200,
 #'   parms = SIR_MODEL$defaults,
 #'   init = list(S = 1e6, I = 20, R = 0),
-#'   obs = "negbin",
-#'   rho = 1,
 #'   seed = 22
 #'  )
 #' plot(sim)
-#' x <- sim$incidence_obs$inc
+#' x <- sim$incidence$inc
+#' lines(x)
 #' ## Fit with log-RMSE (no likelihood, size ignored)
 #' fit_rmse <- fit_epi_model(
 #'   x = x,
 #'   model = SIR_MODEL,
 #'   loss = "logrmse",
-#'   init = list(S = 1e6, I= 5, R = 0)
+#'   init = list(S = 1e6, I= 6, R = 0)
 #'   )
 #' print(fit_rmse)
 #'}
 #' @export
 fit_epi_model <- function(x,
-                          model = SIR_MODEL,
-                          loss = c("logrmse", "rmse"),
-                          init = NULL,
-                          n_starts = 20,
-                          control = list(maxit = 500),
-                          seed = NULL,
-                          eps = 1e-6) {
+                           model = SIR_MODEL,
+                           loss = c("logrmse", "rmse"),
+                           init = NULL,
+                           n_starts = 100,
+                           control = list(maxit = 500),
+                           seed = NULL,
+                           eps = 1e-6,
+                           verbose = TRUE) {
 
   stopifnot(inherits(model, "epi_model"))
   loss <- match.arg(loss)
@@ -143,11 +143,13 @@ fit_epi_model <- function(x,
     stop("Model does not define init.")
   }
 
+  ## --- initial state ----------------------------------------------------------
   ini0 <- unlist(init)
   ini0 <- ini0[model$state_names]
 
   times <- seq_along(x) - 1
 
+  ## --- objective --------------------------------------------------------------
   fn <- objective_logrmse(
     model = model,
     x     = x,
@@ -155,12 +157,27 @@ fit_epi_model <- function(x,
     eps   = eps,
     times = times
   )
+
+  ## --- bounds (log-scale) -----------------------------------------------------
   lower <- log(model$lower[model$par_names])
   upper <- log(model$upper[model$par_names])
 
   if (!is.null(seed)) set.seed(seed)
 
-  best <- list(value = Inf, opt = NULL)
+  ## ========================================================================== ##
+  ## 1) CHEAP MULTI-START
+  ## ========================================================================== ##
+
+  control_ms <- list(
+    maxit = min(50L, control$maxit %||% 50L)
+  )
+
+  best <- list(value = Inf, par = NULL)
+
+  if (verbose) {
+    message("Multi-start optimization\n")
+    message("------------------------\n")
+  }
 
   for (i in seq_len(n_starts)) {
 
@@ -172,17 +189,61 @@ fit_epi_model <- function(x,
       method = "L-BFGS-B",
       lower = lower,
       upper = upper,
-      control = control
+      control = control_ms
     )
 
     if (is.finite(opt_i$value) && opt_i$value < best$value) {
-      best <- list(value = opt_i$value, opt = opt_i)
+      best <- list(value = opt_i$value, par = opt_i$par)
+      improved <- TRUE
+    } else {
+      improved <- FALSE
+    }
+
+    if (verbose) {
+      message(
+        sprintf(
+          "  start %3d/%d | value = %.4g%s\n",
+          i, n_starts, opt_i$value,
+          if (improved) "  *best*" else ""
+        )
+      )
     }
   }
 
-  opt <- best$opt
+  if (is.null(best$par)) {
+    stop("Multi-start phase failed: no valid optimization result.")
+  }
+
+  ## ========================================================================== ##
+  ## 2) FINAL OPTIMIZATION
+  ## ========================================================================== ##
+
+  if (verbose) {
+    message("\nFinal optimization\n")
+    message("------------------\n")
+    message(sprintf("Starting value: %.4g\n", best$value))
+  }
+
+  opt <- optim(
+    par = best$par,
+    fn  = fn,
+    method = "L-BFGS-B",
+    lower = lower,
+    upper = upper,
+    control = control
+  )
+
+  if (verbose) {
+    message(sprintf("Final value: %.4g\n", opt$value))
+    message("Convergence: ", opt$convergence, "\n", sep = "")
+    if (!is.null(opt$message) && nzchar(opt$message)) {
+      message("Message: ", opt$message, "\n", sep = "")
+    }
+  }
+
   par_hat <- setNames(exp(opt$par), model$par_names)
 
+  ## --- build fitted object ----------------------------------------------------
   new_fit_epi_model(
     model = model,
     par = par_hat,
@@ -194,6 +255,48 @@ fit_epi_model <- function(x,
   )
 }
 
+#' Print a fitted epidemic model
+#'
+#' @name print.fit_epi_model
+#' @description
+#' Print method for objects of class \code{"fit_epi_model"}.
+#'
+#' The function displays a concise, human-readable summary of the result of
+#' fitting an epidemic model to incidence data. The printed output includes
+#' the model name, the loss function used for fitting, the final objective
+#' value, convergence information from the optimizer, and the estimated
+#' model parameters.
+#'
+#' This method is automatically called when an object of class
+#' \code{"fit_epi_model"} is printed at the console.
+#'
+#' @param x An object of class \code{"fit_epi_model"} as returned by
+#'   \code{\link{fit_epi_model}}.
+#' @param ... Further arguments (ignored).
+#'
+#' @details
+#' The reported objective value corresponds to the value of the loss function
+#' evaluated at the estimated parameter vector. Convergence information and
+#' optional messages are taken directly from the underlying optimization
+#' routine.
+#'
+#' The printed parameter estimates represent point estimates obtained by
+#' minimizing the chosen loss function; no uncertainty quantification is
+#' provided by this method.
+#'
+#' @return
+#' Invisibly returns the input object \code{x}.
+#'
+#' @examples
+#' \dontrun{
+#' fit <- fit_epi_model(
+#'   x = incidence_data,
+#'   model = SIR_MODEL
+#' )
+#'
+#' fit
+#' }
+#'
 #' @export
 print.fit_epi_model <- function(x, ...) {
   cat("<fit_epi_model>\n")

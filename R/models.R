@@ -97,7 +97,7 @@ SIR_MODEL <- new_epi_model(
   upper = c(beta = 2,    gamma = 1),
   defaults = c(beta = 0.3, gamma = 0.1),
   init = c("S" = 1e6, "I" = 10, "R" = 0),
-  output = list(incidence_col = "incidence")
+  incidence = "incidence"
 )
 
 
@@ -201,7 +201,8 @@ SIRS_MODEL <- new_epi_model(
   lower = c(beta = 1e-8, gamma = 1e-8, omega = 1e-8),
   upper = c(beta = 2,    gamma = 1,    omega = 1),
   defaults = c(beta = 0.3, gamma = 0.1, omega = 0.02),
-  init = c("S" = 1e6, "I" = 20, "R" = 0)
+  init = c("S" = 1e6, "I" = 20, "R" = 0),
+  incidence = "incidence"
 )
 
 
@@ -248,11 +249,6 @@ seir_rhs <- function(time, state, parms) {
 #' and enter the exposed compartment \code{E}. Exposed individuals progress
 #' to the infectious compartment at rate \code{sigma}.
 #'
-#' The model is extended with an auxiliary state variable \code{C(t)} that
-#' tracks the cumulative number of **cases** over time (defined as transitions
-#' from \code{E} to \code{I}), and it provides the instantaneous incidence
-#' as an additional model output.
-#'
 #' @details
 #' ## State variables
 #' The model is defined in terms of the following state variables:
@@ -261,7 +257,7 @@ seir_rhs <- function(time, state, parms) {
 #'   \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
 #'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 #'   \item{R(t)}{Number of recovered (immune) individuals at time \eqn{t}.}
-#'   \item{C(t)}{Cumulative number of **cases** up to time \eqn{t} (entries into \code{I}).}
+#
 #' }
 #'
 #' The total population size is given by
@@ -289,14 +285,10 @@ seir_rhs <- function(time, state, parms) {
 #' \frac{dS}{dt} &= -\lambda(t), \\
 #' \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 #' \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-#' \frac{dR}{dt} &= \gamma I(t), \\
-#' \frac{dC}{dt} &= \sigma E(t).
+#' \frac{dR}{dt} &= \gamma I(t),
 #' \end{aligned}
 #' }
 #'
-#' The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
-#' **case** incidence (entries into \code{I}). This choice aligns the model with
-#' common daily case-count time series.
 #'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
@@ -331,10 +323,7 @@ SEIR_MODEL <- new_epi_model(
   upper = c(beta = 5,    sigma = 2,    gamma = 2),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
   init = c("S" = 1e6, "E" = 5, "I" = 10, "R" = 0),
-  output = list(
-    incidence_col = "incidence",
-    incidence_desc = "entries into I (cases)"
-  )
+  incidence = "incidence"
 )
 
 
@@ -357,8 +346,7 @@ seirs_rhs <- function(time, state, parms) {
     dR <-  gamma * I - omega * R
 
     list(
-      c(dS, dE, dI, dR),
-      incidence = sigma * E
+      c(dS, dE, dI, dR), incidence = sigma * E
     )
   })
 }
@@ -449,10 +437,7 @@ SEIRS_MODEL <- new_epi_model(
   upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 1),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
   init = c("S" = 1e6, "I" = 10, "R" = 0, "E" = 0),
-  output = list(
-    incidence_col = "incidence",
-    incidence_desc = "entries into I (cases)"
-  )
+  incidence = "incidence"
 )
 
 

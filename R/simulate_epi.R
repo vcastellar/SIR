@@ -94,7 +94,7 @@
 #'   model = SIR_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
-#'   init = SIR_MODEL$init,
+#'   init = c(S = 1e6-10, I = 10, R = 0 ),
 #'   seed = 1
 #' )
 #'
@@ -128,7 +128,6 @@ simulate_epi <- function(model,
                          parms = NULL,
                          init = NULL,
                          times = NULL,
-                         rho = 1,
                          obs = c("none", "poisson", "negbin"),
                          size = 20,
                          seed = NULL,
@@ -138,31 +137,38 @@ simulate_epi <- function(model,
   obs <- match.arg(obs)
   if (!is.null(seed)) set.seed(seed)
 
-  # tiempos
+  # 1) Tiempos
   if (is.null(times)) times <- 0:n_days
 
-  # parámetros (defaults + override)
+  # 2) Parámetros: defaults + override
   theta <- model$defaults
   if (is.null(theta)) {
     theta <- setNames(rep(NA_real_, length(model$par_names)), model$par_names)
   }
+
   if (!is.null(parms)) {
+    stopifnot(is.numeric(parms), !is.null(names(parms)))
+    unknown <- setdiff(names(parms), model$par_names)
+    if (length(unknown) > 0) {
+      stop("Unknown parameters: ", paste(unknown, collapse = ", "))
+    }
     theta[names(parms)] <- parms
   }
+
   if (any(is.na(theta))) {
     stop("Missing parameters: ",
          paste(names(theta)[is.na(theta)], collapse = ", "))
   }
   theta <- theta[model$par_names]
 
-  # estado inicial
+  # 3) Estado inicial
   if (is.null(init)) {
-      stop("Provide `init`.")
+    stop("Provide `init`.")
   }
   init <- unlist(init)
   init <- init[model$state_names]
 
-  # integración ODE
+  # 4) Integración ODE
   out <- deSolve::ode(
     y = init,
     times = times,
@@ -172,38 +178,40 @@ simulate_epi <- function(model,
   )
   out <- as.data.frame(out)
 
-  # incidencia latente
-  inc_col <- model$output$incidence_col %||% "incidence"
-  if (!inc_col %in% names(out)) {
-    stop("ODE output does not contain incidence column.")
+  # 5) Incidencia latente derivada de estados (SIR: -diff(S))
+  if (!"S" %in% names(out)) {
+    stop("State 'S' not found: cannot compute incidence.")
   }
-  inc_true <- out[[inc_col]]
 
-  # observación
+  S <- out$S
+  inc_true <- pmax(-diff(S), 0)
+  time_inc <- out$time[-1]
+
+  # 6) Modelo de observación
   if (obs == "none") {
-    inc_obs <- rep(NA_integer_, length(inc_true))
-    cum_obs <- rep(NA_real_, length(inc_true))
+    inc_obs <- inc_true
   } else {
-    mu <- pmax(rho * inc_true, 0)
     inc_obs <- switch(
       obs,
-      poisson = stats::rpois(length(mu), lambda = mu),
-      negbin  = stats::rnbinom(length(mu), mu = mu, size = size)
+      poisson = stats::rpois(length(inc_true), lambda = inc_true),
+      negbin  = stats::rnbinom(length(inc_true), mu = inc_true, size = size)
     )
-    cum_obs <- cumsum(inc_obs)
   }
 
+  inc_cum <- cumsum(inc_obs)
+
+  # 7) Resultado
   res <- list(
     model = model$name,
     params = as.list(theta),
     states = out[, c("time", model$state_names), drop = FALSE],
-    incidence_true = data.frame(time = out$time, inc = inc_true),
-    incidence_obs  = data.frame(time = out$time, inc = inc_obs),
-    cumulative_obs = data.frame(time = out$time, cases_cum = cum_obs)
+    incidence = data.frame(time = time_inc, inc = inc_obs),
+    incidence_cum = data.frame(time = time_inc, cases_cum = inc_cum)
   )
 
   class(res) <- "sim_epi"
   res
 }
+
 
 

@@ -218,15 +218,26 @@ plot.sim_epi <- function(x,
 #'
 #' @export
 summary.sim_epi <- function(object, ...) {
-  with(object, {
-    list(
-      model = params$model,
-      R0 = params$beta / params$gamma,
-      peak_I = max(states$I),
-      total_infections = max(states$C)
-    )
-  })
+
+  st  <- object$states
+  inc <- object$incidence
+
+  res <- list(
+    model = object$model
+  )
+
+  if ("I" %in% names(st)) {
+    res$peak_I <- max(st$I, na.rm = TRUE)
+    res$time_peak_I <- st$time[which.max(st$I)]
+  }
+
+  if (!is.null(inc) && "inc" %in% names(inc)) {
+    res$total_infections <- sum(inc$inc, na.rm = TRUE)
+  }
+
+  res
 }
+
 
 
 #' Print a simulated epidemic
@@ -263,35 +274,30 @@ summary.sim_epi <- function(object, ...) {
 #' @export
 print.sim_epi <- function(x, ...) {
 
-  if (!inherits(x, "sim_epi")) {
-    stop("Object must be of class 'sim_epi'.")
-  }
+  stopifnot(inherits(x, "sim_epi"))
 
-  p  <- x$params
-  st <- x$states
+  st  <- x$states
+  inc <- x$incidence
 
   cat("Epidemic simulation\n")
   cat("-------------------\n")
 
-  cat("Model:            ", toupper(p$model), "\n", sep = "")
-  cat("Time horizon:     ", max(st$time), " days\n", sep = "")
-  cat("Population (N):   ", format(p$N, scientific = TRUE), "\n", sep = "")
-
-  cat("\nParameters\n")
-  for (nm in names(p)) {
-    cat(nm, ": ", p[[nm]], "\n", sep = "")
-  }
-
+  cat("Model:        ", x$model, "\n", sep = "")
+  cat("Time horizon: ", max(st$time), " days\n", sep = "")
 
   cat("\nOutcomes\n")
 
-  peak_I  <- max(st$I, na.rm = TRUE)
-  time_pk <- st$time[which.max(st$I)]
-  total_C <- max(st$C, na.rm = TRUE)
+  if ("I" %in% names(st)) {
+    peak_I  <- max(st$I, na.rm = TRUE)
+    time_pk <- st$time[which.max(st$I)]
+    cat("  Peak infectious (I): ", round(peak_I), "\n", sep = "")
+    cat("  Time of peak:        ", time_pk, " days\n", sep = "")
+  }
 
-  cat("  Peak infectious:      ", format(round(peak_I), big.mark = ","), "\n", sep = "")
-  cat("  Time of peak:         ", time_pk, " days\n", sep = "")
-  cat("  Total infections (C): ", format(round(total_C), big.mark = ","), "\n", sep = "")
+  if (!is.null(inc) && "inc" %in% names(inc)) {
+    total <- sum(inc$inc, na.rm = TRUE)
+    cat("  Total infections:    ", round(total), "\n", sep = "")
+  }
 
   invisible(x)
 }
