@@ -1,7 +1,7 @@
 Package: SIR
 Type: Package
 Title: Simulation and Inference for Deterministic Epidemic Models
-Version: 0.1.4
+Version: 0.1.5
 Authors@R: 
     person(given = "Vicente",
            family = "Castellar",

@@ -2,7 +2,8 @@
 % Please edit documentation in R/constructor.R
 \name{print.epi_model}
 \alias{print.epi_model}
-\title{Print method for epidemic model objects}
+\title{Print method for epidemic model objects
+Print an epidemic model object}
 \usage{
 \method{print}{epi_model}(x, ...)
 }
@@ -15,12 +16,24 @@
 Invisibly returns the input object \code{x}.
 }
 \description{
-Provides a concise, human-readable summary of an \code{epi_model} object,
-including its name, state variables, parameters, and (when available)
-parameter bounds.
+Provides a concise, human-readable summary of an \code{epi_model} object.
+The printed output includes the model name, state variables, parameters,
+the declared definition of epidemic incidence, and the underlying system
+of differential equations.
 
-This method is automatically called when an \code{epi_model} object is printed
-at the console.
+This method is automatically called when an object of class
+\code{"epi_model"} is printed at the console.
+}
+\details{
+The \code{epi_model} class requires an explicit declaration of epidemic
+incidence via the \code{incidence} field, which specifies the name of the
+output returned by the model's right-hand side (\code{rhs}) corresponding
+to the latent incidence rate. This information is displayed by the
+\code{print()} method to make the epidemiological interpretation of the
+model explicit.
+
+Parameter bounds are shown when available. The model equations are printed
+by deparsing the \code{rhs} function for inspection.
 }
 \examples{
 SIR_MODEL

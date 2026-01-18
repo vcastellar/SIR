@@ -1,6 +1,101 @@
 #-------------------------------------------------------------------------------
+# modelo SI
+#-------------------------------------------------------------------------------
+
+#' @keywords internal
+#' @noRd
+si_rhs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+    N <- S + I
+    lambda <- beta * S * I / N
+    dS <- -lambda
+    dI <-  lambda
+    list(c(dS, dI), incidence = lambda)
+  })
+}
+
+
+#' SI epidemic model
+#'
+#' @name SI_MODEL
+#' @description
+#' An \code{epi_model} object representing a deterministic **SI**
+#' (Susceptible–Infectious) compartmental epidemic model.
+#'
+#' The model describes the spread of an infection in a closed population where
+#' individuals move irreversibly from the susceptible compartment \code{S} to the
+#' infectious compartment \code{I}. No recovery or removal process is included.
+#'
+#' @details
+#' ## State variables
+#' The model is defined in terms of the following state variables:
+#' \describe{
+#'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
+#'   \item{I(t)}{Number of infectious individuals at time \eqn{t}.}
+#' }
+#'
+#' The total population size is conserved:
+#' \deqn{N = S(t) + I(t).}
+#'
+#' ## Parameters
+#' The SI model depends on a single parameter:
+#' \describe{
+#'   \item{beta}{Transmission rate (per day).}
+#' }
+#'
+#' ## Model equations
+#' New infections occur at rate
+#' \deqn{\lambda(t) = \beta \frac{S(t)\, I(t)}{N}.}
+#'
+#' The system of ordinary differential equations is:
+#' \deqn{
+#' \begin{aligned}
+#' \frac{dS}{dt} &= -\lambda(t), \\
+#' \frac{dI}{dt} &= \lambda(t).
+#' \end{aligned}
+#' }
+#'
+#' ## Usage
+#' This predefined model object is intended to be used with generic utilities
+#' such as \code{\link{simulate_epi}} and model-fitting functions that operate
+#' on \code{epi_model} objects.
+#'
+#' @format
+#' An object of class \code{"epi_model"}.
+#'
+#' @examples
+#' ## Simulate an SI epidemic
+#' sim <- simulate_epi(
+#'   model = SI_MODEL,
+#'   n_days = 100,
+#'   parms = c(beta = 0.4),
+#'   obs = "negbin",
+#'   init = SI_MODEL$init
+#' )
+#' plot(sim)
+#' plot(sim$incidence$time, sim$incidence$inc, type = "l",
+#'      xlab = "Days", ylab = "I(t)",
+#'      main = "SI model: infectious individuals")
+#'
+#' @seealso
+#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#'
+#' @export
+SI_MODEL <- new_epi_model(
+  name = "SI",
+  rhs = si_rhs,
+  state_names = c("S", "I"),
+  par_names = c("beta"),
+  lower = c(beta = 1e-8),
+  upper = c(beta = 5),
+  defaults = c(beta = 0.3),
+  init = c("S" = 999999, "I" = 1),
+  incidence = "incidence"
+)
+
+#-------------------------------------------------------------------------------
 # modelo SIR
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 #' @keywords internal
 #' @noRd
@@ -14,12 +109,6 @@ sir_rhs <- function(time, state, parms) {
     list(c(dS, dI, dR), incidence = lambda)
   })
 }
-
-#' #' @keywords internal
-#' #' @noRd
-#' make_init_sir <- function(N, I0 = 10, R0 = 0) {
-#'   c(S = N - I0 - R0, I = I0, R = R0)
-#' }
 
 
 #' SIR epidemic model with cumulative infections

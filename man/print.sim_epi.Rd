@@ -10,7 +10,8 @@
 \item{x}{Object of class \code{"sim_epi"} as returned by
 \code{\link{simulate_epi}}.}
 
-\item{...}{Currently unused; included for compatibility with generic dispatch.}
+\item{...}{Additional arguments ignored by this method; included for
+compatibility with the generic \code{\link{print}} function.}
 }
 \value{
 Invisibly returns the input object \code{x}.
@@ -18,21 +19,41 @@ Invisibly returns the input object \code{x}.
 \description{
 Print method for objects of class \code{"sim_epi"} as returned by
 \code{\link{simulate_epi}}. The function provides a concise, human-readable
-summary of the simulated epidemic, including the model type, time horizon,
-key parameters, and basic outcome metrics.
+summary of a simulated epidemic, including the underlying epidemic model,
+the simulation time horizon, the parameter values used, and selected outcome
+metrics derived from the simulation results.
+
+Unlike earlier versions, this method does not assume a specific compartmental
+structure (such as SIR or SEIR). Model-specific information is obtained directly
+from the \code{\link{epi_model}} object stored in \code{x$model}.
 }
 \details{
-This method is automatically called when an object of class \code{"sim_epi"}
-is printed. It is intended to give a quick overview without displaying the
-full internal structure of the object.
+This method is automatically dispatched when an object of class
+\code{"sim_epi"} is printed. It is intended to give a quick overview of the
+simulation without displaying the full internal structure of the object.
+
+The printed output typically includes:
+\itemize{
+\item the name of the epidemic model,
+\item the simulated time horizon,
+\item the parameter values used in the simulation,
+\item basic outcome summaries (e.g. peak prevalence or total infections),
+when such quantities are available.
+}
 }
 \examples{
-sim <- simulate_epi(n_days = 200, model = SIRS_MODEL,
-                    beta = 0.30, gamma = 0.10, omega = 1/180)
+sim <- simulate_epi(
+  model = SIR_MODEL,
+  n_days = 200,
+  parms = c(beta = 0.30, gamma = 0.10),
+  init  = c(S = 999990, I = 10, R = 0, C = 10),
+  seed  = 1
+)
 
 sim
 
 }
 \seealso{
-\code{\link{simulate_epi}}, \code{\link{summary.sim_epi}}, \code{\link{plot.sim_epi}}
+\code{\link{simulate_epi}}, \code{\link{summary.sim_epi}},
+\code{\link{plot.sim_epi}}
 }

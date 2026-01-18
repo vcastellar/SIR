@@ -8,11 +8,12 @@ fit_epi_model(
   x,
   model = SIR_MODEL,
   loss = c("logrmse", "rmse"),
-  init = list(N = 1e+06, I0 = 10, R0 = 0),
-  n_starts = 20,
+  init = NULL,
+  n_starts = 100,
   control = list(maxit = 500),
   seed = NULL,
-  eps = 1e-06
+  eps = 1e-06,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -42,22 +43,21 @@ incidence.
 \dontrun{
 ## Simulate a SIRS epidemic and fit the model to observed incidence
 sim <- simulate_epi(
-  model = SIRS_MODEL,
+  model = SIR_MODEL,
   n_days = 200,
-  parms = SIRS_MODEL$defaults,
-  init_args = list(N = 1e6, I0 = 20, R0 = 0),
-  obs = "negbin",
-  rho = 1,
+  parms = SIR_MODEL$defaults,
+  init = list(S = 1e6, I = 20, R = 0),
   seed = 22
  )
 plot(sim)
-x <- sim$incidence_obs$inc
+x <- sim$incidence$inc
+lines(x)
 ## Fit with log-RMSE (no likelihood, size ignored)
 fit_rmse <- fit_epi_model(
   x = x,
-  model = SIRS_MODEL,
+  model = SIR_MODEL,
   loss = "logrmse",
-  init = list(N = 1e6, I0 = 20, R0 = 0)
+  init = list(S = 1e6, I= 6, R = 0)
   )
 print(fit_rmse)
 }

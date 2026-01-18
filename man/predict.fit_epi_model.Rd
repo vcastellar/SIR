@@ -31,10 +31,10 @@ underlying ODE system using the estimated parameters.
 \examples{
 \dontrun{
 sim <- simulate_epi(
-  model = SIRS_MODEL,
+  model = SIR_MODEL,
   n_days = 200,
-  parms = c(beta = 0.30, gamma = 0.10, omega = 0.02),
-  init_args = list(N = 1e6, I0 = 20, R0 = 0),
+  parms = c(beta = 0.30, gamma = 0.10),
+  init = list(S = 1e6, I = 20, R0 = 0),
   obs = "poisson"
 )
 plot(sim)

@@ -3,7 +3,17 @@
 \docType{data}
 \name{SEIR_MODEL}
 \alias{SEIR_MODEL}
-\title{SEIR epidemic model with latent (exposed) period}
+\title{#' @keywords internal
+#' @noRd
+make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
+c(
+S = N - E0 - I0 - R0,
+E = E0,
+I = I0,
+R = R0
+)
+}
+SEIR epidemic model with latent (exposed) period}
 \format{
 An object of class \code{"epi_model"}.
 }
@@ -16,11 +26,6 @@ An \code{epi_model} object representing a deterministic \strong{SEIR}
 with a latent period. Individuals become infected at rate \eqn{\lambda(t)}
 and enter the exposed compartment \code{E}. Exposed individuals progress
 to the infectious compartment at rate \code{sigma}.
-
-The model is extended with an auxiliary state variable \code{C(t)} that
-tracks the cumulative number of \strong{cases} over time (defined as transitions
-from \code{E} to \code{I}), and it provides the instantaneous incidence
-as an additional model output.
 }
 \details{
 \subsection{State variables}{
@@ -31,7 +36,6 @@ The model is defined in terms of the following state variables:
 \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
 \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 \item{R(t)}{Number of recovered (immune) individuals at time \eqn{t}.}
-\item{C(t)}{Cumulative number of \strong{cases} up to time \eqn{t} (entries into \code{I}).}
 }
 
 The total population size is given by
@@ -63,14 +67,9 @@ The system of ordinary differential equations is:
 \frac{dS}{dt} &= -\lambda(t), \\
 \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-\frac{dR}{dt} &= \gamma I(t), \\
-\frac{dC}{dt} &= \sigma E(t).
+\frac{dR}{dt} &= \gamma I(t),
 \end{aligned}
 }
-
-The auxiliary state \eqn{C(t)} provides a continuous-time analogue of cumulative
-\strong{case} incidence (entries into \code{I}). This choice aligns the model with
-common daily case-count time series.
 }
 
 \subsection{Usage}{

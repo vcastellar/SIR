@@ -9,106 +9,64 @@ new_epi_model(
   rhs,
   state_names,
   par_names,
+  incidence,
   lower = NULL,
   upper = NULL,
   defaults = NULL,
-  make_init = NULL,
-  output = list(incidence_col = "incidence"),
-  equations = NULL
+  init = NULL
 )
 }
 \arguments{
-\item{name}{Character scalar. Human-readable name of the model (e.g. \code{"SIR"},
-\code{"SIRS"}).}
+\item{name}{Character scalar. Human-readable name of the model (e.g. \code{"SIR"}).}
 
-\item{rhs}{Function defining the right-hand side of the ODE system. Must have
-signature \code{function(time, state, parms)} and be compatible with
-\code{deSolve::ode()}.}
+\item{rhs}{Function defining the ODE system. Must have signature
+\code{function(time, state, parms)} and return a list whose first element is
+the vector of state derivatives.}
 
-\item{state_names}{Character vector giving the names of the state variables
-required by the model.}
+\item{state_names}{Character vector of state variable names.}
 
-\item{par_names}{Character vector giving the names of the model parameters.}
+\item{par_names}{Character vector of parameter names.}
 
-\item{lower}{Optional named numeric vector of lower bounds for parameters.}
+\item{incidence}{Character scalar. Name of the \code{rhs} output corresponding
+to the latent incidence rate.}
 
-\item{upper}{Optional named numeric vector of upper bounds for parameters.}
+\item{lower}{Optional named numeric vector of lower parameter bounds.}
+
+\item{upper}{Optional named numeric vector of upper parameter bounds.}
 
 \item{defaults}{Optional named numeric vector of default parameter values.}
 
-\item{make_init}{Optional function to construct the initial state vector.
-Typically takes arguments such as population size and initial conditions
-(e.g. \code{N}, \code{I0}, \code{R0}) and returns a named numeric vector
-matching \code{state_names}.}
-
-\item{output}{Optional list defining output conventions. By default,
-\code{list(incidence_col = "incidence", cumulative_col = "C")}.}
-
-\item{equations}{Optional character vector listing model equations for display
-in \code{print.epi_model}. When \code{NULL}, the right-hand side function
-source is printed instead.}
+\item{init}{Optional named numeric vector of default initial conditions.}
 }
 \value{
-An object of class \code{"epi_model"}, implemented as a named list.
+An object of class \code{"epi_model"}.
 }
 \description{
-Constructs an object of class \code{"epi_model"} that encapsulates all the
-information required to define and simulate a deterministic compartmental
-epidemic model (such as SIR, SIRS, or user-defined extensions).
-
-An \code{epi_model} object stores the model equations (ODE right-hand side),
-state variables, parameters, parameter bounds, default values, and optional
-helpers for building initial conditions and interpreting model output.
+Constructs an object of class \code{"epi_model"} representing a deterministic
+compartmental epidemic model. In addition to the ODE system, the model must
+explicitly declare which output of the right-hand side corresponds to the
+latent incidence rate.
 }
 \details{
-The \code{epi_model} class provides a lightweight abstraction layer separating
-model definition from simulation, inference, and visualization. Generic tools
-such as \code{\link{simulate_epi}} operate on this object without requiring
-model-specific logic.
-\subsection{Required components}{
+\subsection{Incidence}{
 
-At minimum, a model must define:
-\itemize{
-\item a name (\code{name});
-\item a right-hand side ODE function compatible with \code{deSolve::ode()}
-(\code{rhs});
-\item the names of the state variables (\code{state_names});
-\item the names of the model parameters (\code{par_names}).
-}
-}
+The \code{rhs} function may return additional named outputs besides the state
+derivatives. One of these outputs must represent the \strong{latent incidence rate}
+(e.g. force of infection or case-generation rate).
 
-\subsection{Optional components}{
-
-Additional components may be provided to facilitate simulation and fitting:
-\itemize{
-\item lower and upper bounds for parameters (\code{lower}, \code{upper});
-\item default parameter values (\code{defaults});
-\item a function to construct initial conditions (\code{make_init});
-\item a character vector of model equations for display (\code{equations});
-\item conventions for output columns such as incidence and cumulative counts
-(\code{output}).
-}
-
-Parameter bounds and defaults, when supplied, must be named numeric vectors
-whose names match \code{par_names}.
+The \code{incidence} argument specifies the name of this output. This makes the
+definition of epidemic cases explicit and allows generic functions such as
+\code{simulate_epi()}, \code{fit_epi_model()}, and \code{summary()} to operate
+consistently across models.
 }
 }
 \examples{
-## Minimal example (structure only)
-dummy_rhs <- function(time, state, parms) {
-  list(rep(0, length(state)))
-}
-
-model <- new_epi_model(
-  name = "DUMMY",
-  rhs = dummy_rhs,
-  state_names = c("X"),
-  par_names = c("alpha")
+sir_model <- new_epi_model(
+  name = "SIR",
+  rhs = sir_rhs,
+  state_names = c("S", "I", "R"),
+  par_names = c("beta", "gamma"),
+  incidence = "incidence"
 )
 
-model
-
-}
-\seealso{
-\code{\link{simulate_epi}}
 }

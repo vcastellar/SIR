@@ -3,7 +3,12 @@
 \docType{data}
 \name{SIRS_MODEL}
 \alias{SIRS_MODEL}
-\title{SIRS epidemic model with waning immunity}
+\title{#' @keywords internal
+#' @noRd
+make_init_sirs <- function(N, I0 = 10, R0 = 0) {
+c(S = N - I0 - R0, I = I0, R = R0)
+}
+SIRS epidemic model with waning immunity}
 \format{
 An object of class \code{"epi_model"}.
 }
@@ -69,7 +74,7 @@ sim <- simulate_epi(
   model = SIRS_MODEL,
   n_days = 200,
   parms = c(beta = 0.3, gamma = 0.1, omega = 0.02),
-  init_args = list(N = 1e6, I0 = 20, R0 = 0),
+  init = list(N = 1e6, I0 = 20, R0 = 0),
   obs = "none"
 )
 

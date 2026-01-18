@@ -1,128 +1,127 @@
-#' Simulate an epidemic model defined by an `epi_model` object
-#' @name simulate_epi
-#' @description
-#' Simulates a deterministic compartmental epidemic model (e.g. SIR, SIRS, or any
-#' user-defined extension) specified via an \code{epi_model} object. The model is
-#' solved as an ODE system using \code{deSolve::ode()}, and can optionally include
-#' an observation process to generate reported incidence counts.
+#' Simulate an epidemic model defined by an \code{epi_model} object
 #'
-#' The function is model-agnostic: all model-specific information (state variables,
-#' parameters, ODE right-hand side, bounds, and output conventions) is read from
-#' the supplied \code{epi_model}.
+#' @name simulate_epi
+#'
+#' @description
+#' Simulates a deterministic compartmental epidemic model specified via an
+#' \code{\link{epi_model}} object. The model is solved as a system of ordinary
+#' differential equations (ODEs) using \code{\link[deSolve]{ode}}, and can
+#' optionally include a stochastic observation process to generate reported
+#' incidence counts.
+#'
+#' The function is fully model-agnostic: all model-specific information
+#' (state variables, parameters, default values, and the ODE right-hand side)
+#' is read directly from the supplied \code{epi_model}.
 #'
 #' @details
 #' ## Model structure
-#' The \code{model} argument must be an object of class \code{"epi_model"}, typically
-#' created with \code{new_epi_model()}. At minimum, the model must define:
+#' The \code{model} argument must be an object of class \code{"epi_model"},
+#' typically created with \code{\link{new_epi_model}}. At minimum, the model
+#' must define:
 #' \itemize{
-#'   \item a right-hand side ODE function (\code{model$rhs});
-#'   \item the required state variables (\code{model$state_names});
+#'   \item an ODE right-hand side function (\code{model$rhs});
+#'   \item the state variables (\code{model$state_names});
 #'   \item the model parameters (\code{model$par_names}).
 #' }
 #'
-#' Optionally, the model may also define:
-#' \itemize{
-#'   \item default parameter values (\code{model$defaults});
-#'   \item parameter bounds (\code{model$lower}, \code{model$upper});
-#'   \item a helper function to construct initial conditions
-#'     (\code{model$make_init});
-#'   \item standard output column names for incidence and cumulative infections
-#'     (\code{model$output}).
-#' }
+#' Optionally, the model may also define default parameter values
+#' (\code{model$defaults}). Any parameters not supplied via \code{parms}
+#' are taken from these defaults when available.
 #'
 #' ## Time grid
-#' By default, the model is simulated on a daily grid from day 0 to
-#' \code{n_days}. Alternatively, a custom numeric vector of times can be supplied
-#' via \code{times}.
+#' By default, the model is simulated on a regular daily grid from day 0 to
+#' \code{n_days}. Alternatively, a custom numeric vector of time points can be
+#' supplied via \code{times}, in which case \code{n_days} is ignored.
+#'
+#' ## Initial conditions
+#' The initial state \code{init} must be supplied explicitly as a named numeric
+#' vector whose names match \code{model$state_names}. No automatic construction
+#' of initial conditions is performed.
 #'
 #' ## Observation model
-#' The latent incidence produced by the ODE model can be converted into reported
-#' incidence counts using a simple observation model:
+#' The latent incidence derived from the simulated state trajectories can be
+#' converted into reported incidence counts using a simple observation model:
 #' \describe{
 #'   \item{\code{obs = "poisson"}}{Reported counts are drawn from a Poisson
-#'     distribution with mean \eqn{\mu(t) = \rho \lambda(t)}.}
+#'     distribution with mean equal to the latent incidence.}
 #'   \item{\code{obs = "negbin"}}{Reported counts are drawn from a negative binomial
-#'     distribution with mean \eqn{\mu(t) = \rho \lambda(t)} and dispersion
+#'     distribution with mean equal to the latent incidence and dispersion
 #'     parameter \code{size}.}
-#'   \item{\code{obs = "none"}}{No observation process is applied; observed
-#'     incidence and cumulative counts are returned as \code{NA}.}
+#'   \item{\code{obs = "none"}}{No stochastic observation model is applied; the
+#'     observed incidence is taken to be equal to the latent incidence.}
 #' }
 #'
+#' ## Numerical integration
+#' The ODE system is solved using \code{\link[deSolve]{ode}}. Additional arguments
+#' passed via \code{...} are forwarded directly to \code{deSolve::ode()}, allowing
+#' full control over the numerical integration. In particular, the integration
+#' method can be specified using the \code{method} argument.
+#'
+#' If \code{method} is not supplied, \code{deSolve::ode()} uses its default
+#' integration method (typically \code{"lsoda"}).
+#'
 #' @param model An object of class \code{"epi_model"} defining the epidemic model
-#'   to simulate (e.g. SIR, SIRS).
+#'   to simulate.
 #' @param n_days Integer. Number of days to simulate. Ignored if \code{times} is
 #'   provided.
-#' @param parms Named numeric vector of model parameters. Must match
+#' @param parms Named numeric vector of model parameters. Names must match
 #'   \code{model$par_names}. Any missing parameters are taken from
 #'   \code{model$defaults}, if available.
-#' @param init Named numeric vector with initial state values. If \code{NULL}
-#'   (default), the function uses \code{model$make_init} together with
-#'   \code{init_args}.
-#' @param init_args Named list of arguments passed to \code{model$make_init} to
-#'   construct the initial state (e.g. \code{N}, \code{I0}, \code{R0}).
+#' @param init Named numeric vector giving the initial values of the state
+#'   variables. Names must exactly match \code{model$state_names}.
 #' @param times Optional numeric vector of time points at which to solve the ODE
 #'   system. If supplied, it overrides \code{n_days}.
-#' @param rho Numeric in \eqn{[0,1]}. Reporting fraction mapping true incidence to
-#'   expected observed incidence.
 #' @param obs Character string specifying the observation model. One of
-#'   \code{"poisson"}, \code{"negbin"}, or \code{"none"}.
+#'   \code{"none"}, \code{"poisson"}, or \code{"negbin"}.
 #' @param size Numeric. Dispersion (size) parameter for the negative binomial
-#'   observation model. Larger values imply less overdispersion.
+#'   observation model.
 #' @param seed Optional integer. If provided, sets the random seed for reproducible
 #'   observation draws.
-#' @param method Character string. Integration method passed to
-#'   \code{deSolve::ode()} (default: \code{"lsoda"}).
+#' @param ... Additional arguments passed directly to
+#'   \code{\link[deSolve]{ode}}, such as \code{method}, \code{rtol}, or \code{atol}.
 #'
-#' @return A named list with the following components:
+#' @return
+#' An object of class \code{"sim_epi"}, containing:
 #' \describe{
-#'   \item{model}{Name of the epidemic model.}
-#'   \item{params}{List of model parameters used in the simulation, including
-#'     the model name (\code{model}) and total population size (\code{N}).}
-#'   \item{states}{Data frame with columns \code{time} and the model state
-#'     variables (e.g. \code{S}, \code{I}, \code{R}, \code{C}).}
-#'   \item{incidence_true}{Data frame with columns \code{time} and \code{inc}
-#'     containing the latent model incidence.}
-#'   \item{incidence_obs}{Data frame with columns \code{time} and \code{inc}
+#'   \item{model}{The \code{epi_model} object used to generate the simulation.}
+#'   \item{params}{A list of model parameter values used in the simulation.}
+#'   \item{states}{A data frame with columns \code{time} and the model state
+#'     variables, containing the simulated state trajectories.}
+#'   \item{incidence}{A data frame with columns \code{time} and \code{inc}
 #'     containing the observed (reported) incidence counts.}
-#'   \item{cumulative_obs}{Data frame with columns \code{time} and
+#'   \item{incidence_cum}{A data frame with columns \code{time} and
 #'     \code{cases_cum} containing cumulative observed cases.}
 #' }
 #'
 #' @examples
-#' ## SIR simulation
+#' ## SIR simulation using the default ODE solver
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
-#'   init = c(S = 1e6-10, I = 10, R = 0 ),
-#'   seed = 1
+#'   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
+#'   seed  = 1
 #' )
 #'
 #' plot(sim)
 #'
-#' ## SIRS simulation
-#' sim2 <- simulate_epi(
-#'   model = SIRS_MODEL,
+#' ## Using an explicit Runge--Kutta method
+#' sim_rk4 <- simulate_epi(
+#'   model = SIR_MODEL,
 #'   n_days = 200,
-#'   parms = c(beta = 0.30, gamma = 0.10, omega = 0.02),
-#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-#'   obs = "poisson"
+#'   parms = c(beta = 0.30, gamma = 0.10),
+#'   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
+#'   method = "rk4"
 #' )
-#' plot(sim2)
 #'
-#' ## SEIR simulation
-#' sim3 <- simulate_epi(
-#'   model = SEIR_MODEL,
-#'   n_days = 300,
-#'   parms = SEIR_MODEL$defaults,
-#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-#'   obs = "poisson"
-#' )
-#' plot(sim3)
+#' plot(sim_rk4)
+#'
 #' @seealso
-#' \code{\link{new_epi_model}}, \code{\link{deSolve::ode}}
+#' \code{\link{new_epi_model}}, \code{\link[deSolve]{ode}},
+#' \code{\link{plot.sim_epi}}, \code{\link{print.sim_epi}}
 #'
 #' @export
+
 simulate_epi <- function(model,
                          n_days = 200,
                          parms = NULL,
@@ -131,7 +130,7 @@ simulate_epi <- function(model,
                          obs = c("none", "poisson", "negbin"),
                          size = 20,
                          seed = NULL,
-                         method = "lsoda") {
+                         ...) {
 
   stopifnot(inherits(model, "epi_model"))
   obs <- match.arg(obs)
@@ -174,7 +173,7 @@ simulate_epi <- function(model,
     times = times,
     func = model$rhs,
     parms = theta,
-    method = method
+    ...
   )
   out <- as.data.frame(out)
 
@@ -202,7 +201,7 @@ simulate_epi <- function(model,
 
   # 7) Resultado
   res <- list(
-    model = model$name,
+    model = model,
     params = as.list(theta),
     states = out[, c("time", model$state_names), drop = FALSE],
     incidence = data.frame(time = time_inc, inc = inc_obs),

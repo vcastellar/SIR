@@ -3,7 +3,17 @@
 \docType{data}
 \name{SEIRS_MODEL}
 \alias{SEIRS_MODEL}
-\title{SEIRS epidemic model with latent period and waning immunity}
+\title{#' @keywords internal
+#' @noRd
+make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0) {
+c(
+S = N - E0 - I0 - R0,
+E = E0,
+I = I0,
+R = R0
+)
+}
+SEIRS epidemic model with latent period and waning immunity}
 \format{
 An object of class \code{"epi_model"}.
 }
