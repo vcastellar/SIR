@@ -5,13 +5,14 @@
 #' @description
 #' Simulates a deterministic compartmental epidemic model specified via an
 #' \code{\link{epi_model}} object. The model is solved as a system of ordinary
-#' differential equations (ODEs) using \code{\link[deSolve]{ode}}, and can
-#' optionally include a stochastic observation process to generate reported
-#' incidence counts.
+#' differential equations (ODEs) using \code{\link[deSolve]{ode}}. Optionally,
+#' a stochastic observation process can be applied to a model-defined
+#' incidence process to generate reported incidence counts.
 #'
 #' The function is fully model-agnostic: all model-specific information
-#' (state variables, parameters, default values, and the ODE right-hand side)
-#' is read directly from the supplied \code{epi_model}.
+#' (state variables, parameters, default values, ODE right-hand side, and
+#' optional incidence definition) is read directly from the supplied
+#' \code{epi_model}.
 #'
 #' @details
 #' ## Model structure
@@ -24,9 +25,10 @@
 #'   \item the model parameters (\code{model$par_names}).
 #' }
 #'
-#' Optionally, the model may also define default parameter values
-#' (\code{model$defaults}). Any parameters not supplied via \code{parms}
-#' are taken from these defaults when available.
+#' Optionally, the model may define a latent incidence process by returning
+#' a variable named \code{"incidence"} as an additional output of the ODE
+#' right-hand side function. If no such variable is defined, no incidence
+#' time series is produced.
 #'
 #' ## Time grid
 #' By default, the model is simulated on a regular daily grid from day 0 to
@@ -39,7 +41,7 @@
 #' of initial conditions is performed.
 #'
 #' ## Observation model
-#' The latent incidence derived from the simulated state trajectories can be
+#' If the model defines a latent incidence process, it can optionally be
 #' converted into reported incidence counts using a simple observation model:
 #' \describe{
 #'   \item{\code{obs = "poisson"}}{Reported counts are drawn from a Poisson
@@ -50,6 +52,9 @@
 #'   \item{\code{obs = "none"}}{No stochastic observation model is applied; the
 #'     observed incidence is taken to be equal to the latent incidence.}
 #' }
+#'
+#' If the model does not define a latent incidence process, the arguments
+#' \code{obs} and \code{size} are ignored and no incidence outputs are produced.
 #'
 #' ## Numerical integration
 #' The ODE system is solved using \code{\link[deSolve]{ode}}. Additional arguments
@@ -88,13 +93,20 @@
 #'   \item{states}{A data frame with columns \code{time} and the model state
 #'     variables, containing the simulated state trajectories.}
 #'   \item{incidence}{A data frame with columns \code{time} and \code{inc}
-#'     containing the observed (reported) incidence counts.}
+#'     containing the observed (reported) incidence counts, or \code{NULL} if
+#'     no incidence process is defined by the model.}
 #'   \item{incidence_cum}{A data frame with columns \code{time} and
-#'     \code{cases_cum} containing cumulative observed cases.}
+#'     \code{cases_cum} containing cumulative observed cases, or \code{NULL}.}
 #' }
 #'
 #' @examples
-#' ## SIR simulation using the default ODE solver
+#' ## ------------------------------------------------------------------
+#' ## Example 1: SIR model with model-defined incidence
+#' ## ------------------------------------------------------------------
+#'
+#' # In the built-in SIR model, the RHS defines a latent incidence
+#' # (typically beta * S * I / N), returned as an extra output of the ODE.
+#'
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   n_days = 200,
@@ -103,9 +115,20 @@
 #'   seed  = 1
 #' )
 #'
+#' # Plot state trajectories defined by the model
 #' plot(sim)
 #'
-#' ## Using an explicit Runge--Kutta method
+#' # Plot observed incidence (requires the model to define incidence)
+#' plot(sim, what = "incidence")
+#'
+#'
+#' ## ------------------------------------------------------------------
+#' ## Example 2: Using a different numerical integration method
+#' ## ------------------------------------------------------------------
+#'
+#' # Additional arguments passed via `...` are forwarded to deSolve::ode().
+#' # Here we explicitly select a fixed-step Runge--Kutta solver.
+#'
 #' sim_rk4 <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   n_days = 200,
@@ -116,12 +139,54 @@
 #'
 #' plot(sim_rk4)
 #'
+#'
+#' ## ------------------------------------------------------------------
+#' ## Example 3: Model without an incidence definition
+#' ## ------------------------------------------------------------------
+#'
+#' # If the model RHS does not return a variable named "incidence",
+#' # no incidence time series is produced.
+#'
+#' # For such models, sim$incidence and sim$incidence_cum are NULL,
+#' # and plotting incidence will result in an error.
+#'
+#' sim_no_inc <- simulate_epi(
+#'   model = SI_MODEL,
+#'   n_days = 100,
+#'   parms = c(beta = 0.25),
+#'   init  = c(S = 999, I = 1),
+#'   obs   = "none"
+#' )
+#'
+#' plot(sim_no_inc)              # valid: plots model states
+#' # plot(sim_no_inc, what = "incidence")  # error: no incidence defined
+#'
+#'
+#' ## ------------------------------------------------------------------
+#' ## Example 4: Stochastic observation model
+#' ## ------------------------------------------------------------------
+#'
+#' # When a model defines incidence, a stochastic observation process
+#' # can be applied to generate reported case counts.
+#'
+#' sim_obs <- simulate_epi(
+#'   model = SIR_MODEL,
+#'   n_days = 150,
+#'   parms = c(beta = 0.35, gamma = 0.12),
+#'   init  = c(S = 1e5 - 5, I = 5, R = 0, C = 5),
+#'   obs   = "negbin",
+#'   size  = 20,
+#'   seed  = 123
+#' )
+#'
+#' plot(sim_obs, what = "incidence")
+
+#'
 #' @seealso
 #' \code{\link{new_epi_model}}, \code{\link[deSolve]{ode}},
 #' \code{\link{plot.sim_epi}}, \code{\link{print.sim_epi}}
 #'
 #' @export
-
 simulate_epi <- function(model,
                          n_days = 200,
                          parms = NULL,
@@ -165,6 +230,12 @@ simulate_epi <- function(model,
     stop("Provide `init`.")
   }
   init <- unlist(init)
+
+  missing_states <- setdiff(model$state_names, names(init))
+  if (length(missing_states) > 0) {
+    stop("Missing initial states: ",
+         paste(missing_states, collapse = ", "))
+  }
   init <- init[model$state_names]
 
   # 4) Integración ODE
@@ -177,40 +248,47 @@ simulate_epi <- function(model,
   )
   out <- as.data.frame(out)
 
-  # 5) Incidencia latente derivada de estados (SIR: -diff(S))
-  if (!"S" %in% names(out)) {
-    stop("State 'S' not found: cannot compute incidence.")
+  # 5) Incidencia latente definida por el modelo (si existe)
+  if ("incidence" %in% names(out)) {
+    inc_true <- out$incidence[-1]
+    time_inc <- out$time[-1]
+  } else {
+    inc_true <- NULL
+    time_inc <- NULL
   }
 
-  S <- out$S
-  inc_true <- pmax(-diff(S), 0)
-  time_inc <- out$time[-1]
-
   # 6) Modelo de observación
-  if (obs == "none") {
+  if (is.null(inc_true)) {
+
+    inc_obs <- NULL
+    inc_cum <- NULL
+
+  } else if (obs == "none") {
+
     inc_obs <- inc_true
+    inc_cum <- cumsum(inc_obs)
+
   } else {
+
     inc_obs <- switch(
       obs,
       poisson = stats::rpois(length(inc_true), lambda = inc_true),
       negbin  = stats::rnbinom(length(inc_true), mu = inc_true, size = size)
     )
+    inc_cum <- cumsum(inc_obs)
   }
-
-  inc_cum <- cumsum(inc_obs)
 
   # 7) Resultado
   res <- list(
     model = model,
     params = as.list(theta),
     states = out[, c("time", model$state_names), drop = FALSE],
-    incidence = data.frame(time = time_inc, inc = inc_obs),
-    incidence_cum = data.frame(time = time_inc, cases_cum = inc_cum)
+    incidence = if (is.null(inc_obs)) NULL
+    else data.frame(time = time_inc, inc = inc_obs),
+    incidence_cum = if (is.null(inc_cum)) NULL
+    else data.frame(time = time_inc, cases_cum = inc_cum)
   )
 
   class(res) <- "sim_epi"
   res
 }
-
-
-
