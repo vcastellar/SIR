@@ -54,28 +54,42 @@ objective_logrmse <- function(model, x, ini0, times, eps = 1e-8) {
 
   function(log_theta) {
 
+    ## 0) tiempos inválidos → penalización (EVITA warning de deSolve)
+    if (length(times) < 2L) return(1e30)
+
+    ## 1) parámetros
     theta <- exp(log_theta)
     names(theta) <- model$par_names
 
+    ## 2) ODE
     out <- try(
       deSolve::ode(
-        y = ini0,
-        times = times,
-        func  = model$rhs,
-        parms = theta,
+        y      = ini0,
+        times  = times,
+        func   = model$rhs,
+        parms  = theta,
         method = "lsoda"
       ),
       silent = TRUE
     )
     if (inherits(out, "try-error")) return(1e30)
 
-    mu <- as.data.frame(out)[[inc_col]]
+    out <- as.data.frame(out)
 
+    ## 3) incidencia
+    if (!inc_col %in% names(out)) return(1e30)
+    mu <- out[[inc_col]]
+
+    ## 4) validaciones duras
+    if (length(mu) == 0L) return(1e30)
+    if (length(mu) != length(x)) return(1e30)
     if (any(!is.finite(mu)) || any(mu < 0)) return(1e30)
 
+    ## 5) loss
     val <- sqrt(mean((log1p(x) - log1p(mu))^2))
+    if (!is.finite(val)) return(1e30)
 
-    if (!is.finite(val)) 1e30 else val
+    val
   }
 }
 
