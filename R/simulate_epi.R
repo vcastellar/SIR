@@ -31,9 +31,13 @@
 #' time series is produced.
 #'
 #' ## Time grid
-#' By default, the model is simulated on a regular daily grid from day 0 to
-#' \code{n_days}. Alternatively, a custom numeric vector of time points can be
-#' supplied via \code{times}, in which case \code{n_days} is ignored.
+#' The model is simulated at the time points specified by the numeric vector
+#' \code{times}. This vector must be strictly increasing and of length >= 2.
+#' The first value typically corresponds to the initial time (e.g. \code{0}).
+#'
+#' This design follows the interface of \code{\link[deSolve]{ode}} and provides
+#' full control over the temporal resolution of the simulation, including
+#' irregular or non-integer time grids.
 #'
 #' ## Initial conditions
 #' The initial state \code{init} must be supplied explicitly as a named numeric
@@ -67,15 +71,20 @@
 #'
 #' @param model An object of class \code{"epi_model"} defining the epidemic model
 #'   to simulate.
-#' @param n_days Integer. Number of days to simulate. Ignored if \code{times} is
-#'   provided.
+#' @param times Numeric vector of time points at which to solve the ODE system.
+#'   Must be strictly increasing and of length >= 2. The first value typically
+#'   corresponds to the initial time (e.g. \code{0}).
+#' @param time_unit Character string specifying the unit of time associated
+#'   with \code{times}. One of \code{"days"}, \code{"weeks"}, \code{"month"},
+#'   or \code{"year"}. This is used only for printing and plotting labels and
+#'   does not affect the numerical simulation.
+#'   The optional \code{time_unit} argument can be used to label the time axis
+#'   in printed summaries and plots, but does not affect the numerical solution.
 #' @param parms Named numeric vector of model parameters. Names must match
 #'   \code{model$par_names}. Any missing parameters are taken from
 #'   \code{model$defaults}, if available.
 #' @param init Named numeric vector giving the initial values of the state
 #'   variables. Names must exactly match \code{model$state_names}.
-#' @param times Optional numeric vector of time points at which to solve the ODE
-#'   system. If supplied, it overrides \code{n_days}.
 #' @param obs Character string specifying the observation model. One of
 #'   \code{"none"}, \code{"poisson"}, or \code{"negbin"}.
 #' @param size Numeric. Dispersion (size) parameter for the negative binomial
@@ -104,12 +113,10 @@
 #' ## Example 1: SIR model with model-defined incidence
 #' ## ------------------------------------------------------------------
 #'
-#' # In the built-in SIR model, the RHS defines a latent incidence
-#' # (typically beta * S * I / N), returned as an extra output of the ODE.
-#'
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
+#'   time_unit = "week",
 #'   parms = c(beta = 0.30, gamma = 0.10),
 #'   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
 #'   seed  = 1
@@ -126,12 +133,9 @@
 #' ## Example 2: Using a different numerical integration method
 #' ## ------------------------------------------------------------------
 #'
-#' # Additional arguments passed via `...` are forwarded to deSolve::ode().
-#' # Here we explicitly select a fixed-step Runge--Kutta solver.
-#'
 #' sim_rk4 <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
 #'   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
 #'   method = "rk4"
@@ -144,15 +148,9 @@
 #' ## Example 3: Model without an incidence definition
 #' ## ------------------------------------------------------------------
 #'
-#' # If the model RHS does not return a variable named "incidence",
-#' # no incidence time series is produced.
-#'
-#' # For such models, sim$incidence and sim$incidence_cum are NULL,
-#' # and plotting incidence will result in an error.
-#'
 #' sim_no_inc <- simulate_epi(
 #'   model = SI_MODEL,
-#'   n_days = 100,
+#'   times = 0:100,
 #'   parms = c(beta = 0.25),
 #'   init  = c(S = 999, I = 1),
 #'   obs   = "none"
@@ -166,12 +164,9 @@
 #' ## Example 4: Stochastic observation model
 #' ## ------------------------------------------------------------------
 #'
-#' # When a model defines incidence, a stochastic observation process
-#' # can be applied to generate reported case counts.
-#'
 #' sim_obs <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   n_days = 150,
+#'   times = 0:150,
 #'   parms = c(beta = 0.35, gamma = 0.12),
 #'   init  = c(S = 1e5 - 5, I = 5, R = 0, C = 5),
 #'   obs   = "negbin",
@@ -180,7 +175,6 @@
 #' )
 #'
 #' plot(sim_obs, what = "incidence")
-
 #'
 #' @seealso
 #' \code{\link{new_epi_model}}, \code{\link[deSolve]{ode}},
@@ -188,10 +182,10 @@
 #'
 #' @export
 simulate_epi <- function(model,
-                         n_days = 200,
+                         times,
+                         time_unit = c("days", "weeks", "month", "year"),
                          parms = NULL,
                          init = NULL,
-                         times = NULL,
                          obs = c("none", "poisson", "negbin"),
                          size = 20,
                          seed = NULL,
@@ -199,10 +193,21 @@ simulate_epi <- function(model,
 
   stopifnot(inherits(model, "epi_model"))
   obs <- match.arg(obs)
+  time_unit <- match.arg(time_unit)
   if (!is.null(seed)) set.seed(seed)
 
   # 1) Tiempos
-  if (is.null(times)) times <- 0:n_days
+  if (missing(times)) {
+    stop("Provide `times` as a strictly increasing numeric vector.")
+  }
+
+  if (!is.numeric(times) || length(times) < 2 || anyNA(times)) {
+    stop("`times` must be a numeric vector of length >= 2 with no missing values.")
+  }
+
+  if (any(diff(times) <= 0)) {
+    stop("`times` must be strictly increasing.")
+  }
 
   # 2) Parámetros: defaults + override
   theta <- model$defaults
@@ -286,9 +291,12 @@ simulate_epi <- function(model,
     incidence = if (is.null(inc_obs)) NULL
     else data.frame(time = time_inc, inc = inc_obs),
     incidence_cum = if (is.null(inc_cum)) NULL
-    else data.frame(time = time_inc, cases_cum = inc_cum)
+    else data.frame(time = time_inc, cases_cum = inc_cum),
+    time_unit = time_unit
   )
 
   class(res) <- "sim_epi"
   res
 }
+
+
