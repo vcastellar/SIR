@@ -92,13 +92,13 @@ test_that("predict works on fitted model", {
     init = init,
     obs = "poisson",
     seed = 1,
-    method = "rk4"
+    method = "lsoda"
   )
 
   fit <- fit_epi_model(
     x = sim$incidence_obs$inc,
     model = SIR_MODEL,
-    init = list(I = 8, N = 1e5),
+    init = head(sim$states, n = 1)[,-1],
     n_starts = 2,
     seed = 2
   )
@@ -106,7 +106,7 @@ test_that("predict works on fitted model", {
   pred <- predict(
     fit,
     n_days = 10,
-    init = fit$ini0
+    init = tail(sim$states, n = 1)[, -1]
   )
 
   expect_true(is.list(pred))
