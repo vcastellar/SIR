@@ -26,6 +26,10 @@
 #' \code{x$incidence}. If no observation model was specified during
 #' simulation (i.e. \code{obs = "none"}), this option results in an error.
 #'
+#' If available, the time unit stored in the \code{sim_epi} object
+#' (i.e. \code{x$time_unit}) is used to label the time axis. This affects
+#' only the plot labels and does not change the numerical values of time.
+#'
 #' @param x Object of class \code{"sim_epi"} as returned by
 #'   \code{\link{simulate_epi}}.
 #' @param what Character string specifying the type of plot to produce.
@@ -47,7 +51,8 @@
 #' @examples
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
+#'   time_unit = "days",
 #'   parms = c(beta = 0.3, gamma = 0.1),
 #'   init  = c(S = 999990, I = 10, R = 0, C = 10),
 #'   obs   = "poisson",
@@ -61,7 +66,6 @@
 #' plot(sim, what = "incidence")
 #'
 #' @export
-
 plot.sim_epi <- function(x,
                          what = c("states", "incidence"),
                          scale = c("auto", "full", "small", "log"),
@@ -85,6 +89,14 @@ plot.sim_epi <- function(x,
   model  <- x$model
   st     <- x$states
   states <- model$state_names
+
+  # Etiqueta del eje X según time_unit
+  unit <- x$time_unit
+  xlab <- if (is.null(unit) || !nzchar(unit)) {
+    "Time"
+  } else {
+    paste0("Time (", unit, ")")
+  }
 
   # ---------------------------------------------------------------------------
   # STATES
@@ -128,7 +140,7 @@ plot.sim_epi <- function(x,
       type = "l",
       lty = 1,
       lwd = 2,
-      xlab = "Time (days)",
+      xlab = xlab,
       ylab = ylab,
       main = paste("Simulation:", model$name),
       ylim = ylim,
@@ -161,7 +173,7 @@ plot.sim_epi <- function(x,
     plot(
       inc$time, inc$inc,
       type = "h",
-      xlab = "Time (days)",
+      xlab = xlab,
       ylab = "Observed incidence",
       main = paste("Observed incidence:", model$name),
       ...
@@ -170,6 +182,7 @@ plot.sim_epi <- function(x,
 
   invisible(x)
 }
+
 
 
 
@@ -257,6 +270,11 @@ summary.sim_epi <- function(object, ...) {
 #' \code{"sim_epi"} is printed. It is intended to give a quick overview of the
 #' simulation without displaying the full internal structure of the object.
 #'
+#' If available, the time unit stored in the \code{sim_epi} object
+#' (i.e. \code{x$time_unit}) is used to label the simulation horizon and
+#' reported event times. This affects only the printed labels and does not
+#' change the numerical values of time.
+#'
 #' The printed output typically includes:
 #' \itemize{
 #'   \item the name of the epidemic model,
@@ -281,7 +299,8 @@ summary.sim_epi <- function(object, ...) {
 #' @examples
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
+#'   time_unit = "days",
 #'   parms = c(beta = 0.30, gamma = 0.10),
 #'   init  = c(S = 999990, I = 10, R = 0, C = 10),
 #'   seed  = 1
@@ -298,13 +317,24 @@ print.sim_epi <- function(x, ...) {
   params <- x$params
   states <- x$states
 
+  # Etiqueta de unidad de tiempo
+  unit <- x$time_unit
+  unit_lbl <- if (is.null(unit) || !nzchar(unit)) {
+    "time units"
+  } else {
+    unit
+  }
+
   cat("Epidemic simulation\n")
   cat("-------------------\n")
 
   cat("Model:            ", model$name, "\n", sep = "")
-  cat("Time horizon:     ", max(states$time), " days\n", sep = "")
+  cat("Time horizon:     ",
+      max(states$time, na.rm = TRUE), " ", unit_lbl, "\n", sep = "")
+
   if ("N" %in% names(params)) {
-    cat("Population (N):   ", format(params$N, scientific = TRUE), "\n", sep = "")
+    cat("Population (N):   ",
+        format(params$N, scientific = TRUE), "\n", sep = "")
   }
 
   cat("\nParameters\n")
@@ -315,10 +345,13 @@ print.sim_epi <- function(x, ...) {
   cat("\nOutcomes\n")
 
   if ("I" %in% names(states)) {
-    peak_I  <- max(states$I, na.rm = TRUE)
-    time_pk <- states$time[which.max(states$I)]
-    cat("  Peak infectious:      ", round(peak_I), "\n", sep = "")
-    cat("  Time of peak:         ", time_pk, " days\n", sep = "")
+    peak_I <- max(states$I, na.rm = TRUE)
+    if (is.finite(peak_I)) {
+      time_pk <- states$time[which.max(states$I)]
+      cat("  Peak infectious:      ", round(peak_I), "\n", sep = "")
+      cat("  Time of peak:         ",
+          time_pk, " ", unit_lbl, "\n", sep = "")
+    }
   }
 
   if (!is.null(x$incidence_cum)) {
