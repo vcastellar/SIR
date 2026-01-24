@@ -24,18 +24,18 @@
 #'   model = SIR_MODEL,
 #'   n_days = 200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
-#'   init = list(S = 1e6, I = 20, R0 = 0),
+#'   init = list(S = 1e6, I = 20, R = 0),
 #'   obs = "poisson"
 #' )
 #' plot(sim)
-#' inc_obs <- sim$incidence_obs$inc
+#' inc_obs <- sim$incidence$inc
 #' plot(seq_along(inc_obs) - 1, inc_obs,
 #'      type = "l", xlab = "Day", ylab = "Incidence")
 #' fit <- fit_epi_model(inc_obs,
 #'                      loss = "logrmse",
 #'                      model = SIRS_MODEL,
 #'                      init = list(I0 = 6, N = 1e6))
-#' init <- tail(sim$states, n = 1)[-1]
+#' init <- tail(sim$states, n = 1)[, -1]
 #' pred <- predict(
 #'   object = fit,
 #'   n_days = 1000,
@@ -73,11 +73,25 @@ predict.fit_epi_model <- function(object,
 
   # 2) initial state
   if (is.null(init)) {
-    init <- object$ini0
+    init <- object$ini
+  }
+
+  init <- init[model$state_names]
+  if (any(is.na(init))) {
+    stop("`init` must contain all model state variables.")
   }
 
   init <- as.numeric(init[model$state_names])
   names(init) <- model$state_names
+
+
+  if (any(!is.finite(init))) {
+    stop("`init` contains non-finite values.")
+  }
+
+  if (any(init < 0)) {
+    stop("`init` must be non-negative.")
+  }
 
   # 3) integrate ODE
   out <- deSolve::ode(
