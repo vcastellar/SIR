@@ -48,7 +48,7 @@ new_epi_model <- function(name,
                           rhs,
                           state_names,
                           par_names,
-                          incidence,
+                          outputs = state_names,
                           lower = NULL,
                           upper = NULL,
                           defaults = NULL,
@@ -58,14 +58,14 @@ new_epi_model <- function(name,
   stopifnot(is.function(rhs))
   stopifnot(is.character(state_names), length(state_names) >= 1)
   stopifnot(is.character(par_names), length(par_names) >= 1)
+  stopifnot(is.character(outputs), length(outputs) >= 1)
 
-  ## --- incidence is mandatory -------------------------------------------------
-  if (missing(incidence)) {
-    stop("`incidence` must be provided and must name an output returned by `rhs`.")
+  ## --- outputs must include states -------------------------------------------
+  if (!all(state_names %in% outputs)) {
+    stop("All state variables must be included in `outputs`.")
   }
-  stopifnot(is.character(incidence), length(incidence) == 1)
 
-  ## --- parameter bounds -------------------------------------------------------
+  ## --- parameter bounds ------------------------------------------------------
   if (!is.null(lower)) {
     stopifnot(is.numeric(lower), all(par_names %in% names(lower)))
     lower <- lower[par_names]
@@ -78,13 +78,13 @@ new_epi_model <- function(name,
     if (any(lower >= upper)) stop("Invalid bounds: lower >= upper.")
   }
 
-  ## --- defaults ---------------------------------------------------------------
+  ## --- defaults --------------------------------------------------------------
   if (!is.null(defaults)) {
     stopifnot(is.numeric(defaults), all(par_names %in% names(defaults)))
     defaults <- defaults[par_names]
   }
 
-  ## --- init -------------------------------------------------------------------
+  ## --- init ------------------------------------------------------------------
   if (!is.null(init)) {
     stopifnot(is.numeric(init), all(state_names %in% names(init)))
     init <- init[state_names]
@@ -96,7 +96,7 @@ new_epi_model <- function(name,
       rhs = rhs,
       state_names = state_names,
       par_names = par_names,
-      incidence = incidence,
+      outputs = outputs,
       lower = lower,
       upper = upper,
       defaults = defaults,
@@ -107,26 +107,23 @@ new_epi_model <- function(name,
 }
 
 
-#' Print method for epidemic model objects
 #' Print an epidemic model object
 #'
 #' @name print.epi_model
 #' @description
 #' Provides a concise, human-readable summary of an \code{epi_model} object.
 #' The printed output includes the model name, state variables, parameters,
-#' the declared definition of epidemic incidence, and the underlying system
-#' of differential equations.
+#' the declared model outputs, and the underlying system of differential
+#' equations.
 #'
 #' This method is automatically called when an object of class
 #' \code{"epi_model"} is printed at the console.
 #'
 #' @details
-#' The \code{epi_model} class requires an explicit declaration of epidemic
-#' incidence via the \code{incidence} field, which specifies the name of the
-#' output returned by the model's right-hand side (\code{rhs}) corresponding
-#' to the latent incidence rate. This information is displayed by the
-#' \code{print()} method to make the epidemiological interpretation of the
-#' model explicit.
+#' The \code{epi_model} class explicitly declares the set of model outputs via
+#' the \code{outputs} field. These outputs may include state variables, derived
+#' quantities such as incidence, or any other observable returned by the
+#' model's right-hand side (\code{rhs}) function.
 #'
 #' Parameter bounds are shown when available. The model equations are printed
 #' by deparsing the \code{rhs} function for inspection.
@@ -145,33 +142,33 @@ print.epi_model <- function(x, ...) {
 
   stopifnot(inherits(x, "epi_model"))
 
-  cat("<epi_model>", x$name, "\n")
+  cat("<epi_model> ", x$name, "\n", sep = "")
 
-  cat("  States:    ", paste(x$state_names, collapse = ", "), "\n", sep = "")
-  cat("  Params:    ", paste(x$par_names, collapse = ", "), "\n", sep = "")
+  ## --- core structure --------------------------------------------------------
+  cat("  States:   ", paste(x$state_names, collapse = ", "), "\n", sep = "")
+  cat("  Params:   ", paste(x$par_names, collapse = ", "), "\n", sep = "")
 
-  ## --- incidence --------------------------------------------------------------
-  if (!is.null(x$incidence)) {
-    cat("  Incidence: ", x$incidence, " (rhs output)\n", sep = "")
+  ## --- outputs ---------------------------------------------------------------
+  if (!is.null(x$outputs)) {
+    cat("  Outputs:  ", paste(x$outputs, collapse = ", "), "\n", sep = "")
   }
 
-  ## --- parameter bounds -------------------------------------------------------
+  ## --- parameter bounds ------------------------------------------------------
   if (!is.null(x$lower) && !is.null(x$upper)) {
     cat("  Bounds:\n")
     b <- cbind(lower = x$lower, upper = x$upper)
     print(b)
   }
 
-  ## --- equations --------------------------------------------------------------
+  ## --- equations -------------------------------------------------------------
   if (!is.null(x$rhs)) {
     cat("  Equations (rhs):\n")
     rhs_txt <- deparse(x$rhs)
     rhs_txt <- rhs_txt[nzchar(trimws(rhs_txt))]
     for (ln in rhs_txt) {
-      cat("   ", ln, "\n", sep = "")
+      cat("    ", ln, "\n", sep = "")
     }
   }
 
   invisible(x)
 }
-
