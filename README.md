@@ -1,38 +1,63 @@
-# SIR — A Minimal Framework for Deterministic Epidemic Models in R
+# **SIR** — Deterministic Compartmental Epidemic Models in R
 
 **SIR** is an R package for defining, simulating, fitting, and predicting
-deterministic compartmental epidemic models based on systems of ordinary
+**deterministic compartmental epidemic models** based on systems of ordinary
 differential equations (ODEs).
 
-The package is model-agnostic and revolves around a single abstraction:
-the `epi_model` object. All model-specific information (states, parameters,
-equations, bounds, defaults, and output conventions) is stored in this object
-and consumed by generic simulation, inference, and visualization tools.
-
-The current implementation includes built-in **SIR**, **SIRS**, and **SEIR**
-models, likelihood-based parameter estimation from incidence data, forward
-prediction, and plotting and summary methods.
+The package is intentionally **model-agnostic**, **explicit**, and
+**deterministic by design**.  
+It focuses on transparent model definition, reproducible simulation, and
+trajectory-matching parameter estimation, without imposing probabilistic
+observation models or Bayesian inference frameworks.
 
 ---
 
-## Features
+## What makes this package different
 
-- Unified abstraction for epidemic models via the `epi_model` class
+Most epidemic-modeling packages tightly couple model structure, simulation,
+and inference, often hiding assumptions behind complex APIs.
+
+**SIR takes a different approach**:
+
+- Models are **explicit objects** (`epi_model`) that fully declare:
+  - states
+  - parameters
+  - equations
+  - bounds
+  - outputs
+- Simulation, fitting, prediction, and plotting are **generic operations**
+  defined *on* these models.
+- Parameter estimation is performed by **trajectory matching**, not by
+  likelihood-based inference.
+- Predictions are **conditionally linked to fitted models**, preserving
+  full traceability.
+
+The result is a framework that is:
+- easy to inspect,
+- easy to extend,
+- and well suited for teaching, prototyping, and deterministic analysis.
+
+---
+
+## Key Features
+
+- **Explicit epidemic models** via the `epi_model` abstraction
 - Deterministic simulation using `deSolve::ode()`
-- Built-in SIR, SIRS, and SEIR compartmental models
-- Explicit incidence and cumulative-count handling via auxiliary state `C(t)`
-- Observation models for incidence (Poisson and Negative Binomial)
-- Likelihood-based parameter estimation with multi-start optimization
-- Forward prediction from fitted models
-- Base R plotting, printing, and summary methods
+- Built-in SIR, SIRS, and SEIR models
+- Generic model outputs (states, incidence, or user-defined observables)
+- Trajectory-matching parameter estimation (RMSE / log-RMSE)
+- Multi-start optimization with flexible optimizers
+- Conditional prediction objects linking fits and forecasts
+- Base R printing, plotting, and summary methods
+- Minimal dependency footprint
 
 ---
 
 ## Installation
 
-This package is currently under development and not available on CRAN.
+The package is under active development and not yet available on CRAN.
 
-You can install it from source (for example, from GitHub):
+Install the development version from GitHub:
 
 ```r
 # install.packages("remotes")
@@ -46,33 +71,32 @@ remotes::install_github("vcastellar/SIR")
 
 ---
 
-## Core Concepts
+## Core Abstraction: `epi_model`
 
-### The `epi_model` class
+An `epi_model` object encapsulates all model-specific information:
 
-An `epi_model` object encapsulates everything required to define a deterministic
-compartmental epidemic model:
-
-- Model name
+- model name
+- state variable names
+- parameter names
 - ODE right-hand side (`rhs`)
-- State variable names
-- Parameter names
-- Parameter bounds and default values (optional)
-- Initial-condition constructor (`make_init`, optional)
-- Output conventions (e.g. names of incidence and cumulative variables)
-- Optional human-readable equations
+- parameter bounds and defaults
+- declared model outputs (e.g. `"I"`, `"S"`, `"incidence"`)
+- optional human-readable equations
 
-Models are created with `new_epi_model()` and can then be passed unchanged to
-generic tools such as `simulate_epi()`, `fit_epi_model()`, and `predict()`.
+Once defined, an `epi_model` can be passed unchanged to:
 
-This design cleanly separates **model definition** from **simulation**,
-**inference**, and **visualization**.
+- `simulate_epi()` — deterministic simulation
+- `fit_epi_model()` — trajectory-matching parameter estimation
+- `predict()` — forward prediction from fitted models
+- `plot()` / `summary()` — visualization and reporting
+
+This cleanly separates **model definition** from **model use**.
 
 ---
 
 ## Built-in Models
 
-The package currently provides the following predefined models:
+The package currently provides:
 
 ### `SIR_MODEL`
 
@@ -80,118 +104,98 @@ Susceptible–Infectious–Recovered model.
 
 ### `SIRS_MODEL`
 
-Extension of SIR with waning immunity, allowing transitions from `R` back to
-`S` at rate `omega`.
+Extension of SIR with waning immunity (`R → S`).
 
 ### `SEIR_MODEL`
 
-Susceptible–Exposed–Infectious–Recovered model with a latent period. In this
-model, incidence corresponds to transitions from `E` to `I`.
+Susceptible–Exposed–Infectious–Recovered model with a latent period.
+
+In all models, outputs are explicitly declared and can be used consistently
+for fitting, plotting, and prediction.
 
 ---
 
 ## Simulation
-
-### Basic simulation
 
 ```r
 library(SIR)
 
 sim <- simulate_epi(
   model = SIR_MODEL,
-  n_days = 200,
+  times = 0:200,
   parms = c(beta = 0.3, gamma = 0.1),
-  init_args = list(N = 1e6, I0 = 20, R0 = 0),
-  obs = "poisson",
-  seed = 1
+  init  = list(S = 1e6, I = 20, R = 0)
 )
 
 plot(sim)
-plot(sim, what = "incidence")
+plot(sim, what = "I")
 summary(sim)
 ```
 
-The simulation returns an object of class `sim_epi` containing:
 
-- Deterministic state trajectories
-- True incidence derived from the cumulative state
-- Observed incidence generated by the observation model (if enabled)
+Simulation returns a `sim_epi` object containing:
 
----
-
-## Observation Models
-
-The latent epidemic dynamics can be mapped to reported incidence using a simple
-observation model:
-
-- `"poisson"`: Poisson counts with mean `rho * incidence`
-- `"negbin"`: Negative Binomial counts with mean `rho * incidence`
-- `"none"`: no observation model (purely deterministic output)
-
-The reporting fraction `rho` controls under-reporting.
+- state trajectories
+- declared model outputs
+- optional incidence if defined by the model
 
 ---
 
-## Model Fitting
+## Model Fitting (Trajectory Matching)
 
-Model parameters can be estimated from incidence count data by minimizing a
-negative log-likelihood.
+Model parameters can be estimated by minimizing a discrepancy between observed
+data and simulated trajectories.
 
 ```r
 fit <- fit_epi_model(
-  x = sim$incidence_obs$inc,
+  x = sim$states$I,
   model = SIR_MODEL,
-  distr = "poisson",
-  init = list(I = 10, N = 1e6),
-  n_starts = 40,
-  ms_strategy = "lhs",
-  seed = 1
+  target = "I",
+  init = list(S = 1e6, I = 10, R = 0)
 )
 
 fit
-fit$par
 ```
 
-## Fitting approach
+## Fitting philosophy
 
-- Expected incidence is computed as increments of the cumulative state:  
-  `diff(C(t))`
+- No observation likelihood is assumed
+- No stochasticity is introduced
+- The objective is **deterministic trajectory matching**
+- Loss functions include RMSE and log-RMSE
+- Multi-start optimization is used to mitigate local minima
 
-- Likelihood:
-  - Poisson
-  - Negative Binomial
+This makes the fitting procedure:
 
-- Optimization:
-  - Multi-start initialization (Latin Hypercube, uniform, or jitter sampling)
-  - Final optimization via `optim(..., method = "L-BFGS-B")`
-
-- Parameter bounds are enforced throughout optimization
-
-The result is an object of class `fit_epi_model` containing parameter estimates,
-convergence information, and the fitted model definition.
+- fast,
+- transparent,
+- and easy to interpret.
 
 ---
 
-## Prediction
+## Prediction from Fitted Models
 
-Forward deterministic predictions can be generated from a fitted model:
+Predictions are generated conditionally on a fitted model and returned as a
+dedicated object linking the fit and the forecast.
 
 ```r
 pred <- predict(
   fit,
-  n_days = 300,
-  init = fit$ini0,
-  type = "both"
+  times = 201:400
 )
 
-head(pred$states)
-head(pred$incidence)
+pred
 ```
-### Available prediction outputs
 
-- `"states"`: compartment trajectories
-- `"incidence"`: expected incidence time series
-- `"both"`: states and incidence
+The returned object preserves:
+
+- the fitted model
+- estimated parameters
+- initial conditions
+- numerical integration settings
+- predicted trajectories
+
+Predictions are therefore fully reproducible and auditable.
 
 ---
 
@@ -199,45 +203,26 @@ head(pred$incidence)
 
 ### Simulation objects (`sim_epi`)
 
-- `plot(sim)` — compartment trajectories
-- `plot(sim, what = "incidence")` — observed incidence
-- `summary(sim)` — epidemiological summary statistics
-- `print(sim)` — concise textual overview
+- `plot(sim)` — all state trajectories
+- `plot(sim, what = "I")` — a single output
+- `plot(sim, what = "incidence")` — incidence (if defined)
+- `summary(sim)` — epidemiological summaries
 
 ### Fitted models (`fit_epi_model`)
 
-- `print(fit)` — parameter estimates and convergence diagnostics
-- `predict()` — forward simulation using fitted parameters
-
----
-
-## File Overview
-
-The package is currently composed of the following main source files:
-
-- `dependencies.R` — package dependencies
-- `constructor.R` — `new_epi_model()` and `epi_model` infrastructure
-- `models.R` — SIR, SIRS, and SEIR model definitions
-- `simulate_epi.R` — deterministic simulation and observation models
-- `optimizador.R` — likelihood objective and multi-start optimization
-- `predict.R` — forward prediction from fitted models
-- `metodos.R` — plotting, printing, and summary methods
+- `print(fit)` — parameter estimates and diagnostics
+- `predict(fit, ...)` — conditional forward predictions
 
 ---
 
 ## Design Philosophy
 
-- Keep the core minimal and transparent
-- Separate model definition from simulation and inference
-- Favor explicit likelihood-based inference over ad-hoc fitting
-- Use base R and a small dependency footprint
-- Provide sensible defaults without hiding assumptions
+- **Deterministic by default**
+- Explicit model structure
+- No hidden assumptions
+- Minimal API surface
+- Small dependency footprint
+- Emphasis on clarity and reproducibility
 
----
-
-## Status
-
-This package is **experimental** and under active development.  
-The API may change as functionality evolves.
-
-
+This package is not intended to replace full probabilistic inference frameworks,
+but to provide a clean, deterministic foundation for epidemic modelin
