@@ -12,13 +12,11 @@ test_that("built-in models exist", {
 # ------------------------------------------------------------------------------
 test_that("simulate_epi works for SIR", {
 
-  init <- c(S = 1e6 - 10, I = 10, R = 0, C = 10)
-
   sim <- simulate_epi(
     model = SIR_MODEL,
-    times = 0:20,
+    times = 0:200,
     parms = c(beta = 0.3, gamma = 0.1),
-    init = init,
+    init = SIR_MODEL$init,
     obs = "none"
   )
 
@@ -29,14 +27,12 @@ test_that("simulate_epi works for SIR", {
 # ------------------------------------------------------------------------------
 test_that("print, plot and summary do not crash", {
 
-  init <- c(S = 99990, I = 10, R = 0, C = 10)
-
   sim <- simulate_epi(
     model = SIR_MODEL,
-    times = 0:20,
+    times = 0:200,
     parms = c(beta = 0.3, gamma = 0.1),
-    init = init,
-    obs = "none"
+    init = SIR_MODEL$init,
+    obs = "negbin"
   )
 
   expect_output(print(sim))
@@ -44,7 +40,7 @@ test_that("print, plot and summary do not crash", {
   expect_silent({
     grDevices::pdf(NULL)
     plot(sim)
-    plot(sim, what = "incidence")
+    plot(sim, what = "I")
     grDevices::dev.off()
   })
 
@@ -60,16 +56,16 @@ test_that("fit_epi_model works end-to-end", {
     model = SIR_MODEL,
     init = init,
     parms = c(beta = 0.25, gamma = 0.1),
-    times = 0:40,
+    times = 0:200,
     obs = "poisson",
     seed = 1
   )
 
   fit <- fit_epi_model(
-    x = sim$incidence_obs$inc,
+    x = sim$incidence$inc,
+    target = "incidence",
     model = SIR_MODEL,
-    init = list(I = 10, N = 1e5),
-    n_starts = 3,
+    init = init,
     seed = 1
   )
 
@@ -80,11 +76,11 @@ test_that("fit_epi_model works end-to-end", {
 # ------------------------------------------------------------------------------
 test_that("predict works on fitted model", {
 
-  init <- c(S = 99990, I = 10, R = 0, C = 10)
+  init <- c(S = 99990, I = 10, R = 0)
 
   sim <- simulate_epi(
     model = SIR_MODEL,
-    times = 0:30,
+    times = 0:200,
     parms = c(beta = 0.3, gamma = 0.1),
     init = init,
     obs = "poisson",
@@ -92,17 +88,15 @@ test_that("predict works on fitted model", {
   )
 
   fit <- fit_epi_model(
-    x = sim$incidence_obs$inc,
+    x = sim$incidence$inc,
     model = SIR_MODEL,
-    init = head(sim$states, n = 1)[,-1],
-    n_starts = 2,
-    seed = 2
+    init = init
   )
 
   pred <- predict(
     fit,
     n_days = 10,
-    init = tail(sim$states, n = 1)[, -1]
+    init = tail(sim$states, n = 1)[,-1]
   )
 
   expect_true(is.list(pred))
