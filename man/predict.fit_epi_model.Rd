@@ -34,18 +34,18 @@ sim <- simulate_epi(
   model = SIR_MODEL,
   n_days = 200,
   parms = c(beta = 0.30, gamma = 0.10),
-  init = list(S = 1e6, I = 20, R0 = 0),
+  init = list(S = 1e6, I = 20, R = 0),
   obs = "poisson"
 )
 plot(sim)
-inc_obs <- sim$incidence_obs$inc
+inc_obs <- sim$incidence$inc
 plot(seq_along(inc_obs) - 1, inc_obs,
      type = "l", xlab = "Day", ylab = "Incidence")
 fit <- fit_epi_model(inc_obs,
                      loss = "logrmse",
                      model = SIRS_MODEL,
                      init = list(I0 = 6, N = 1e6))
-init <- tail(sim$states, n = 1)[-1]
+init <- tail(sim$states, n = 1)[, -1]
 pred <- predict(
   object = fit,
   n_days = 1000,

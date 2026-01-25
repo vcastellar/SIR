@@ -9,7 +9,7 @@ new_epi_model(
   rhs,
   state_names,
   par_names,
-  incidence,
+  outputs = state_names,
   lower = NULL,
   upper = NULL,
   defaults = NULL,
@@ -27,9 +27,6 @@ the vector of state derivatives.}
 
 \item{par_names}{Character vector of parameter names.}
 
-\item{incidence}{Character scalar. Name of the \code{rhs} output corresponding
-to the latent incidence rate.}
-
 \item{lower}{Optional named numeric vector of lower parameter bounds.}
 
 \item{upper}{Optional named numeric vector of upper parameter bounds.}
@@ -37,6 +34,9 @@ to the latent incidence rate.}
 \item{defaults}{Optional named numeric vector of default parameter values.}
 
 \item{init}{Optional named numeric vector of default initial conditions.}
+
+\item{incidence}{Character scalar. Name of the \code{rhs} output corresponding
+to the latent incidence rate.}
 }
 \value{
 An object of class \code{"epi_model"}.

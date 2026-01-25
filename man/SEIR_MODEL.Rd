@@ -3,17 +3,7 @@
 \docType{data}
 \name{SEIR_MODEL}
 \alias{SEIR_MODEL}
-\title{#' @keywords internal
-#' @noRd
-make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
-c(
-S = N - E0 - I0 - R0,
-E = E0,
-I = I0,
-R = R0
-)
-}
-SEIR epidemic model with latent (exposed) period}
+\title{SEIR epidemic model with latent (exposed) period}
 \format{
 An object of class \code{"epi_model"}.
 }
@@ -23,9 +13,13 @@ SEIR_MODEL
 \description{
 An \code{epi_model} object representing a deterministic \strong{SEIR}
 (Susceptible–Exposed–Infectious–Recovered) compartmental epidemic model
-with a latent period. Individuals become infected at rate \eqn{\lambda(t)}
-and enter the exposed compartment \code{E}. Exposed individuals progress
-to the infectious compartment at rate \code{sigma}.
+with a latent (exposed) period.
+
+The model describes the spread of an infection in a closed population where
+susceptible individuals become infected at rate \eqn{\lambda(t)} and enter
+the exposed compartment \code{E}. Exposed individuals progress to the
+infectious compartment at rate \code{sigma} and subsequently recover with
+permanent immunity.
 }
 \details{
 \subsection{State variables}{
@@ -38,9 +32,25 @@ The model is defined in terms of the following state variables:
 \item{R(t)}{Number of recovered (immune) individuals at time \eqn{t}.}
 }
 
-The total population size is given by
-\deqn{N = S(t) + E(t) + I(t) + R(t),}
-which is conserved by the model dynamics.
+The total population size is conserved:
+\deqn{N = S(t) + E(t) + I(t) + R(t).}
+}
+
+\subsection{Model outputs}{
+
+The SEIR model declares the following outputs:
+\describe{
+\item{\code{"S"}}{Susceptible population size.}
+\item{\code{"E"}}{Exposed (latent) population size.}
+\item{\code{"I"}}{Infectious population size.}
+\item{\code{"R"}}{Recovered (immune) population size.}
+\item{\code{"incidence"}}{Rate of progression from \code{E} to \code{I},
+\eqn{\sigma E(t)}, representing the instantaneous incidence of new
+infectious cases returned by the model's right-hand side.}
+}
+
+All declared outputs may be used as observables in generic utilities such as
+\code{\link{fit_epi_model}} via the \code{target} argument.
 }
 
 \subsection{Parameters}{
@@ -48,8 +58,10 @@ which is conserved by the model dynamics.
 The SEIR model depends on the following parameters:
 \describe{
 \item{beta}{Transmission rate (per day).}
-\item{sigma}{Rate of progression from \code{E} to \code{I} (per day), so \eqn{1/\sigma} is the mean latent period.}
-\item{gamma}{Recovery/removal rate from \code{I} to \code{R} (per day), so \eqn{1/\gamma} is the mean infectious period.}
+\item{sigma}{Rate of progression from exposed to infectious (per day);
+\eqn{1/\sigma} is the mean latent period.}
+\item{gamma}{Recovery/removal rate from infectious to recovered (per day);
+\eqn{1/\gamma} is the mean infectious period.}
 }
 }
 
@@ -67,7 +79,7 @@ The system of ordinary differential equations is:
 \frac{dS}{dt} &= -\lambda(t), \\
 \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-\frac{dR}{dt} &= \gamma I(t),
+\frac{dR}{dt} &= \gamma I(t).
 \end{aligned}
 }
 }
@@ -75,24 +87,39 @@ The system of ordinary differential equations is:
 \subsection{Usage}{
 
 This predefined model object is intended to be used with generic utilities
-such as \code{\link{simulate_epi}} and model-fitting functions that operate
-on \code{epi_model} objects.
+such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+\code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
 }
 }
 \examples{
-## Simulate a SEIR epidemic without an observation model
+## Simulate a SEIR epidemic
 sim <- simulate_epi(
   model = SEIR_MODEL,
-  n_days = 200,
+  times = 0:200,
   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
-  init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
-  obs = "poisson"
+  init  = c(S = 1e6, E = 5, I = 10, R = 0),
+  obs   = "poisson"
 )
 
 plot(sim)
 
+## Plot observed incidence
+plot(sim, what = "incidence")
+
+## Fit the model to observed incidence
+fit_inc <- fit_epi_model(
+  x = sim$incidence$inc,
+  model = SEIR_MODEL,
+  init = SEIR_MODEL$init,
+  target = "incidence"
+)
+
+fit_inc
+
 }
 \seealso{
-\code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+\code{\link{simulate_epi}},
+\code{\link{fit_epi_model}},
+\code{\link{new_epi_model}}
 }
 \keyword{datasets}

@@ -9,56 +9,116 @@ fit_epi_model(
   model = SIR_MODEL,
   loss = c("logrmse", "rmse"),
   init = NULL,
+  target = "incidence",
   n_starts = 100,
   control = list(maxit = 500),
   seed = NULL,
   eps = 1e-06,
-  verbose = TRUE
+  verbose = TRUE,
+  optim_method = "L-BFGS-B",
+  ...
 )
 }
 \arguments{
-\item{x}{Numeric vector of observed incidence.}
+\item{x}{Numeric vector of observed data used for fitting.}
 
-\item{model}{An \code{epi_model} object.}
+\item{model}{An object of class \code{"epi_model"} defining the epidemic model.}
 
-\item{loss}{Loss function: \code{"logrmse"} (default) or \code{"rmse"}.}
+\item{loss}{Loss function to minimize. One of \code{"logrmse"} (default)
+or \code{"rmse"}.}
 
-\item{init}{Named list passed to \code{model$make_init()}.}
+\item{init}{Named list or vector specifying the initial state of the model.
+Names must match \code{model$state_names}.}
 
-\item{n_starts}{Number of random multi-start initializations.}
+\item{target}{Character string specifying which model output is matched to
+\code{x}. Must be one of \code{model$outputs} (e.g. \code{"incidence"},
+\code{"I"}, \code{"S"}).}
 
-\item{control}{Control list passed to \code{optim()}.}
+\item{n_starts}{Integer. Number of random multi-start initializations used to
+reduce sensitivity to local minima.}
 
-\item{seed}{Optional random seed.}
+\item{control}{Control list passed to \code{\link{optim}} for the final
+optimization step (e.g. \code{maxit}).}
+
+\item{seed}{Optional integer. If provided, sets the random seed for
+reproducible multi-start initialization.}
+
+\item{eps}{Small positive constant used for numerical stability in the
+log-RMSE loss.}
+
+\item{verbose}{Logical. If \code{TRUE}, progress information from the
+multi-start and final optimization phases is printed.}
+
+\item{optim_method}{Character string specifying the optimization algorithm
+passed to \code{\link{optim}}. Defaults to \code{"L-BFGS-B"}.
+Methods that do not support box constraints (e.g. \code{"Nelder-Mead"})
+are handled automatically.}
+
+\item{...}{Additional arguments passed directly to \code{\link[deSolve]{ode}}
+for numerical integration of the ODE system (e.g. \code{method},
+\code{rtol}, \code{atol}).}
 }
 \value{
-An object of class \code{"fit_epi_model"}.
+An object of class \code{"fit_epi_model"} containing the fitted parameters,
+optimization diagnostics, the selected fitting target, and the ODE control
+settings used during fitting.
 }
 \description{
-Fits a deterministic epidemic model to incidence data by minimizing a
-trajectory-matching loss (RMSE or log-RMSE) between observed and simulated
-incidence.
+Fits a deterministic compartmental epidemic model to observed data by
+minimizing a trajectory-matching loss (RMSE or log-RMSE) between the observed
+time series and the corresponding model-predicted trajectory.
+
+The observable used for fitting is selected via the \code{target} argument
+and must correspond to one of the outputs declared by the underlying
+\code{\link{epi_model}} (e.g. \code{"incidence"}, \code{"I"}, \code{"S"}).
+
+No probabilistic observation model is assumed. Parameter estimates should be
+interpreted as providing the best deterministic approximation to the observed
+trajectory under the chosen loss.
 }
 \examples{
 \dontrun{
-## Simulate a SIRS epidemic and fit the model to observed incidence
+## ------------------------------------------------------------
+## Example 1: Fit incidence using log-RMSE
+## ------------------------------------------------------------
 sim <- simulate_epi(
   model = SIR_MODEL,
-  n_days = 200,
+  times = 0:200,
   parms = SIR_MODEL$defaults,
-  init = list(S = 1e6, I = 20, R = 0),
-  seed = 22
- )
-plot(sim)
-x <- sim$incidence$inc
-lines(x)
-## Fit with log-RMSE (no likelihood, size ignored)
-fit_rmse <- fit_epi_model(
-  x = x,
+  init  = list(S = 1e6, I = 20, R = 0),
+  seed  = 22
+)
+
+x_inc <- sim$incidence$inc
+
+fit_inc <- fit_epi_model(
+  x = x_inc,
   model = SIR_MODEL,
+  target = "incidence",
   loss = "logrmse",
-  init = list(S = 1e6, I= 6, R = 0)
-  )
-print(fit_rmse)
+  init = list(S = 1e6, I = 6, R = 0)
+)
+
+print(fit_inc)
+
+## ------------------------------------------------------------
+## Example 2: Fit a state variable using a different optimizer
+## ------------------------------------------------------------
+fit_I <- fit_epi_model(
+  x = sim$states$I,
+  model = SIR_MODEL,
+  target = "I",
+  init = list(S = 1e6, I = 10, R = 0),
+  optim_method = "Nelder-Mead",
+  method = "rk4",
+  rtol = 1e-8,
+  atol = 1e-10
+)
+
+print(fit_I)
 }
+
+}
+\seealso{
+\code{\link{simulate_epi}}, \code{\link{predict.fit_epi_model}}
 }

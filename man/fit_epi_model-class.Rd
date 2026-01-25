@@ -5,7 +5,17 @@
 \alias{new_fit_epi_model}
 \title{Fitted epidemic model (trajectory matching)}
 \usage{
-new_fit_epi_model(model, par, optim, loss, init, ini0, x)
+new_fit_epi_model(
+  model,
+  par,
+  optim,
+  loss,
+  target,
+  init,
+  ini0,
+  x,
+  ode_control = NULL
+)
 }
 \description{
 Objects of class \code{"fit_epi_model"} represent the result of fitting a
@@ -23,13 +33,14 @@ A \code{"fit_epi_model"} object is a named list with components:
 \item{model}{The fitted \code{epi_model} object.}
 \item{par}{Named numeric vector of fitted parameters.}
 \item{loss}{Loss minimized (\code{"rmse"} or \code{"logrmse"}).}
+\item{target}{Model output used for fitting (e.g. \code{"incidence"}, \code{"I"}).}
 \item{value}{Final loss value.}
 \item{optim}{Object returned by \code{stats::optim()}.}
 \item{convergence}{Convergence code from \code{optim()}.}
 \item{message}{Optional convergence message.}
 \item{init}{Initial condition arguments passed by the user.}
 \item{ini0}{Initial state vector used internally.}
-\item{x}{Observed incidence data.}
+\item{x}{Observed data used for fitting.}
 }
 }
 

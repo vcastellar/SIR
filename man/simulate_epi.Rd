@@ -6,10 +6,10 @@
 \usage{
 simulate_epi(
   model,
-  n_days = 200,
+  times,
+  time_unit = "days",
   parms = NULL,
   init = NULL,
-  times = NULL,
   obs = c("none", "poisson", "negbin"),
   size = 20,
   seed = NULL,
@@ -20,8 +20,16 @@ simulate_epi(
 \item{model}{An object of class \code{"epi_model"} defining the epidemic model
 to simulate.}
 
-\item{n_days}{Integer. Number of days to simulate. Ignored if \code{times} is
-provided.}
+\item{times}{Numeric vector of time points at which to solve the ODE system.
+Must be strictly increasing and of length >= 2. The first value typically
+corresponds to the initial time (e.g. \code{0}).}
+
+\item{time_unit}{Character string specifying the unit of time associated
+with \code{times}. One of \code{"days"}, \code{"weeks"}, \code{"month"},
+or \code{"year"}. This is used only for printing and plotting labels and
+does not affect the numerical simulation.
+The optional \code{time_unit} argument can be used to label the time axis
+in printed summaries and plots, but does not affect the numerical solution.}
 
 \item{parms}{Named numeric vector of model parameters. Names must match
 \code{model$par_names}. Any missing parameters are taken from
@@ -29,9 +37,6 @@ provided.}
 
 \item{init}{Named numeric vector giving the initial values of the state
 variables. Names must exactly match \code{model$state_names}.}
-
-\item{times}{Optional numeric vector of time points at which to solve the ODE
-system. If supplied, it overrides \code{n_days}.}
 
 \item{obs}{Character string specifying the observation model. One of
 \code{"none"}, \code{"poisson"}, or \code{"negbin"}.}
@@ -91,9 +96,13 @@ time series is produced.
 
 \subsection{Time grid}{
 
-By default, the model is simulated on a regular daily grid from day 0 to
-\code{n_days}. Alternatively, a custom numeric vector of time points can be
-supplied via \code{times}, in which case \code{n_days} is ignored.
+The model is simulated at the time points specified by the numeric vector
+\code{times}. This vector must be strictly increasing and of length >= 2.
+The first value typically corresponds to the initial time (e.g. \code{0}).
+
+This design follows the interface of \code{\link[deSolve]{ode}} and provides
+full control over the temporal resolution of the simulation, including
+irregular or non-integer time grids.
 }
 
 \subsection{Initial conditions}{
@@ -137,15 +146,14 @@ integration method (typically \code{"lsoda"}).
 ## Example 1: SIR model with model-defined incidence
 ## ------------------------------------------------------------------
 
-# In the built-in SIR model, the RHS defines a latent incidence
-# (typically beta * S * I / N), returned as an extra output of the ODE.
-
 sim <- simulate_epi(
   model = SIR_MODEL,
-  n_days = 200,
+  times = 0:200,
+  time_unit = "week",
   parms = c(beta = 0.30, gamma = 0.10),
   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
-  seed  = 1
+  seed  = 1,
+  method = 'lsoda'
 )
 
 # Plot state trajectories defined by the model
@@ -159,12 +167,9 @@ plot(sim, what = "incidence")
 ## Example 2: Using a different numerical integration method
 ## ------------------------------------------------------------------
 
-# Additional arguments passed via `...` are forwarded to deSolve::ode().
-# Here we explicitly select a fixed-step Runge--Kutta solver.
-
 sim_rk4 <- simulate_epi(
   model = SIR_MODEL,
-  n_days = 200,
+  times = 0:200,
   parms = c(beta = 0.30, gamma = 0.10),
   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
   method = "rk4"
@@ -177,34 +182,24 @@ plot(sim_rk4)
 ## Example 3: Model without an incidence definition
 ## ------------------------------------------------------------------
 
-# If the model RHS does not return a variable named "incidence",
-# no incidence time series is produced.
-
-# For such models, sim$incidence and sim$incidence_cum are NULL,
-# and plotting incidence will result in an error.
-
-sim_no_inc <- simulate_epi(
+sim <- simulate_epi(
   model = SI_MODEL,
-  n_days = 100,
+  times = 30:100,
   parms = c(beta = 0.25),
-  init  = c(S = 999, I = 1),
-  obs   = "none"
+  init  = c(S = 999, I = 1)
 )
 
-plot(sim_no_inc)              # valid: plots model states
-# plot(sim_no_inc, what = "incidence")  # error: no incidence defined
+plot(sim)
+plot(sim, what = "incidence")
 
 
 ## ------------------------------------------------------------------
 ## Example 4: Stochastic observation model
 ## ------------------------------------------------------------------
 
-# When a model defines incidence, a stochastic observation process
-# can be applied to generate reported case counts.
-
-sim_obs <- simulate_epi(
+sim <- simulate_epi(
   model = SIR_MODEL,
-  n_days = 150,
+  times = 0:150,
   parms = c(beta = 0.35, gamma = 0.12),
   init  = c(S = 1e5 - 5, I = 5, R = 0, C = 5),
   obs   = "negbin",
@@ -212,7 +207,7 @@ sim_obs <- simulate_epi(
   seed  = 123
 )
 
-plot(sim_obs, what = "incidence")
+plot(sim, what = "incidence")
 
 }
 \seealso{

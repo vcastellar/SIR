@@ -32,6 +32,11 @@ This method is automatically dispatched when an object of class
 \code{"sim_epi"} is printed. It is intended to give a quick overview of the
 simulation without displaying the full internal structure of the object.
 
+If available, the time unit stored in the \code{sim_epi} object
+(i.e. \code{x$time_unit}) is used to label the simulation horizon and
+reported event times. This affects only the printed labels and does not
+change the numerical values of time.
+
 The printed output typically includes:
 \itemize{
 \item the name of the epidemic model,
@@ -44,7 +49,8 @@ when such quantities are available.
 \examples{
 sim <- simulate_epi(
   model = SIR_MODEL,
-  n_days = 200,
+  times = 0:200,
+  time_unit = "days",
   parms = c(beta = 0.30, gamma = 0.10),
   init  = c(S = 999990, I = 10, R = 0, C = 10),
   seed  = 1

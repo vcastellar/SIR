@@ -3,12 +3,7 @@
 \docType{data}
 \name{SIRS_MODEL}
 \alias{SIRS_MODEL}
-\title{#' @keywords internal
-#' @noRd
-make_init_sirs <- function(N, I0 = 10, R0 = 0) {
-c(S = N - I0 - R0, I = I0, R = R0)
-}
-SIRS epidemic model with waning immunity}
+\title{SIRS epidemic model with waning immunity}
 \format{
 An object of class \code{"epi_model"}.
 }
@@ -18,8 +13,12 @@ SIRS_MODEL
 \description{
 An \code{epi_model} object representing a deterministic \strong{SIRS}
 (Susceptible–Infectious–Recovered–Susceptible) compartmental epidemic model
-with waning immunity. Individuals who recover from infection lose immunity
-at rate \code{omega} and return to the susceptible compartment.
+with waning immunity.
+
+The model describes the spread of an infection in a closed population where
+susceptible individuals become infectious, subsequently recover, and may
+lose immunity over time, returning to the susceptible compartment at rate
+\code{omega}.
 }
 \details{
 \subsection{State variables}{
@@ -28,12 +27,26 @@ The model is defined in terms of the following state variables:
 \describe{
 \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
-\item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
+\item{R(t)}{Number of recovered individuals with temporary immunity at time \eqn{t}.}
 }
 
-The total population size is given by
-\deqn{N = S(t) + I(t) + R(t),}
-which is conserved by the model dynamics.
+The total population size is conserved:
+\deqn{N = S(t) + I(t) + R(t).}
+}
+
+\subsection{Model outputs}{
+
+The SIRS model declares the following outputs:
+\describe{
+\item{\code{"S"}}{Susceptible population size.}
+\item{\code{"I"}}{Infectious population size.}
+\item{\code{"R"}}{Recovered (temporarily immune) population size.}
+\item{\code{"incidence"}}{Instantaneous rate of new infections
+\eqn{\lambda(t)} returned by the model's right-hand side.}
+}
+
+All declared outputs may be used as observables in generic utilities such as
+\code{\link{fit_epi_model}} via the \code{target} argument.
 }
 
 \subsection{Parameters}{
@@ -64,26 +77,38 @@ The system of ordinary differential equations is:
 \subsection{Usage}{
 
 This predefined model object is intended to be used with generic utilities
-such as \code{\link{simulate_epi}} and model-fitting functions that operate
-on \code{epi_model} objects.
+such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+\code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
 }
 }
 \examples{
-## Simulate a SIRS epidemic without an observation model
+## Simulate a SIRS epidemic
 sim <- simulate_epi(
   model = SIRS_MODEL,
-  n_days = 200,
+  times = 0:200,
   parms = c(beta = 0.3, gamma = 0.1, omega = 0.02),
-  init = list(N = 1e6, I0 = 20, R0 = 0),
-  obs = "none"
+  init  = c(S = 1e6, I = 20, R = 0)
 )
 
-plot(sim$states$time, sim$states$I, type = "l",
-     xlab = "Days", ylab = "I(t)",
-     main = "SIRS model: infectious individuals")
+plot(sim)
+
+## Plot observed incidence (if an observation model is used)
+plot(sim, what = "incidence")
+
+## Fit the model to observed incidence
+fit_inc <- fit_epi_model(
+  x = sim$incidence$inc,
+  model = SIRS_MODEL,
+  init = SIRS_MODEL$init,
+  target = "incidence"
+)
+
+fit_inc
 
 }
 \seealso{
-\code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+\code{\link{simulate_epi}},
+\code{\link{fit_epi_model}},
+\code{\link{new_epi_model}}
 }
 \keyword{datasets}
