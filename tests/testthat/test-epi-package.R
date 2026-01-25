@@ -12,15 +12,14 @@ test_that("built-in models exist", {
 # ------------------------------------------------------------------------------
 test_that("simulate_epi works for SIR", {
 
-  init <- c(S = 1e5 - 10, I = 10, R = 0, C = 10)
+  init <- c(S = 1e6 - 10, I = 10, R = 0, C = 10)
 
   sim <- simulate_epi(
     model = SIR_MODEL,
-    n_days = 20,
+    times = 0:20,
     parms = c(beta = 0.3, gamma = 0.1),
     init = init,
-    obs = "none",
-    method = "rk4"
+    obs = "none"
   )
 
   expect_s3_class(sim, "sim_epi")
@@ -34,11 +33,10 @@ test_that("print, plot and summary do not crash", {
 
   sim <- simulate_epi(
     model = SIR_MODEL,
-    n_days = 20,
+    times = 0:20,
     parms = c(beta = 0.3, gamma = 0.1),
     init = init,
-    obs = "none",
-    method = "rk4"
+    obs = "none"
   )
 
   expect_output(print(sim))
@@ -60,12 +58,11 @@ test_that("fit_epi_model works end-to-end", {
 
   sim <- simulate_epi(
     model = SIR_MODEL,
-    n_days = 40,
-    parms = c(beta = 0.25, gamma = 0.1),
     init = init,
+    parms = c(beta = 0.25, gamma = 0.1),
+    times = 0:40,
     obs = "poisson",
-    seed = 1,
-    method = "rk4"
+    seed = 1
   )
 
   fit <- fit_epi_model(
@@ -87,12 +84,11 @@ test_that("predict works on fitted model", {
 
   sim <- simulate_epi(
     model = SIR_MODEL,
-    n_days = 30,
+    times = 0:30,
     parms = c(beta = 0.3, gamma = 0.1),
     init = init,
     obs = "poisson",
-    seed = 1,
-    method = "lsoda"
+    seed = 1
   )
 
   fit <- fit_epi_model(
@@ -124,4 +120,19 @@ test_that("invalid inputs raise errors", {
       method = "rk4"
     )
   )
+
+  expect_error(
+    simulate_epi(
+      model = SIR_MODEL,
+      times = 0:200,
+      time_unit = "week",
+      parms = c(beta = 0.30, gamma = 0.10),
+      init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
+      seed  = 1,
+      method = 'bannana'
+    )
+  )
 })
+
+#-------------------------------------------------------------------------------
+

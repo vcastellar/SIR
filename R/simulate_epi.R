@@ -119,7 +119,8 @@
 #'   time_unit = "week",
 #'   parms = c(beta = 0.30, gamma = 0.10),
 #'   init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
-#'   seed  = 1
+#'   seed  = 1,
+#'   method = 'lsoda'
 #' )
 #'
 #' # Plot state trajectories defined by the model
@@ -148,23 +149,22 @@
 #' ## Example 3: Model without an incidence definition
 #' ## ------------------------------------------------------------------
 #'
-#' sim_no_inc <- simulate_epi(
+#' sim <- simulate_epi(
 #'   model = SI_MODEL,
-#'   times = 0:100,
+#'   times = 30:100,
 #'   parms = c(beta = 0.25),
-#'   init  = c(S = 999, I = 1),
-#'   obs   = "none"
+#'   init  = c(S = 999, I = 1)
 #' )
 #'
-#' plot(sim_no_inc)              # valid: plots model states
-#' # plot(sim_no_inc, what = "incidence")  # error: no incidence defined
+#' plot(sim)
+#' plot(sim, what = "incidence")
 #'
 #'
 #' ## ------------------------------------------------------------------
 #' ## Example 4: Stochastic observation model
 #' ## ------------------------------------------------------------------
 #'
-#' sim_obs <- simulate_epi(
+#' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   times = 0:150,
 #'   parms = c(beta = 0.35, gamma = 0.12),
@@ -174,7 +174,7 @@
 #'   seed  = 123
 #' )
 #'
-#' plot(sim_obs, what = "incidence")
+#' plot(sim, what = "incidence")
 #'
 #' @seealso
 #' \code{\link{new_epi_model}}, \code{\link[deSolve]{ode}},
@@ -183,7 +183,7 @@
 #' @export
 simulate_epi <- function(model,
                          times,
-                         time_unit = c("days", "weeks", "month", "year"),
+                         time_unit = "days",
                          parms = NULL,
                          init = NULL,
                          obs = c("none", "poisson", "negbin"),
@@ -193,7 +193,8 @@ simulate_epi <- function(model,
 
   stopifnot(inherits(model, "epi_model"))
   obs <- match.arg(obs)
-  time_unit <- match.arg(time_unit)
+  time_unit <- match.arg(time_unit,
+                         choices = c("days", "weeks", "month", "year"))
   if (!is.null(seed)) set.seed(seed)
 
   # 1) Tiempos

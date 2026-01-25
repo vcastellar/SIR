@@ -67,7 +67,7 @@ si_rhs <- function(time, state, parms) {
 #' ## Simulate an SI epidemic
 #' sim <- simulate_epi(
 #'   model = SI_MODEL,
-#'   n_days = 100,
+#'   times = 0:100,
 #'   parms = c(beta = 0.4),
 #'   obs = "negbin",
 #'   init = SI_MODEL$init
@@ -206,11 +206,6 @@ sirs_rhs <- function(time, state, parms) {
   })
 }
 
-#' #' @keywords internal
-#' #' @noRd
-#' make_init_sirs <- function(N, I0 = 10, R0 = 0) {
-#'   c(S = N - I0 - R0, I = I0, R = R0)
-#' }
 
 #' SIRS epidemic model with waning immunity
 #' @name SIRS_MODEL
@@ -268,7 +263,7 @@ sirs_rhs <- function(time, state, parms) {
 #' ## Simulate a SIRS epidemic without an observation model
 #' sim <- simulate_epi(
 #'   model = SIRS_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
 #'   parms = c(beta = 0.3, gamma = 0.1, omega = 0.02),
 #'   init = list(N = 1e6, I0 = 20, R0 = 0),
 #'   obs = "none"
@@ -317,17 +312,6 @@ seir_rhs <- function(time, state, parms) {
     list(c(dS, dE, dI, dR), incidence = sigma * E)
   })
 }
-
-#' #' @keywords internal
-#' #' @noRd
-#' make_init_seir <- function(N, I0 = 10, R0 = 0, E0 = 0) {
-#'   c(
-#'     S = N - E0 - I0 - R0,
-#'     E = E0,
-#'     I = I0,
-#'     R = R0
-#'   )
-#' }
 
 #' SEIR epidemic model with latent (exposed) period
 #' @name SEIR_MODEL
@@ -391,7 +375,7 @@ seir_rhs <- function(time, state, parms) {
 #' ## Simulate a SEIR epidemic without an observation model
 #' sim <- simulate_epi(
 #'   model = SEIR_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
 #'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
 #'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
 #'   obs = "poisson"
@@ -440,17 +424,6 @@ seirs_rhs <- function(time, state, parms) {
   })
 }
 
-
-#' #' @keywords internal
-#' #' @noRd
-#' make_init_seirs <- function(N, I0 = 10, R0 = 0, E0 = 0) {
-#'   c(
-#'     S = N - E0 - I0 - R0,
-#'     E = E0,
-#'     I = I0,
-#'     R = R0
-#'   )
-#' }
 
 #' SEIRS epidemic model with latent period and waning immunity
 #' @name SEIRS_MODEL
