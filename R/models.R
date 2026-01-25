@@ -37,6 +37,18 @@ si_rhs <- function(time, state, parms) {
 #' The total population size is conserved:
 #' \deqn{N = S(t) + I(t).}
 #'
+#' ## Model outputs
+#' The SI model declares the following outputs:
+#' \describe{
+#'   \item{\code{"S"}}{Susceptible population size.}
+#'   \item{\code{"I"}}{Infectious population size.}
+#'   \item{\code{"incidence"}}{Instantaneous rate of new infections
+#'     \eqn{\lambda(t)} returned by the model's right-hand side.}
+#' }
+#'
+#' All declared outputs may be used as observables in generic utilities such as
+#' \code{\link{fit_epi_model}} via the \code{target} argument.
+#'
 #' ## Parameters
 #' The SI model depends on a single parameter:
 #' \describe{
@@ -57,8 +69,8 @@ si_rhs <- function(time, state, parms) {
 #'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
-#' such as \code{\link{simulate_epi}} and model-fitting functions that operate
-#' on \code{epi_model} objects.
+#' such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+#' \code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
 #'
 #' @format
 #' An object of class \code{"epi_model"}.
@@ -72,25 +84,37 @@ si_rhs <- function(time, state, parms) {
 #'   obs = "negbin",
 #'   init = SI_MODEL$init
 #' )
+#'
 #' plot(sim)
-#' plot(sim$incidence$time, sim$incidence$inc, type = "l",
-#'      xlab = "Days", ylab = "I(t)",
-#'      main = "SI model: infectious individuals")
+#'
+#' ## Plot observed incidence
+#' plot(sim, what = "incidence")
+#'
+#' ## Fit the model to observed incidence
+#' fit_inc <- fit_epi_model(
+#'   x = sim$incidence$inc,
+#'   model = SI_MODEL,
+#'   init = SI_MODEL$init,
+#'   target = "incidence"
+#' )
+#'
+#' fit_inc
 #'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#' \code{\link{simulate_epi}},
+#' \code{\link{fit_epi_model}},
+#' \code{\link{new_epi_model}}
 #'
 #' @export
+
 SI_MODEL <- new_epi_model(
   name = "SI",
   rhs = si_rhs,
   state_names = c("S", "I"),
   par_names = c("beta"),
-  lower = c(beta = 1e-8),
-  upper = c(beta = 5),
+  outputs = c("S", "I", "incidence"),
   defaults = c(beta = 0.3),
-  init = c("S" = 999999, "I" = 1),
-  incidence = "incidence"
+  init = c(S = 999999, I = 1)
 )
 
 #-------------------------------------------------------------------------------
@@ -111,11 +135,16 @@ sir_rhs <- function(time, state, parms) {
 }
 
 
-#' SIR epidemic model with cumulative infections
+#' SIR epidemic model
+#'
 #' @name SIR_MODEL
 #' @description
 #' An \code{epi_model} object representing a deterministic **SIR**
 #' (Susceptible–Infectious–Recovered) compartmental epidemic model.
+#'
+#' The model describes the spread of an infection in a closed population where
+#' susceptible individuals become infectious and subsequently recover with
+#' permanent immunity.
 #'
 #' @details
 #' ## State variables
@@ -126,9 +155,21 @@ sir_rhs <- function(time, state, parms) {
 #'   \item{R(t)}{Number of removed/recovered individuals at time \eqn{t}.}
 #' }
 #'
-#' The total population size is given by
-#' \deqn{N = S(t) + I(t) + R(t)}
-#' which is conserved by the model dynamics.
+#' The total population size is conserved:
+#' \deqn{N = S(t) + I(t) + R(t).}
+#'
+#' ## Model outputs
+#' The SIR model declares the following outputs:
+#' \describe{
+#'   \item{\code{"S"}}{Susceptible population size.}
+#'   \item{\code{"I"}}{Infectious population size.}
+#'   \item{\code{"R"}}{Recovered (removed) population size.}
+#'   \item{\code{"incidence"}}{Instantaneous rate of new infections
+#'     \eqn{\lambda(t)} returned by the model's right-hand side.}
+#' }
+#'
+#' All declared outputs may be used as observables in generic utilities such as
+#' \code{\link{fit_epi_model}} via the \code{target} argument.
 #'
 #' ## Parameters
 #' The SIR model depends on the following parameters:
@@ -146,35 +187,46 @@ sir_rhs <- function(time, state, parms) {
 #' \begin{aligned}
 #' \frac{dS}{dt} &= -\lambda(t), \\
 #' \frac{dI}{dt} &= \lambda(t) - \gamma I(t), \\
-#' \frac{dR}{dt} &= \gamma I(t), \\
+#' \frac{dR}{dt} &= \gamma I(t). \\
 #' \end{aligned}
 #' }
 #'
-#'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
-#' such as \code{\link{simulate_epi}} and model-fitting functions that operate
-#' on \code{epi_model} objects.
+#' such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+#' \code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
 #'
 #' @format
 #' An object of class \code{"epi_model"}.
 #'
 #' @examples
-#' ## Simulate a SIR epidemic without an observation model
+#' ## Simulate a SIR epidemic
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   n_days = 200,
+#'   times = 0:200,
 #'   parms = c(beta = 0.3, gamma = 0.1),
-#'   init_args = list(N = 1e6, I0 = 20, R0 = 0),
-#'   obs = "none"
+#'   init  = c(S = 1e6, I = 10, R = 0)
 #' )
 #'
-#' plot(sim$states$time, sim$states$I, type = "l",
-#'      xlab = "Days", ylab = "I(t)",
-#'      main = "SIR model: infectious individuals")
+#' plot(sim)
+#'
+#' ## Plot observed incidence (if an observation model is used)
+#' plot(sim, what = "incidence")
+#'
+#' ## Fit the model to observed incidence
+#' fit_inc <- fit_epi_model(
+#'   x = sim$incidence$inc,
+#'   model = SIR_MODEL,
+#'   init = SIR_MODEL$init,
+#'   target = "incidence"
+#' )
+#'
+#' fit_inc
 #'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#' \code{\link{simulate_epi}},
+#' \code{\link{fit_epi_model}},
+#' \code{\link{new_epi_model}}
 #'
 #' @export
 SIR_MODEL <- new_epi_model(
@@ -186,7 +238,7 @@ SIR_MODEL <- new_epi_model(
   upper = c(beta = 2,    gamma = 1),
   defaults = c(beta = 0.3, gamma = 0.1),
   init = c("S" = 1e6, "I" = 10, "R" = 0),
-  incidence = "incidence"
+  outputs = c("S", "I", "R", "incidence")
 )
 
 
@@ -208,13 +260,17 @@ sirs_rhs <- function(time, state, parms) {
 
 
 #' SIRS epidemic model with waning immunity
+#'
 #' @name SIRS_MODEL
 #' @description
 #' An \code{epi_model} object representing a deterministic **SIRS**
 #' (Susceptible–Infectious–Recovered–Susceptible) compartmental epidemic model
-#' with waning immunity. Individuals who recover from infection lose immunity
-#' at rate \code{omega} and return to the susceptible compartment.
+#' with waning immunity.
 #'
+#' The model describes the spread of an infection in a closed population where
+#' susceptible individuals become infectious, subsequently recover, and may
+#' lose immunity over time, returning to the susceptible compartment at rate
+#' \code{omega}.
 #'
 #' @details
 #' ## State variables
@@ -222,12 +278,24 @@ sirs_rhs <- function(time, state, parms) {
 #' \describe{
 #'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 #'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
-#'   \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
+#'   \item{R(t)}{Number of recovered individuals with temporary immunity at time \eqn{t}.}
 #' }
 #'
-#' The total population size is given by
-#' \deqn{N = S(t) + I(t) + R(t),}
-#' which is conserved by the model dynamics.
+#' The total population size is conserved:
+#' \deqn{N = S(t) + I(t) + R(t).}
+#'
+#' ## Model outputs
+#' The SIRS model declares the following outputs:
+#' \describe{
+#'   \item{\code{"S"}}{Susceptible population size.}
+#'   \item{\code{"I"}}{Infectious population size.}
+#'   \item{\code{"R"}}{Recovered (temporarily immune) population size.}
+#'   \item{\code{"incidence"}}{Instantaneous rate of new infections
+#'     \eqn{\lambda(t)} returned by the model's right-hand side.}
+#' }
+#'
+#' All declared outputs may be used as observables in generic utilities such as
+#' \code{\link{fit_epi_model}} via the \code{target} argument.
 #'
 #' ## Parameters
 #' The SIRS model depends on the following parameters:
@@ -250,33 +318,45 @@ sirs_rhs <- function(time, state, parms) {
 #' \end{aligned}
 #' }
 #'
-#'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
-#' such as \code{\link{simulate_epi}} and model-fitting functions that operate
-#' on \code{epi_model} objects.
+#' such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+#' \code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
 #'
 #' @format
 #' An object of class \code{"epi_model"}.
 #'
 #' @examples
-#' ## Simulate a SIRS epidemic without an observation model
+#' ## Simulate a SIRS epidemic
 #' sim <- simulate_epi(
 #'   model = SIRS_MODEL,
 #'   times = 0:200,
 #'   parms = c(beta = 0.3, gamma = 0.1, omega = 0.02),
-#'   init = list(N = 1e6, I0 = 20, R0 = 0),
-#'   obs = "none"
+#'   init  = c(S = 1e6, I = 20, R = 0)
 #' )
 #'
-#' plot(sim$states$time, sim$states$I, type = "l",
-#'      xlab = "Days", ylab = "I(t)",
-#'      main = "SIRS model: infectious individuals")
+#' plot(sim)
+#'
+#' ## Plot observed incidence (if an observation model is used)
+#' plot(sim, what = "incidence")
+#'
+#' ## Fit the model to observed incidence
+#' fit_inc <- fit_epi_model(
+#'   x = sim$incidence$inc,
+#'   model = SIRS_MODEL,
+#'   init = SIRS_MODEL$init,
+#'   target = "incidence"
+#' )
+#'
+#' fit_inc
 #'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#' \code{\link{simulate_epi}},
+#' \code{\link{fit_epi_model}},
+#' \code{\link{new_epi_model}}
 #'
 #' @export
+
 SIRS_MODEL <- new_epi_model(
   name = "SIRS",
   rhs = sirs_rhs,
@@ -286,7 +366,7 @@ SIRS_MODEL <- new_epi_model(
   upper = c(beta = 2,    gamma = 1,    omega = 1),
   defaults = c(beta = 0.3, gamma = 0.1, omega = 0.02),
   init = c("S" = 1e6, "I" = 20, "R" = 0),
-  incidence = "incidence"
+  outputs = c("S", "I", "R", "incidence")
 )
 
 
@@ -314,13 +394,18 @@ seir_rhs <- function(time, state, parms) {
 }
 
 #' SEIR epidemic model with latent (exposed) period
+#'
 #' @name SEIR_MODEL
 #' @description
 #' An \code{epi_model} object representing a deterministic **SEIR**
 #' (Susceptible–Exposed–Infectious–Recovered) compartmental epidemic model
-#' with a latent period. Individuals become infected at rate \eqn{\lambda(t)}
-#' and enter the exposed compartment \code{E}. Exposed individuals progress
-#' to the infectious compartment at rate \code{sigma}.
+#' with a latent (exposed) period.
+#'
+#' The model describes the spread of an infection in a closed population where
+#' susceptible individuals become infected at rate \eqn{\lambda(t)} and enter
+#' the exposed compartment \code{E}. Exposed individuals progress to the
+#' infectious compartment at rate \code{sigma} and subsequently recover with
+#' permanent immunity.
 #'
 #' @details
 #' ## State variables
@@ -330,19 +415,34 @@ seir_rhs <- function(time, state, parms) {
 #'   \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
 #'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
 #'   \item{R(t)}{Number of recovered (immune) individuals at time \eqn{t}.}
-#
 #' }
 #'
-#' The total population size is given by
-#' \deqn{N = S(t) + E(t) + I(t) + R(t),}
-#' which is conserved by the model dynamics.
+#' The total population size is conserved:
+#' \deqn{N = S(t) + E(t) + I(t) + R(t).}
+#'
+#' ## Model outputs
+#' The SEIR model declares the following outputs:
+#' \describe{
+#'   \item{\code{"S"}}{Susceptible population size.}
+#'   \item{\code{"E"}}{Exposed (latent) population size.}
+#'   \item{\code{"I"}}{Infectious population size.}
+#'   \item{\code{"R"}}{Recovered (immune) population size.}
+#'   \item{\code{"incidence"}}{Rate of progression from \code{E} to \code{I},
+#'     \eqn{\sigma E(t)}, representing the instantaneous incidence of new
+#'     infectious cases returned by the model's right-hand side.}
+#' }
+#'
+#' All declared outputs may be used as observables in generic utilities such as
+#' \code{\link{fit_epi_model}} via the \code{target} argument.
 #'
 #' ## Parameters
 #' The SEIR model depends on the following parameters:
 #' \describe{
 #'   \item{beta}{Transmission rate (per day).}
-#'   \item{sigma}{Rate of progression from \code{E} to \code{I} (per day), so \eqn{1/\sigma} is the mean latent period.}
-#'   \item{gamma}{Recovery/removal rate from \code{I} to \code{R} (per day), so \eqn{1/\gamma} is the mean infectious period.}
+#'   \item{sigma}{Rate of progression from exposed to infectious (per day);
+#'     \eqn{1/\sigma} is the mean latent period.}
+#'   \item{gamma}{Recovery/removal rate from infectious to recovered (per day);
+#'     \eqn{1/\gamma} is the mean infectious period.}
 #' }
 #'
 #' ## Model equations
@@ -358,33 +458,47 @@ seir_rhs <- function(time, state, parms) {
 #' \frac{dS}{dt} &= -\lambda(t), \\
 #' \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 #' \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-#' \frac{dR}{dt} &= \gamma I(t),
+#' \frac{dR}{dt} &= \gamma I(t).
 #' \end{aligned}
 #' }
 #'
-#'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
-#' such as \code{\link{simulate_epi}} and model-fitting functions that operate
-#' on \code{epi_model} objects.
+#' such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+#' \code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
 #'
 #' @format
 #' An object of class \code{"epi_model"}.
 #'
 #' @examples
-#' ## Simulate a SEIR epidemic without an observation model
+#' ## Simulate a SEIR epidemic
 #' sim <- simulate_epi(
 #'   model = SEIR_MODEL,
 #'   times = 0:200,
 #'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
-#'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
-#'   obs = "poisson"
+#'   init  = c(S = 1e6, E = 5, I = 10, R = 0),
+#'   obs   = "poisson"
 #' )
 #'
 #' plot(sim)
 #'
+#' ## Plot observed incidence
+#' plot(sim, what = "incidence")
+#'
+#' ## Fit the model to observed incidence
+#' fit_inc <- fit_epi_model(
+#'   x = sim$incidence$inc,
+#'   model = SEIR_MODEL,
+#'   init = SEIR_MODEL$init,
+#'   target = "incidence"
+#' )
+#'
+#' fit_inc
+#'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#' \code{\link{simulate_epi}},
+#' \code{\link{fit_epi_model}},
+#' \code{\link{new_epi_model}}
 #'
 #' @export
 SEIR_MODEL <- new_epi_model(
@@ -396,7 +510,7 @@ SEIR_MODEL <- new_epi_model(
   upper = c(beta = 5,    sigma = 2,    gamma = 2),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
   init = c("S" = 1e6, "E" = 5, "I" = 10, "R" = 0),
-  incidence = "incidence"
+  outputs = c("S", "E", "I", "R", "incidence")
 )
 
 
@@ -426,34 +540,58 @@ seirs_rhs <- function(time, state, parms) {
 
 
 #' SEIRS epidemic model with latent period and waning immunity
+#'
 #' @name SEIRS_MODEL
 #' @description
 #' An \code{epi_model} object representing a deterministic **SEIRS**
 #' (Susceptible–Exposed–Infectious–Recovered–Susceptible) compartmental epidemic
-#' model with a latent period and waning immunity. Individuals become infected
-#' at rate \eqn{\lambda(t)} and enter the exposed compartment \code{E}. Exposed
-#' individuals progress to \code{I} at rate \code{sigma}. Recovered individuals
-#' lose immunity at rate \code{omega} and return to \code{S}.
+#' model with a latent (exposed) period and waning immunity.
+#'
+#' The model describes the spread of an infection in a closed population where
+#' susceptible individuals become infected at rate \eqn{\lambda(t)} and enter
+#' the exposed compartment \code{E}. Exposed individuals progress to the
+#' infectious compartment at rate \code{sigma}. Infectious individuals recover
+#' at rate \code{gamma}, and recovered individuals lose immunity at rate
+#' \code{omega}, returning to the susceptible compartment.
 #'
 #' @details
 #' ## State variables
+#' The model is defined in terms of the following state variables:
 #' \describe{
 #'   \item{S(t)}{Number of susceptible individuals at time \eqn{t}.}
 #'   \item{E(t)}{Number of exposed (infected but not yet infectious) individuals at time \eqn{t}.}
-#'   \item{I(t)}{Number of infectious individuals at time \eqn{t}.}
-#'   \item{R(t)}{Number of recovered (temporarily immune) individuals at time \eqn{t}.}
+#'   \item{I(t)}{Number of infectious (actively infected) individuals at time \eqn{t}.}
+#'   \item{R(t)}{Number of recovered individuals with temporary immunity at time \eqn{t}.}
 #' }
 #'
-#' The total population size is
-#' \deqn{N = S(t) + E(t) + I(t) + R(t),}
-#' which is conserved by the model dynamics.
+#' The total population size is conserved:
+#' \deqn{N = S(t) + E(t) + I(t) + R(t).}
+#'
+#' ## Model outputs
+#' The SEIRS model declares the following outputs:
+#' \describe{
+#'   \item{\code{"S"}}{Susceptible population size.}
+#'   \item{\code{"E"}}{Exposed (latent) population size.}
+#'   \item{\code{"I"}}{Infectious population size.}
+#'   \item{\code{"R"}}{Recovered (temporarily immune) population size.}
+#'   \item{\code{"incidence"}}{Rate of progression from \code{E} to \code{I},
+#'     \eqn{\sigma E(t)}, representing the instantaneous incidence of new
+#'     infectious cases returned by the model's right-hand side.}
+#' }
+#'
+#' All declared outputs may be used as observables in generic utilities such as
+#' \code{\link{fit_epi_model}} via the \code{target} argument.
 #'
 #' ## Parameters
+#' The SEIRS model depends on the following parameters:
 #' \describe{
 #'   \item{beta}{Transmission rate (per day).}
-#'   \item{sigma}{Rate of progression from \code{E} to \code{I} (per day); \eqn{1/\sigma} is the mean latent period.}
-#'   \item{gamma}{Recovery/removal rate from \code{I} to \code{R} (per day); \eqn{1/\gamma} is the mean infectious period.}
-#'   \item{omega}{Rate of waning immunity from \code{R} back to \code{S} (per day); \eqn{1/\omega} is the mean immunity duration.}
+#'   \item{sigma}{Rate of progression from exposed to infectious (per day);
+#'     \eqn{1/\sigma} is the mean latent period.}
+#'   \item{gamma}{Recovery/removal rate from infectious to recovered (per day);
+#'     \eqn{1/\gamma} is the mean infectious period.}
+#'   \item{omega}{Rate of waning immunity from \code{R} back to \code{S} (per day);
+#'     \eqn{1/\omega} is the mean immunity duration.}
 #' }
 #'
 #' ## Model equations
@@ -463,31 +601,53 @@ seirs_rhs <- function(time, state, parms) {
 #' Case incidence (entries into \code{I}) occurs at rate
 #' \deqn{\text{incidence}(t) = \sigma E(t).}
 #'
-#' The ODE system is:
+#' The system of ordinary differential equations is:
 #' \deqn{
 #' \begin{aligned}
 #' \frac{dS}{dt} &= -\lambda(t) + \omega R(t), \\
 #' \frac{dE}{dt} &= \lambda(t) - \sigma E(t), \\
 #' \frac{dI}{dt} &= \sigma E(t) - \gamma I(t), \\
-#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t). \\
+#' \frac{dR}{dt} &= \gamma I(t) - \omega R(t).
 #' \end{aligned}
 #' }
 #'
-#' @format An object of class \code{"epi_model"}.
+#' ## Usage
+#' This predefined model object is intended to be used with generic utilities
+#' such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
+#' \code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
+#'
+#' @format
+#' An object of class \code{"epi_model"}.
 #'
 #' @examples
 #' ## Simulate a SEIRS epidemic
 #' sim <- simulate_epi(
 #'   model = SEIRS_MODEL,
-#'   n_days = 300,
-#'   parms = SEIRS_MODEL$default,
-#'   init_args = list(N = 1e6, E0 = 0, I0 = 20, R0 = 0),
-#'   obs = "poisson"
+#'   times = 0:300,
+#'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
+#'   init  = c(S = 1e6, E = 0, I = 20, R = 0),
+#'   obs   = "poisson"
 #' )
+#'
 #' plot(sim)
 #'
+#' ## Plot observed incidence
+#' plot(sim, what = "incidence")
+#'
+#' ## Fit the model to observed incidence
+#' fit_inc <- fit_epi_model(
+#'   x = sim$incidence$inc,
+#'   model = SEIRS_MODEL,
+#'   init = SEIRS_MODEL$init,
+#'   target = "incidence"
+#' )
+#'
+#' fit_inc
+#'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{new_epi_model}}
+#' \code{\link{simulate_epi}},
+#' \code{\link{fit_epi_model}},
+#' \code{\link{new_epi_model}}
 #'
 #' @export
 SEIRS_MODEL <- new_epi_model(
@@ -499,7 +659,7 @@ SEIRS_MODEL <- new_epi_model(
   upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 1),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
   init = c("S" = 1e6, "I" = 10, "R" = 0, "E" = 0),
-  incidence = "incidence"
+  outputs = c("S", "E", "I", "R", "incidence")
 )
 
 
