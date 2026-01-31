@@ -9,13 +9,13 @@ Authors@R:
            family = "Castellar",
            role = c("aut", "cre"),
            email = "vic.castellar@gmail.com")
-Description: Tools for simulating and analyzing deterministic compartmental
-    epidemic models using ordinary differential equations. The package currently
-    supports classical SIR and SIRS models, including cumulative infection
-    tracking and stochastic observation processes based on Poisson or negative
-    binomial likelihoods. The output of simulations is returned as a dedicated
-    S3 object with associated plotting and summary methods, facilitating
-    reproducible epidemic modeling workflows.
+Description: Simulation and exploration of deterministic compartmental epidemiological 
+    models formulated as systems of ordinary differential equations (ODEs). 
+    The package provides tools to define custom epidemic models, simulate latent 
+    state trajectories over time, and explore model dynamics under different 
+    parameter settings. Several classical models are included, such as SI, SIR, 
+    SIRS, SEIR, and SEIRS. An optional Shiny application is provided for 
+    interactive visualization and experimentation with epidemic scenarios.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

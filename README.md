@@ -1,228 +1,113 @@
-# **SIR** — Deterministic Compartmental Epidemic Models in R
+# SIR
 
-**SIR** is an R package for defining, simulating, fitting, and predicting
-**deterministic compartmental epidemic models** based on systems of ordinary
+**SIR** is an R package for simulating and exploring deterministic
+compartmental epidemiological models formulated as systems of ordinary
 differential equations (ODEs).
 
-The package is intentionally **model-agnostic**, **explicit**, and
-**deterministic by design**.  
-It focuses on transparent model definition, reproducible simulation, and
-trajectory-matching parameter estimation, without imposing probabilistic
-observation models or Bayesian inference frameworks.
+The package focuses on **model definition and simulation**, providing
+a small but flexible framework to study epidemic dynamics under different
+assumptions and parameter values. An optional **Shiny application** is
+included for interactive exploration.
 
 ---
 
-## What makes this package different
+## Features
 
-Most epidemic-modeling packages tightly couple model structure, simulation,
-and inference, often hiding assumptions behind complex APIs.
+- Deterministic simulation of epidemic models using ODEs
+- Flexible definition of custom compartmental models
+- Several classical models included:
+  - SI
+  - SIR
+  - SIRS
+  - SEIR
+  - SEIRS
+- Numerical integration based on `deSolve`
+- Interactive Shiny app for visual exploration of model dynamics
 
-**SIR takes a different approach**:
-
-- Models are **explicit objects** (`epi_model`) that fully declare:
-  - states
-  - parameters
-  - equations
-  - bounds
-  - outputs
-- Simulation, fitting, prediction, and plotting are **generic operations**
-  defined *on* these models.
-- Parameter estimation is performed by **trajectory matching**, not by
-  likelihood-based inference.
-- Predictions are **conditionally linked to fitted models**, preserving
-  full traceability.
-
-The result is a framework that is:
-- easy to inspect,
-- easy to extend,
-- and well suited for teaching, prototyping, and deterministic analysis.
-
----
-
-## Key Features
-
-- **Explicit epidemic models** via the `epi_model` abstraction
-- Deterministic simulation using `deSolve::ode()`
-- Built-in SIR, SIRS, and SEIR models
-- Generic model outputs (states, incidence, or user-defined observables)
-- Trajectory-matching parameter estimation (RMSE / log-RMSE)
-- Multi-start optimization with flexible optimizers
-- Conditional prediction objects linking fits and forecasts
-- Base R printing, plotting, and summary methods
-- Minimal dependency footprint
+> ⚠️ This package does **not** perform parameter estimation or statistical
+> inference. Its scope is simulation and exploration only.
 
 ---
 
 ## Installation
 
-The package is under active development and not yet available on CRAN.
-
-Install the development version from GitHub:
+Install the package from source:
 
 ```r
-# install.packages("remotes")
-remotes::install_github("vcastellar/SIR")
-```
-
-## Dependencies
-
-- **deSolve**
-- **stats** (base R)
-
----
-
-## Core Abstraction: `epi_model`
-
-An `epi_model` object encapsulates all model-specific information:
-
-- model name
-- state variable names
-- parameter names
-- ODE right-hand side (`rhs`)
-- parameter bounds and defaults
-- declared model outputs (e.g. `"I"`, `"S"`, `"incidence"`)
-- optional human-readable equations
-
-Once defined, an `epi_model` can be passed unchanged to:
-
-- `simulate_epi()` — deterministic simulation
-- `fit_epi_model()` — trajectory-matching parameter estimation
-- `predict()` — forward prediction from fitted models
-- `plot()` / `summary()` — visualization and reporting
-
-This cleanly separates **model definition** from **model use**.
-
----
-
-## Built-in Models
-
-The package currently provides:
-
-### `SIR_MODEL`
-
-Susceptible–Infectious–Recovered model.
-
-### `SIRS_MODEL`
-
-Extension of SIR with waning immunity (`R → S`).
-
-### `SEIR_MODEL`
-
-Susceptible–Exposed–Infectious–Recovered model with a latent period.
-
-In all models, outputs are explicitly declared and can be used consistently
-for fitting, plotting, and prediction.
-
----
-
-## Simulation
-
-```r
+devtools::install("path/to/SIR")
 library(SIR)
 
 sim <- simulate_epi(
   model = SIR_MODEL,
   times = 0:200,
   parms = c(beta = 0.3, gamma = 0.1),
-  init  = list(S = 1e6, I = 20, R = 0)
+  init  = c(S = 1e6, I = 10, R = 0)
 )
 
 plot(sim)
-plot(sim, what = "I")
-summary(sim)
+plot(sim, what = "incidence")
 ```
 
+## Defining a custom model
 
-Simulation returns a `sim_epi` object containing:
-
-- state trajectories
-- declared model outputs
-- optional incidence if defined by the model
-
----
-
-## Model Fitting (Trajectory Matching)
-
-Model parameters can be estimated by minimizing a discrepancy between observed
-data and simulated trajectories.
+Users can define their own epidemic models by specifying the right-hand
+side of the ODE system and creating an epi_model object.
 
 ```r
-fit <- fit_epi_model(
-  x = sim$states$I,
-  model = SIR_MODEL,
-  target = "I",
-  init = list(S = 1e6, I = 10, R = 0)
-)
+sir_rhs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+    N <- S + I + R
+    lambda <- beta * S * I / N
 
-fit
+    dS <- -lambda
+    dI <-  lambda - gamma * I
+    dR <-  gamma * I
+
+    list(c(dS, dI, dR), incidence = lambda)
+  })
+}
+
+my_sir <- new_epi_model(
+  name        = "MySIR",
+  rhs         = sir_rhs,
+  state_names = c("S", "I", "R"),
+  par_names   = c("beta", "gamma"),
+  init        = c(S = 1e6, I = 10, R = 0),
+  outputs     = c("S", "I", "R", "incidence")
+)
 ```
 
-## Fitting philosophy
+This model can then be simulated using simulate_epi() like any built-in
+model.
 
-- No observation likelihood is assumed
-- No stochasticity is introduced
-- The objective is **deterministic trajectory matching**
-- Loss functions include RMSE and log-RMSE
-- Multi-start optimization is used to mitigate local minima
+## Shiny application
 
-This makes the fitting procedure:
-
-- fast,
-- transparent,
-- and easy to interpret.
-
----
-
-## Prediction from Fitted Models
-
-Predictions are generated conditionally on a fitted model and returned as a
-dedicated object linking the fit and the forecast.
+The package includes a Shiny app for interactive exploration of epidemic
+models.
 
 ```r
-pred <- predict(
-  fit,
-  times = 201:400
-)
-
-pred
+library(SIR)
+run_epi_app()
 ```
 
-The returned object preserves:
+The app allows users to:
 
-- the fitted model
-- estimated parameters
-- initial conditions
-- numerical integration settings
-- predicted trajectories
+- select a built-in model
+- adjust parameters and initial conditions
+- visualize state trajectories and incidence
+- inspect the model equations
 
-Predictions are therefore fully reproducible and auditable.
+The Shiny app is optional; the package works without shiny installed.
 
----
+## Scope and philosophy
 
-## Plotting and Summaries
+SIR is designed as a simulation-oriented package:
 
-### Simulation objects (`sim_epi`)
+- deterministic models
+- explicit compartmental structure
+- transparent dynamics
+- minimal hidden state
 
-- `plot(sim)` — all state trajectories
-- `plot(sim, what = "I")` — a single output
-- `plot(sim, what = "incidence")` — incidence (if defined)
-- `summary(sim)` — epidemiological summaries
-
-### Fitted models (`fit_epi_model`)
-
-- `print(fit)` — parameter estimates and diagnostics
-- `predict(fit, ...)` — conditional forward predictions
-
----
-
-## Design Philosophy
-
-- **Deterministic by default**
-- Explicit model structure
-- No hidden assumptions
-- Minimal API surface
-- Small dependency footprint
-- Emphasis on clarity and reproducibility
-
-This package is not intended to replace full probabilistic inference frameworks,
-but to provide a clean, deterministic foundation for epidemic modelin
+It is intended for teaching, exploration, and rapid prototyping of
+epidemiological models, rather than for statistical inference or
+data-driven estimation.
