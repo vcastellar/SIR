@@ -1,0 +1,725 @@
+
+R version 4.5.1 (2025-06-13) -- "Great Square Root"
+Copyright (C) 2025 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> pkgname <- "SIR"
+> source(file.path(R.home("share"), "R", "examples-header.R"))
+> options(warn = 1)
+> base::assign(".ExTimings", "SIR-Ex.timings", pos = 'CheckExEnv')
+> base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
+> base::assign(".format_ptime",
++ function(x) {
++   if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
++   if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
++   options(OutDec = '.')
++   format(x[1L:3L], digits = 7L)
++ },
++ pos = 'CheckExEnv')
+> 
+> ### * </HEADER>
+> library('SIR')
+> 
+> base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+> base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+> cleanEx()
+> nameEx("SEIRS_MODEL")
+> ### * SEIRS_MODEL
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: SEIRS_MODEL
+> ### Title: SEIRS epidemic model with latent period and waning immunity
+> ### Aliases: SEIRS_MODEL
+> ### Keywords: datasets
+> 
+> ### ** Examples
+> 
+> ## Simulate a SEIRS epidemic
+> sim <- simulate_epi(
++   model = SEIRS_MODEL,
++   times = 0:300,
++   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
++   init  = c(S = 1e6, E = 0, I = 20, R = 0),
++   obs   = "poisson"
++ )
+> 
+> plot(sim)
+> 
+> ## Plot observed incidence
+> plot(sim, what = "incidence")
+> 
+> ## Fit the model to observed incidence
+> fit_inc <- fit_epi_model(
++   x = sim$incidence$inc,
++   model = SEIRS_MODEL,
++   init = SEIRS_MODEL$init,
++   target = "incidence"
++ )
+Multi-start optimization
+------------------------
+  start   1/100 | value = 7.618  *best*
+  start   2/100 | value = 7.618  *best*
+  start   3/100 | value = 0.6012  *best*
+  start   4/100 | value = 7.618
+  start   5/100 | value = 7.618
+  start   6/100 | value = 7.618
+  start   7/100 | value = 7.618
+  start   8/100 | value = 0.6012
+  start   9/100 | value = 7.618
+  start  10/100 | value = 0.6011  *best*
+  start  11/100 | value = 7.618
+  start  12/100 | value = 0.3479  *best*
+  start  13/100 | value = 7.618
+  start  14/100 | value = 7.618
+  start  15/100 | value = 2.064
+  start  16/100 | value = 2.019
+  start  17/100 | value = 7.618
+  start  18/100 | value = 7.618
+  start  19/100 | value = 7.618
+  start  20/100 | value = 7.618
+  start  21/100 | value = 7.618
+  start  22/100 | value = 0.6012
+  start  23/100 | value = 7.618
+  start  24/100 | value = 7.618
+  start  25/100 | value = 0.1839  *best*
+  start  26/100 | value = 2.02
+  start  27/100 | value = 7.618
+  start  28/100 | value = 0.1545  *best*
+  start  29/100 | value = 7.618
+  start  30/100 | value = 2.02
+  start  31/100 | value = 7.618
+  start  32/100 | value = 2.064
+  start  33/100 | value = 7.618
+  start  34/100 | value = 7.618
+  start  35/100 | value = 7.618
+  start  36/100 | value = 7.618
+  start  37/100 | value = 0.6012
+  start  38/100 | value = 0.6012
+  start  39/100 | value = 7.618
+  start  40/100 | value = 0.4261
+  start  41/100 | value = 0.1884
+  start  42/100 | value = 0.6012
+  start  43/100 | value = 7.618
+  start  44/100 | value = 7.618
+  start  45/100 | value = 7.618
+  start  46/100 | value = 7.618
+  start  47/100 | value = 7.618
+  start  48/100 | value = 0.6012
+  start  49/100 | value = 7.618
+  start  50/100 | value = 7.618
+  start  51/100 | value = 7.618
+  start  52/100 | value = 7.618
+  start  53/100 | value = 2.064
+  start  54/100 | value = 0.3479
+  start  55/100 | value = 7.618
+  start  56/100 | value = 7.618
+  start  57/100 | value = 1.449
+  start  58/100 | value = 7.618
+  start  59/100 | value = 7.618
+  start  60/100 | value = 7.618
+  start  61/100 | value = 7.618
+  start  62/100 | value = 0.3479
+  start  63/100 | value = 7.618
+  start  64/100 | value = 7.618
+  start  65/100 | value = 7.618
+  start  66/100 | value = 7.618
+  start  67/100 | value = 7.618
+  start  68/100 | value = 2.02
+  start  69/100 | value = 0.6012
+  start  70/100 | value = 7.618
+  start  71/100 | value = 0.6012
+  start  72/100 | value = 0.4261
+  start  73/100 | value = 7.618
+  start  74/100 | value = 0.6012
+  start  75/100 | value = 7.618
+  start  76/100 | value = 7.618
+  start  77/100 | value = 7.618
+  start  78/100 | value = 7.618
+  start  79/100 | value = 7.618
+  start  80/100 | value = 7.618
+  start  81/100 | value = 7.618
+  start  82/100 | value = 7.618
+  start  83/100 | value = 7.618
+  start  84/100 | value = 7.618
+  start  85/100 | value = 7.618
+  start  86/100 | value = 7.618
+  start  87/100 | value = 7.618
+  start  88/100 | value = 7.618
+  start  89/100 | value = 0.6012
+  start  90/100 | value = 7.618
+  start  91/100 | value = 7.618
+  start  92/100 | value = 7.618
+  start  93/100 | value = 7.618
+  start  94/100 | value = 7.618
+  start  95/100 | value = 0.6012
+  start  96/100 | value = 7.618
+  start  97/100 | value = 1.449
+  start  98/100 | value = 7.618
+  start  99/100 | value = 7.618
+  start 100/100 | value = 7.618
+
+Final optimization
+------------------
+Starting value: 0.1545
+Final value: 0.1545
+Convergence: 0
+Message: CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH
+> 
+> fit_inc
+<fit_epi_model>
+  Model:  SEIRS
+  Target: incidence
+  Loss:   logrmse
+  Value:  0.1545
+  Convergence: 0
+  Message: CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH
+  Parameters:
+    beta: 3.537
+    sigma: 0.1173
+    gamma: 2
+    omega: 0.01136
+> 
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("SEIRS_MODEL", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("SEIR_MODEL")
+> ### * SEIR_MODEL
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: SEIR_MODEL
+> ### Title: SEIR epidemic model with latent (exposed) period
+> ### Aliases: SEIR_MODEL
+> ### Keywords: datasets
+> 
+> ### ** Examples
+> 
+> ## Simulate a SEIR epidemic
+> sim <- simulate_epi(
++   model = SEIR_MODEL,
++   times = 0:200,
++   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
++   init  = c(S = 1e6, E = 5, I = 10, R = 0),
++   obs   = "poisson"
++ )
+> 
+> plot(sim)
+> 
+> ## Plot observed incidence
+> plot(sim, what = "incidence")
+> 
+> ## Fit the model to observed incidence
+> fit_inc <- fit_epi_model(
++   x = sim$incidence$inc,
++   model = SEIR_MODEL,
++   init = SEIR_MODEL$init,
++   target = "incidence"
++ )
+Multi-start optimization
+------------------------
+  start   1/100 | value = 7.051  *best*
+  start   2/100 | value = 0.1966  *best*
+  start   3/100 | value = 7.066
+  start   4/100 | value = 0.1743  *best*
+  start   5/100 | value = 0.366
+  start   6/100 | value = 0.2155
+  start   7/100 | value = 7.066
+  start   8/100 | value = 7.066
+  start   9/100 | value = 0.366
+  start  10/100 | value = 0.5504
+  start  11/100 | value = 0.366
+  start  12/100 | value = 6.507
+  start  13/100 | value = 0.3996
+  start  14/100 | value = 0.4386
+  start  15/100 | value = 0.1683  *best*
+  start  16/100 | value = 7.051
+  start  17/100 | value = 7.051
+  start  18/100 | value = 0.8538
+  start  19/100 | value = 0.366
+  start  20/100 | value = 6.098
+  start  21/100 | value = 0.88
+  start  22/100 | value = 7.066
+  start  23/100 | value = 7.066
+  start  24/100 | value = 7.066
+  start  25/100 | value = 7.066
+  start  26/100 | value = 7.066
+  start  27/100 | value = 7.051
+  start  28/100 | value = 2.296
+  start  29/100 | value = 7.066
+  start  30/100 | value = 0.366
+  start  31/100 | value = 7.051
+  start  32/100 | value = 7.066
+  start  33/100 | value = 0.4806
+  start  34/100 | value = 7.051
+  start  35/100 | value = 0.3659
+  start  36/100 | value = 7.066
+  start  37/100 | value = 6.681
+  start  38/100 | value = 0.366
+  start  39/100 | value = 0.366
+  start  40/100 | value = 4.35
+  start  41/100 | value = 0.3658
+  start  42/100 | value = 7.066
+  start  43/100 | value = 0.1674  *best*
+  start  44/100 | value = 0.366
+  start  45/100 | value = 0.697
+  start  46/100 | value = 7.051
+  start  47/100 | value = 0.366
+  start  48/100 | value = 7.066
+  start  49/100 | value = 0.8248
+  start  50/100 | value = 0.366
+  start  51/100 | value = 0.7775
+  start  52/100 | value = 1.03
+  start  53/100 | value = 7.066
+  start  54/100 | value = 0.683
+  start  55/100 | value = 0.366
+  start  56/100 | value = 0.1692
+  start  57/100 | value = 7.066
+  start  58/100 | value = 0.5742
+  start  59/100 | value = 0.517
+  start  60/100 | value = 7.066
+  start  61/100 | value = 0.1672  *best*
+  start  62/100 | value = 0.366
+  start  63/100 | value = 0.5669
+  start  64/100 | value = 7.051
+  start  65/100 | value = 0.167  *best*
+  start  66/100 | value = 7.051
+  start  67/100 | value = 0.4543
+  start  68/100 | value = 0.4866
+  start  69/100 | value = 0.1762
+  start  70/100 | value = 0.366
+  start  71/100 | value = 7.066
+  start  72/100 | value = 0.366
+  start  73/100 | value = 7.019
+  start  74/100 | value = 0.6353
+  start  75/100 | value = 7.066
+  start  76/100 | value = 0.3659
+  start  77/100 | value = 0.366
+  start  78/100 | value = 0.9702
+  start  79/100 | value = 0.1672
+  start  80/100 | value = 7.066
+  start  81/100 | value = 0.366
+  start  82/100 | value = 0.366
+  start  83/100 | value = 0.3659
+  start  84/100 | value = 7.066
+  start  85/100 | value = 7.066
+  start  86/100 | value = 0.366
+  start  87/100 | value = 0.167
+  start  88/100 | value = 7.066
+  start  89/100 | value = 0.366
+  start  90/100 | value = 7.066
+  start  91/100 | value = 7.066
+  start  92/100 | value = 0.6434
+  start  93/100 | value = 7.066
+  start  94/100 | value = 1.388
+  start  95/100 | value = 0.5025
+  start  96/100 | value = 7.066
+  start  97/100 | value = 7.051
+  start  98/100 | value = 0.1671
+  start  99/100 | value = 7.051
+  start 100/100 | value = 7.066
+
+Final optimization
+------------------
+Starting value: 0.167
+Final value: 0.167
+Convergence: 0
+Message: CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH
+> 
+> fit_inc
+<fit_epi_model>
+  Model:  SEIR
+  Target: incidence
+  Loss:   logrmse
+  Value:  0.167
+  Convergence: 0
+  Message: CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH
+  Parameters:
+    beta: 0.2939
+    sigma: 0.2133
+    gamma: 0.1385
+> 
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("SEIR_MODEL", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("SIRS_MODEL")
+> ### * SIRS_MODEL
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: SIRS_MODEL
+> ### Title: SIRS epidemic model with waning immunity
+> ### Aliases: SIRS_MODEL
+> ### Keywords: datasets
+> 
+> ### ** Examples
+> 
+> ## Simulate a SIRS epidemic
+> sim <- simulate_epi(
++   model = SIRS_MODEL,
++   times = 0:200,
++   parms = c(beta = 0.3, gamma = 0.1, omega = 0.02),
++   init  = c(S = 1e6, I = 20, R = 0)
++ )
+> 
+> plot(sim)
+> 
+> ## Plot observed incidence (if an observation model is used)
+> plot(sim, what = "incidence")
+> 
+> ## Fit the model to observed incidence
+> fit_inc <- fit_epi_model(
++   x = sim$incidence$inc,
++   model = SIRS_MODEL,
++   init = SIRS_MODEL$init,
++   target = "incidence"
++ )
+Multi-start optimization
+------------------------
+  start   1/100 | value = 8.899  *best*
+  start   2/100 | value = 2.959  *best*
+  start   3/100 | value = 3.283
+  start   4/100 | value = 8.899
+  start   5/100 | value = 1.789  *best*
+  start   6/100 | value = 0.1665  *best*
+  start   7/100 | value = 8.899
+  start   8/100 | value = 8.899
+  start   9/100 | value = 8.899
+  start  10/100 | value = 8.899
+  start  11/100 | value = 3.106
+  start  12/100 | value = 8.899
+  start  13/100 | value = 2.962
+  start  14/100 | value = 8.899
+  start  15/100 | value = 2.828
+  start  16/100 | value = 2.962
+  start  17/100 | value = 2.721
+  start  18/100 | value = 2.948
+  start  19/100 | value = 8.899
+  start  20/100 | value = 2.808
+  start  21/100 | value = 2.962
+  start  22/100 | value = 8.899
+  start  23/100 | value = 2.868
+  start  24/100 | value = 2.888
+  start  25/100 | value = 2.962
+  start  26/100 | value = 0.03601  *best*
+  start  27/100 | value = 0.03601
+  start  28/100 | value = 0.1249
+  start  29/100 | value = 2.962
+  start  30/100 | value = 8.899
+  start  31/100 | value = 8.899
+  start  32/100 | value = 0.03601
+  start  33/100 | value = 0.03601  *best*
+  start  34/100 | value = 0.03601
+  start  35/100 | value = 1e+30
+  start  36/100 | value = 8.899
+  start  37/100 | value = 0.1665
+  start  38/100 | value = 2.962
+  start  39/100 | value = 8.899
+  start  40/100 | value = 8.899
+  start  41/100 | value = 1.789
+  start  42/100 | value = 8.899
+  start  43/100 | value = 2.962
+  start  44/100 | value = 2.877
+  start  45/100 | value = 8.899
+  start  46/100 | value = 0.03601  *best*
+  start  47/100 | value = 1.448
+  start  48/100 | value = 2.962
+  start  49/100 | value = 2.961
+  start  50/100 | value = 2.962
+  start  51/100 | value = 0.03601
+  start  52/100 | value = 2.888
+  start  53/100 | value = 2.962
+  start  54/100 | value = 8.899
+  start  55/100 | value = 2.926
+  start  56/100 | value = 2.962
+  start  57/100 | value = 2.951
+  start  58/100 | value = 2.694
+  start  59/100 | value = 8.899
+  start  60/100 | value = 1.789
+  start  61/100 | value = 8.899
+  start  62/100 | value = 8.899
+  start  63/100 | value = 0.1665
+  start  64/100 | value = 2.852
+  start  65/100 | value = 8.899
+  start  66/100 | value = 2.962
+  start  67/100 | value = 8.899
+  start  68/100 | value = 8.899
+  start  69/100 | value = 8.899
+  start  70/100 | value = 8.899
+  start  71/100 | value = 2.962
+  start  72/100 | value = 0.03601
+  start  73/100 | value = 0.1665
+  start  74/100 | value = 8.899
+  start  75/100 | value = 8.899
+  start  76/100 | value = 2.962
+  start  77/100 | value = 8.899
+  start  78/100 | value = 8.899
+  start  79/100 | value = 0.03601  *best*
+  start  80/100 | value = 1.789
+  start  81/100 | value = 8.899
+  start  82/100 | value = 8.899
+  start  83/100 | value = 2.962
+  start  84/100 | value = 0.1665
+  start  85/100 | value = 0.03601
+  start  86/100 | value = 8.899
+  start  87/100 | value = 8.899
+  start  88/100 | value = 8.899
+  start  89/100 | value = 2.962
+  start  90/100 | value = 2.542
+  start  91/100 | value = 8.899
+  start  92/100 | value = 8.899
+  start  93/100 | value = 8.899
+  start  94/100 | value = 2.962
+  start  95/100 | value = 2.962
+  start  96/100 | value = 8.899
+  start  97/100 | value = 8.899
+  start  98/100 | value = 1e+30
+  start  99/100 | value = 2.847
+  start 100/100 | value = 8.899
+
+Final optimization
+------------------
+Starting value: 0.03601
+Final value: 0.03601
+Convergence: 0
+Message: CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH
+> 
+> fit_inc
+<fit_epi_model>
+  Model:  SIRS
+  Target: incidence
+  Loss:   logrmse
+  Value:  0.03601
+  Convergence: 0
+  Message: CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH
+  Parameters:
+    beta: 0.3256
+    gamma: 0.1218
+    omega: 0.02102
+> 
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("SIRS_MODEL", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("SIR_MODEL")
+> ### * SIR_MODEL
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: SIR_MODEL
+> ### Title: SIR epidemic model
+> ### Aliases: SIR_MODEL
+> ### Keywords: datasets
+> 
+> ### ** Examples
+> 
+> ## Simulate a SIR epidemic
+> sim <- simulate_epi(
++   model = SIR_MODEL,
++   times = 0:200,
++   parms = c(beta = 0.3, gamma = 0.1),
++   init  = c(S = 1e6, I = 10, R = 0)
++ )
+> 
+> plot(sim)
+> 
+> ## Plot observed incidence (if an observation model is used)
+> plot(sim, what = "incidence")
+> 
+> ## Fit the model to observed incidence
+> fit_inc <- fit_epi_model(
++   x = sim$incidence$inc,
++   model = SIR_MODEL,
++   init = SIR_MODEL$init,
++   target = "incidence"
++ )
+Multi-start optimization
+------------------------
+  start   1/100 | value = 5.966  *best*
+  start   2/100 | value = 5.966  *best*
+  start   3/100 | value = 5.966
+  start   4/100 | value = 1e+30
+  start   5/100 | value = 1.338  *best*
+  start   6/100 | value = 5.966
+  start   7/100 | value = 0.05603  *best*
+  start   8/100 | value = 5.242
+  start   9/100 | value = 0.05603  *best*
+  start  10/100 | value = 5.966
+  start  11/100 | value = 1e+30
+  start  12/100 | value = 5.251
+  start  13/100 | value = 5.966
+  start  14/100 | value = 5.966
+  start  15/100 | value = 0.4779
+  start  16/100 | value = 1.32
+  start  17/100 | value = 5.251
+  start  18/100 | value = 0.4779
+  start  19/100 | value = 5.251
+  start  20/100 | value = 4.486
+  start  21/100 | value = 5.162
+  start  22/100 | value = 5.231
+  start  23/100 | value = 1.57
+  start  24/100 | value = 5.966
+  start  25/100 | value = 0.05603
+  start  26/100 | value = 5.966
+  start  27/100 | value = 3.176
+  start  28/100 | value = 5.966
+  start  29/100 | value = 5.966
+  start  30/100 | value = 3.732
+  start  31/100 | value = 1.338
+  start  32/100 | value = 5.515
+  start  33/100 | value = 5.251
+  start  34/100 | value = 2.226
+  start  35/100 | value = 5.966
+  start  36/100 | value = 5.966
+  start  37/100 | value = 5.966
+  start  38/100 | value = 5.966
+  start  39/100 | value = 1.615
+  start  40/100 | value = 0.05603
+  start  41/100 | value = 1.456
+  start  42/100 | value = 5.232
+  start  43/100 | value = 5.251
+  start  44/100 | value = 5.251
+  start  45/100 | value = 5.966
+  start  46/100 | value = 5.966
+  start  47/100 | value = 3.217
+  start  48/100 | value = 4.001
+  start  49/100 | value = 5.225
+  start  50/100 | value = 3.499
+  start  51/100 | value = 0.05603
+  start  52/100 | value = 5.966
+  start  53/100 | value = 5.251
+  start  54/100 | value = 5.966
+  start  55/100 | value = 0.4779
+  start  56/100 | value = 1e+30
+  start  57/100 | value = 5.966
+  start  58/100 | value = 5.966
+  start  59/100 | value = 5.251
+  start  60/100 | value = 1.353
+  start  61/100 | value = 1e+30
+  start  62/100 | value = 4.711
+  start  63/100 | value = 5.248
+  start  64/100 | value = 2.6
+  start  65/100 | value = 5.966
+  start  66/100 | value = 1.338
+  start  67/100 | value = 5.966
+  start  68/100 | value = 1e+30
+  start  69/100 | value = 4.229
+  start  70/100 | value = 1e+30
+  start  71/100 | value = 1.032
+  start  72/100 | value = 5.966
+  start  73/100 | value = 5.198
+  start  74/100 | value = 5.966
+  start  75/100 | value = 5.966
+  start  76/100 | value = 5.244
+  start  77/100 | value = 5.966
+  start  78/100 | value = 4.022
+  start  79/100 | value = 5.251
+  start  80/100 | value = 5.966
+  start  81/100 | value = 5.966
+  start  82/100 | value = 4.001
+  start  83/100 | value = 0.4779
+  start  84/100 | value = 5.966
+  start  85/100 | value = 4.462
+  start  86/100 | value = 5.154
+  start  87/100 | value = 2.559
+  start  88/100 | value = 5.966
+  start  89/100 | value = 0.4779
+  start  90/100 | value = 0.05603
+  start  91/100 | value = 5.966
+  start  92/100 | value = 0.4779
+  start  93/100 | value = 1.338
+  start  94/100 | value = 0.05603
+  start  95/100 | value = 1e+30
+  start  96/100 | value = 5.258
+  start  97/100 | value = 5.966
+  start  98/100 | value = 5.966
+  start  99/100 | value = 5.966
+  start 100/100 | value = 5.966
+
+Final optimization
+------------------
+Starting value: 0.05603
+Final value: 0.05603
+Convergence: 52
+Message: ERROR: ABNORMAL_TERMINATION_IN_LNSRCH
+> 
+> fit_inc
+<fit_epi_model>
+  Model:  SIR
+  Target: incidence
+  Loss:   logrmse
+  Value:  0.05603
+  Convergence: 52
+  Message: ERROR: ABNORMAL_TERMINATION_IN_LNSRCH
+  Parameters:
+    beta: 0.3014
+    gamma: 0.09729
+> 
+> 
+> 
+> 
+> base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+> base::cat("SIR_MODEL", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+> cleanEx()
+> nameEx("SI_MODEL")
+> ### * SI_MODEL
+> 
+> flush(stderr()); flush(stdout())
+> 
+> base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+> ### Name: SI_MODEL
+> ### Title: SI epidemic model
+> ### Aliases: SI_MODEL
+> ### Keywords: datasets
+> 
+> ### ** Examples
+> 
+> ## Simulate an SI epidemic
+> sim <- simulate_epi(
++   model = SI_MODEL,
++   times = 0:100,
++   parms = c(beta = 0.4),
++   obs = "negbin",
++   init = SI_MODEL$init
++ )
+> 
+> plot(sim)
+> 
+> ## Plot observed incidence
+> plot(sim, what = "incidence")
+> 
+> ## Fit the model to observed incidence
+> fit_inc <- fit_epi_model(
++   x = sim$incidence$inc,
++   model = SI_MODEL,
++   init = SI_MODEL$init,
++   target = "incidence"
++ )
+Error in log(model$lower[model$par_names]) : 
+  non-numeric argument to mathematical function
+Calls: fit_epi_model
+Execution halted

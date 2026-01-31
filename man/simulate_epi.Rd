@@ -151,7 +151,7 @@ sim <- simulate_epi(
   times = 0:200,
   time_unit = "week",
   parms = c(beta = 0.30, gamma = 0.10),
-  init  = c(S = 1e6 - 10, I = 10, R = 0, C = 10),
+  init  = SIR_MODEL$init,
   seed  = 1,
   method = 'lsoda'
 )
@@ -161,6 +161,7 @@ plot(sim)
 
 # Plot observed incidence (requires the model to define incidence)
 plot(sim, what = "incidence")
+plot(sim, what = "CR")
 
 
 ## ------------------------------------------------------------------

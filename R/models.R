@@ -1,4 +1,9 @@
 #-------------------------------------------------------------------------------
+# Epidemiological models registry (simple & robust)
+#-------------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
 # modelo SI
 #-------------------------------------------------------------------------------
 
@@ -125,14 +130,33 @@ SI_MODEL <- new_epi_model(
 #' @noRd
 sir_rhs <- function(time, state, parms) {
   with(as.list(c(state, parms)), {
+
     N <- S + I + R
+
     lambda <- beta * S * I / N
+
     dS <- -lambda
     dI <-  lambda - gamma * I
     dR <-  gamma * I
-    list(c(dS, dI, dR), incidence = lambda)
+
+    ## acumulados
+    dC <- lambda          # casos acumulados
+    dCR <- gamma * I      # recuperados acumulados
+
+    list(
+      c(dS, dI, dR, dC, dCR),
+
+      ## flujos instantáneos
+      incidence = lambda,
+      recovery  = gamma * I,
+
+      ## fracciones útiles
+      prevalence = I / N,
+      Rt = beta / gamma * (S / N)
+    )
   })
 }
+
 
 
 #' SIR epidemic model
@@ -231,14 +255,40 @@ sir_rhs <- function(time, state, parms) {
 #' @export
 SIR_MODEL <- new_epi_model(
   name = "SIR",
+
   rhs = sir_rhs,
-  state_names = c("S", "I", "R"),
+
+  state_names = c(
+    "S", "I", "R",
+    "C",    # casos acumulados
+    "CR"    # recuperados acumulados
+  ),
+
   par_names = c("beta", "gamma"),
+
   lower = c(beta = 1e-8, gamma = 1e-8),
   upper = c(beta = 2,    gamma = 1),
+
   defaults = c(beta = 0.3, gamma = 0.1),
-  init = c("S" = 1e6, "I" = 10, "R" = 0),
-  outputs = c("S", "I", "R", "incidence")
+
+  init = c(
+    S  = 1e6,
+    I  = 10,
+    R  = 0,
+    C  = 0,
+    CR = 0
+  ),
+
+  outputs = c(
+    ## estados
+    "S", "I", "R", "C", "CR",
+
+    ## flujos
+    "incidence", "recovery",
+
+    ## métricas
+    "prevalence", "Rt"
+  )
 )
 
 
@@ -663,5 +713,69 @@ SEIRS_MODEL <- new_epi_model(
 )
 
 
+
+#'
+#' @param name Model name
+#' @param model An epi_model object
+#' @param overwrite Overwrite existing model?
+#' @examples
+#' ## ---------------------------------------------------------------
+#' ## Define and register a new epidemiological model (SIRD)
+#' ## ---------------------------------------------------------------
+#'
+#' sird_rhs <- function(time, state, parms) {
+#'   with(as.list(c(state, parms)), {
+#'     N <- S + I + R
+#'     lambda <- beta * S * I / N
+#'
+#'     dS <- -lambda
+#'     dI <-  lambda - gamma * I - mu * I
+#'     dR <-  gamma * I
+#'     dD <-  mu * I
+#'
+#'     list(
+#'       c(dS, dI, dR, dD),
+#'       incidence = lambda
+#'     )
+#'   })
+#' }
+#'
+#' SIRD_MODEL <- new_epi_model(
+#'   name        = "SIRD",
+#'   rhs         = sird_rhs,
+#'   state_names = c("S", "I", "R", "D"),
+#'   par_names   = c("beta", "gamma", "mu"),
+#'   defaults    = c(beta = 0.3, gamma = 0.1, mu = 0.01),
+#'   init        = c(S = 1e6, I = 10, R = 0, D = 0),
+#'   outputs     = c("S", "I", "R", "D", "incidence")
+#' )
+#'
+#'
+#' ## Simulate using explicit initial conditions
+#' sim <- simulate_epi(
+#'   model = SIRD_MODEL,
+#'   times = 0:200,
+#'   parms = c(beta = 0.25, gamma = 0.1, mu = 0.02),
+#'   init  = get_epi_model("SIRD")$init
+#' )
+#'
+#' plot(sim)
+#' plot(sim, what = "incidence")
+
+
+#' Return built-in epidemiological models
+#'
+#' @keywords internal
+#' @export
+.get_builtin_models <- function() {
+
+  list(
+    SI    = SI_MODEL,
+    SIR   = SIR_MODEL,
+    SIRS  = SIRS_MODEL,
+    SEIR  = SEIR_MODEL,
+    SEIRS = SEIRS_MODEL
+  )
+}
 
 

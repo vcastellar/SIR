@@ -106,7 +106,7 @@ objective_logrmse <- function(model,
 
     ## 2) extraer observable
     if (!target %in% names(out)) return(1e30)
-    mu <- out[[target]]
+    mu <- out[[target]][-1]
 
     ## 3) validaciones duras
     if (length(mu) != length(x)) return(1e30)
@@ -129,98 +129,208 @@ objective_logrmse <- function(model,
 #' minimizing a trajectory-matching loss (RMSE or log-RMSE) between the observed
 #' time series and the corresponding model-predicted trajectory.
 #'
-#' The observable used for fitting is selected via the \code{target} argument
-#' and must correspond to one of the outputs declared by the underlying
-#' \code{\link{epi_model}} (e.g. \code{"incidence"}, \code{"I"}, \code{"S"}).
+#' The fitting procedure is **model-agnostic**: all epidemiological structure,
+#' parameter definitions, and (optional) parameter bounds are taken directly
+#' from the supplied \code{\link{epi_model}} object.
 #'
-#' No probabilistic observation model is assumed. Parameter estimates should be
-#' interpreted as providing the best deterministic approximation to the observed
-#' trajectory under the chosen loss.
+#' Parameter estimation is performed on the **log-scale**, ensuring positivity
+#' of all model parameters. If the model defines lower and/or upper parameter
+#' bounds, these are respected automatically during optimization. If no bounds
+#' are defined, parameters are optimized over the entire positive real line.
+#'
+#' @details
+#' ## Fitting strategy
+#'
+#' Model parameters are estimated by **trajectory matching**: the epidemic model
+#' is solved as a system of ordinary differential equations (ODEs), and the
+#' resulting model output specified by \code{target} is compared to the observed
+#' data \code{x} using the selected loss function.
+#'
+#' The optimization is carried out in two stages:
+#' \enumerate{
+#'   \item A **multi-start phase**, in which the optimizer is run repeatedly from
+#'   different initial parameter values to reduce sensitivity to local minima.
+#'   \item A **final optimization phase**, initialized at the best solution found
+#'   during the multi-start phase.
+#' }
+#'
+#' By default, optimization is performed using \code{"L-BFGS-B"}, which allows
+#' box constraints when parameter bounds are defined by the model. Models without
+#' bounds are optimized over an unconstrained log-parameter space.
+#'
+#' ## Parameter bounds
+#'
+#' Parameter bounds are optional and must be defined as part of the
+#' \code{\link{epi_model}} object via its \code{lower} and \code{upper} fields.
+#'
+#' \itemize{
+#'   \item If bounds are provided, they are interpreted as **admissible
+#'   epidemiological ranges** and enforced during optimization.
+#'   \item If bounds are not provided, parameters are assumed to be strictly
+#'   positive and no upper or lower limits are imposed beyond positivity.
+#' }
+#'
+#' Bounds are **not** specified in \code{fit_epi_model()} itself; this ensures
+#' full reproducibility and traceability of fitted models.
+#'
+#' ## Numerical integration
+#'
+#' The epidemic model is solved using \code{\link[deSolve]{ode}}. Additional
+#' arguments passed via \code{...} are forwarded directly to the ODE solver,
+#' allowing full control over numerical integration (e.g. \code{method},
+#' \code{rtol}, \code{atol}).
 #'
 #' @param x Numeric vector of observed data used for fitting.
-#' @param model An object of class \code{"epi_model"} defining the epidemic model.
-#' @param loss Loss function to minimize. One of \code{"logrmse"} (default)
-#'   or \code{"rmse"}.
-#' @param init Named list or vector specifying the initial state of the model.
-#'   Names must match \code{model$state_names}.
+#'
+#' @param model An object of class \code{"epi_model"} defining the epidemic model
+#'   to be fitted.
+#'
+#' @param loss Character string specifying the loss function to minimize.
+#'   One of \code{"logrmse"} (default) or \code{"rmse"}.
+#'
+#' @param init Named numeric vector or list specifying the initial state of the
+#'   model. Names must match \code{model$state_names}.
+#'
 #' @param target Character string specifying which model output is matched to
 #'   \code{x}. Must be one of \code{model$outputs} (e.g. \code{"incidence"},
 #'   \code{"I"}, \code{"S"}).
-#' @param n_starts Integer. Number of random multi-start initializations used to
-#'   reduce sensitivity to local minima.
-#' @param control Control list passed to \code{\link{optim}} for the final
-#'   optimization step (e.g. \code{maxit}).
+#'
+#' @param n_starts Integer. Number of random initializations used in the
+#'   multi-start optimization phase.
+#'
+#' @param control List of control parameters passed to
+#'   \code{\link{stats::optim}} for the final optimization step (e.g.
+#'   \code{maxit}).
+#'
 #' @param seed Optional integer. If provided, sets the random seed for
 #'   reproducible multi-start initialization.
+#'
 #' @param eps Small positive constant used for numerical stability in the
 #'   log-RMSE loss.
+#'
 #' @param verbose Logical. If \code{TRUE}, progress information from the
 #'   multi-start and final optimization phases is printed.
+#'
 #' @param optim_method Character string specifying the optimization algorithm
-#'   passed to \code{\link{optim}}. Defaults to \code{"L-BFGS-B"}.
-#'   Methods that do not support box constraints (e.g. \code{"Nelder-Mead"})
-#'   are handled automatically.
-#' @param ... Additional arguments passed directly to \code{\link[deSolve]{ode}}
-#'   for numerical integration of the ODE system (e.g. \code{method},
-#'   \code{rtol}, \code{atol}).
+#'   passed to \code{\link{stats::optim}}. Defaults to \code{"L-BFGS-B"}.
+#'
+#' @param ... Additional arguments passed directly to
+#'   \code{\link[deSolve]{ode}} to control numerical integration of the ODE system.
 #'
 #' @return
-#' An object of class \code{"fit_epi_model"} containing the fitted parameters,
-#' optimization diagnostics, the selected fitting target, and the ODE control
-#' settings used during fitting.
+#' An object of class \code{"fit_epi_model"} containing the fitted model,
+#' estimated parameters, optimization diagnostics, the fitting target, and
+#' the numerical integration settings used during fitting.
+#'
+#' The returned object preserves full reproducibility and traceability between
+#' the fitted parameters, the epidemic model definition, and subsequent
+#' predictions obtained via \code{\link{predict.fit_epi_model}}.
 #'
 #' @examples
 #' \dontrun{
-#' ## ------------------------------------------------------------
-#' ## Example 1: Fit incidence using log-RMSE
-#' ## ------------------------------------------------------------
+#' ## ============================================================
+#' ## Example 1: Fit a SIR model to simulated incidence data
+#' ##            (model WITH parameter bounds)
+#' ## ============================================================
+#'
+#' ## Simulate a SIR epidemic
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
-#'   times = 0:200,
-#'   parms = SIR_MODEL$defaults,
-#'   init  = list(S = 1e6, I = 20, R = 0),
-#'   seed  = 22
+#'   times = 0:150,
+#'   parms = c(beta = 0.50, gamma = 0.25),
+#'   init  = c(S = 1e6 - 10, I = 10, R = 0),
+#'   obs   = "poisson",
+#'   seed  = 123
 #' )
-#'
-#' x_inc <- sim$incidence$inc
-#'
+#' plot(sim)
+#' plot(sim$incidence$inc)
+#' ## Fit the model to observed incidence
 #' fit_inc <- fit_epi_model(
-#'   x = x_inc,
-#'   model = SIR_MODEL,
-#'   target = "incidence",
-#'   loss = "logrmse",
-#'   init = list(S = 1e6, I = 6, R = 0)
+#'   x      = sim$incidence$inc,
+#'   model  = SIR_MODEL,
+#'   target = "I",
+#'   init   = c(S = 1e6 - 5, I = 10, R = 0),
+#'   control = list(maxit = 5000),
 #' )
 #'
-#' print(fit_inc)
+#' fit_inc
 #'
-#' ## ------------------------------------------------------------
-#' ## Example 2: Fit a state variable using a different optimizer
-#' ## ------------------------------------------------------------
+#'
+#' ## ============================================================
+#' ## Example 2: Fit a state variable instead of incidence
+#' ## ============================================================
+#'
+#' ## Fit to the infectious compartment I(t)
 #' fit_I <- fit_epi_model(
-#'   x = sim$states$I,
-#'   model = SIR_MODEL,
+#'   x      = sim$states$I,
+#'   model  = SIR_MODEL,
 #'   target = "I",
-#'   init = list(S = 1e6, I = 10, R = 0),
+#'   init   = c(S = 1e6 - 5, I = 5, R = 0)
+#' )
+#'
+#' fit_I
+#'
+#'
+#' ## ============================================================
+#' ## Example 3: Fit an SI model (model WITHOUT parameter bounds)
+#' ## ============================================================
+#'
+#' ## Simulate an SI epidemic
+#' sim_si <- simulate_epi(
+#'   model = SI_MODEL,
+#'   times = 0:100,
+#'   parms = c(beta = 0.4),
+#'   init  = SI_MODEL$init,
+#'   obs   = "negbin",
+#'   seed  = 42
+#' )
+#'
+#' ## Fit the SI model to observed incidence
+#' ## Note: beta is optimized over the entire positive real line
+#' fit_si <- fit_epi_model(
+#'   x      = sim_si$incidence$inc,
+#'   model  = SI_MODEL,
+#'   target = "incidence",
+#'   init   = SI_MODEL$init
+#' )
+#'
+#' fit_si
+#'
+#'
+#' ## ============================================================
+#' ## Example 4: Using a different optimizer and ODE solver
+#' ## ============================================================
+#'
+#' fit_custom <- fit_epi_model(
+#'   x      = sim$incidence$inc,
+#'   model  = SIR_MODEL,
+#'   target = "incidence",
+#'   init   = c(S = 1e6 - 5, I = 5, R = 0),
 #'   optim_method = "Nelder-Mead",
 #'   method = "rk4",
-#'   rtol = 1e-8,
-#'   atol = 1e-10
+#'   rtol   = 1e-8,
+#'   atol   = 1e-10
 #' )
 #'
-#' print(fit_I)
+#' fit_custom
 #' }
+
 #'
 #' @seealso
-#' \code{\link{simulate_epi}}, \code{\link{predict.fit_epi_model}}
+#' \code{\link{epi_model}},
+#' \code{\link{new_epi_model}},
+#' \code{\link{simulate_epi}},
+#' \code{\link{predict.fit_epi_model}}
+#'
+#'
 #'
 #' @export
 fit_epi_model <- function(x,
                           model = SIR_MODEL,
                           loss = c("logrmse", "rmse"),
                           init = NULL,
+                          par_init = NULL,
                           target = "incidence",
-                          n_starts = 100,
                           control = list(maxit = 500),
                           seed = NULL,
                           eps = 1e-6,
@@ -256,7 +366,7 @@ fit_epi_model <- function(x,
     stop("`init` must contain finite, non-negative values.", call. = FALSE)
   }
 
-  times <- seq_along(x) - 1
+  times <- seq_len(length(x) + 1) - 1
 
   ## ---------------------------------------------------------------------------
   ## Capturar control del integrador ODE
@@ -277,82 +387,66 @@ fit_epi_model <- function(x,
   )
 
   ## ---------------------------------------------------------------------------
-  ## Bounds en escala log
+  ## Bounds en escala log (opcionales)
   ## ---------------------------------------------------------------------------
-  lower <- log(model$lower[model$par_names])
-  upper <- log(model$upper[model$par_names])
+  n_par <- length(model$par_names)
+
+  if (is.null(model$lower)) {
+    lower <- rep(-Inf, n_par)
+  } else {
+    lower <- log(model$lower[model$par_names])
+  }
+
+  if (is.null(model$upper)) {
+    upper <- rep( Inf, n_par)
+  } else {
+    upper <- log(model$upper[model$par_names])
+  }
 
   uses_bounds <- optim_method %in% c("L-BFGS-B", "Brent")
 
   if (!is.null(seed)) set.seed(seed)
 
-  ## ===========================================================================
-  ## 1) MULTI-START
-  ## ===========================================================================
-  control_ms <- list(maxit = min(50L, control$maxit %||% 50L))
-  best <- list(value = Inf, par = NULL)
+  ## ---------------------------------------------------------------------------
+  ## Inicialización del optimizador
+  ## par_init > model$defaults > fallback
+  ## ---------------------------------------------------------------------------
+  if (!is.null(par_init)) {
 
-  if (verbose) {
-    message("Multi-start optimization\n------------------------")
-  }
-
-  for (i in seq_len(n_starts)) {
-
-    ## Inicialización coherente con el optimizador
-    if (uses_bounds) {
-      par0 <- runif(length(lower), lower, upper)
-    } else {
-      par0 <- rnorm(length(lower), mean = 0, sd = 1)
-    }
-
-    ## Construir llamada a optim() correctamente
-    opt_args <- list(
-      par     = par0,
-      fn      = fn,
-      method  = optim_method,
-      control = control_ms
+    stopifnot(
+      is.numeric(par_init),
+      !is.null(names(par_init))
     )
 
-    if (uses_bounds) {
-      opt_args$lower <- lower
-      opt_args$upper <- upper
+    missing <- setdiff(model$par_names, names(par_init))
+    if (length(missing) > 0) {
+      stop(
+        "Missing initial parameters: ",
+        paste(missing, collapse = ", "),
+        call. = FALSE
+      )
     }
 
-    opt_i <- do.call(optim, opt_args)
+    par0 <- log(par_init[model$par_names])
 
-    if (is.finite(opt_i$value) && opt_i$value < best$value) {
-      best <- list(value = opt_i$value, par = opt_i$par)
-      improved <- TRUE
-    } else {
-      improved <- FALSE
-    }
+  } else if (!is.null(model$defaults)) {
 
-    if (verbose) {
-      message(sprintf(
-        "  start %3d/%d | value = %.4g%s",
-        i, n_starts, opt_i$value,
-        if (improved) "  *best*" else ""
-      ))
-    }
+    par0 <- log(model$defaults[model$par_names])
+
+  } else {
+
+    par0 <- rep(0, n_par)  # equivale a parámetros = 1
   }
 
-  if (!is.finite(best$value)) {
-    stop(
-      "Optimization failed: ODE integration failed for all starting points.",
-      call. = FALSE
-    )
-  }
-
-  ## ===========================================================================
-  ## 2) OPTIMIZACIÓN FINAL
-  ## ===========================================================================
+  ## ---------------------------------------------------------------------------
+  ## Optimización
+  ## ---------------------------------------------------------------------------
   if (verbose) {
-    message("\nFinal optimization\n------------------")
-    message(sprintf("Starting value: %.4g", best$value))
+    message("Optimization\n------------")
   }
 
   opt_args <- list(
-    par     = best$par,
+    par     = par0,
     fn      = fn,
     method  = optim_method,
     control = control
@@ -373,6 +467,9 @@ fit_epi_model <- function(x,
     }
   }
 
+  ## ---------------------------------------------------------------------------
+  ## Parámetros estimados (escala original)
+  ## ---------------------------------------------------------------------------
   par_hat <- setNames(exp(opt$par), model$par_names)
 
   ## ---------------------------------------------------------------------------
