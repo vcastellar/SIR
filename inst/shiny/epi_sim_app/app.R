@@ -6,7 +6,7 @@ library(shiny)
 library(SIR)
 
 ## ---------------------------------------------------------------------------
-## Built-in models (local to the Shiny process)
+## Built-in models
 ## ---------------------------------------------------------------------------
 .models <- .get_builtin_models()
 
@@ -74,9 +74,9 @@ ui <- fluidPage(
     sidebarPanel(
 
       selectInput(
-        inputId = "model_name",
-        label   = "Epidemic model",
-        choices = names(.models),
+        "model_name",
+        "Epidemic model",
+        choices  = names(.models),
         selected = names(.models)[1]
       ),
 
@@ -89,19 +89,25 @@ ui <- fluidPage(
       uiOutput("init_ui"),
 
       hr(),
+      h4("States to plot"),
+      uiOutput("states_select_ui"),
+
+      hr(),
       sliderInput(
-        inputId = "t_max",
-        label   = "Time horizon",
-        min     = 10,
-        max     = 500,
-        value   = 150
+        "t_max",
+        "Time horizon",
+        min   = 10,
+        max   = 500,
+        value = 150
       )
     ),
 
     mainPanel(
       tabsetPanel(
-        tabPanel("States",    plotOutput("plot_states",    height = 400)),
-        tabPanel("Incidence", plotOutput("plot_incidence", height = 400)),
+        tabPanel("States",
+                 plotOutput("plot_states", height = 400)),
+        tabPanel("Incidence",
+                 plotOutput("plot_incidence", height = 400)),
         tabPanel(
           "Equations",
           tags$pre(
@@ -131,17 +137,24 @@ server <- function(input, output, session) {
   ## UI dinámica
   ## ---------------------------------------------------------
   output$params_ui <- renderUI({
-    req(model())
     tagList(param_sliders_ui(model()))
   })
 
   output$init_ui <- renderUI({
-    req(model())
     tagList(init_sliders_ui(model()))
   })
 
+  output$states_select_ui <- renderUI({
+    checkboxGroupInput(
+      "states_to_plot",
+      NULL,
+      choices  = model()$state_names,
+      selected = model()$state_names,
+      inline   = TRUE
+    )
+  })
+
   output$rhs_equations <- renderText({
-    req(model())
     rhs_text(model())
   })
 
@@ -179,7 +192,7 @@ server <- function(input, output, session) {
   ## Simulación
   ## ---------------------------------------------------------
   sim <- reactive({
-    req(parms(), init())
+    req(parms(), init(), input$t_max)
 
     simulate_epi(
       model = model(),
@@ -190,13 +203,34 @@ server <- function(input, output, session) {
   })
 
   ## ---------------------------------------------------------
-  ## Plots
+  ## Plot de estados (estilo original, subconjunto permitido)
   ## ---------------------------------------------------------
   output$plot_states <- renderPlot({
-    req(sim())
-    plot(sim(), what = "states")
+    req(sim(), input$states_to_plot)
+
+    states <- input$states_to_plot
+
+    if (length(states) == 0) {
+      plot.new()
+      text(0.5, 0.5, "No states selected")
+      return()
+    }
+
+    sim2 <- sim()
+
+    ## mantener 'time' + estados seleccionados
+    keep <- c("time", states)
+    sim2$states <- sim2$states[, keep, drop = FALSE]
+
+    ## coherencia interna del sim_epi
+    sim2$model$state_names <- states
+
+    plot(sim2, what = "states")
   })
 
+  ## ---------------------------------------------------------
+  ## Plot de incidencia
+  ## ---------------------------------------------------------
   output$plot_incidence <- renderPlot({
     req(sim())
 
