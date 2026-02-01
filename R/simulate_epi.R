@@ -198,7 +198,9 @@ simulate_epi <- function(model,
                          choices = c("days", "weeks", "month", "year"))
   if (!is.null(seed)) set.seed(seed)
 
-  # 1) Tiempos
+  ## -------------------------------------------------------------------------
+  ## 1) Tiempos
+  ## -------------------------------------------------------------------------
   if (missing(times)) {
     stop("Provide `times` as a strictly increasing numeric vector.")
   }
@@ -211,10 +213,13 @@ simulate_epi <- function(model,
     stop("`times` must be strictly increasing.")
   }
 
-  # 2) Parámetros: defaults + override
+  ## -------------------------------------------------------------------------
+  ## 2) Parámetros: defaults + override
+  ## -------------------------------------------------------------------------
   theta <- model$defaults
   if (is.null(theta)) {
-    theta <- setNames(rep(NA_real_, length(model$par_names)), model$par_names)
+    theta <- setNames(rep(NA_real_, length(model$par_names)),
+                      model$par_names)
   }
 
   if (!is.null(parms)) {
@@ -230,12 +235,16 @@ simulate_epi <- function(model,
     stop("Missing parameters: ",
          paste(names(theta)[is.na(theta)], collapse = ", "))
   }
+
   theta <- theta[model$par_names]
 
-  # 3) Estado inicial
+  ## -------------------------------------------------------------------------
+  ## 3) Estado inicial
+  ## -------------------------------------------------------------------------
   if (is.null(init)) {
     stop("Provide `init`.")
   }
+
   init <- unlist(init)
 
   missing_states <- setdiff(model$state_names, names(init))
@@ -243,57 +252,75 @@ simulate_epi <- function(model,
     stop("Missing initial states: ",
          paste(missing_states, collapse = ", "))
   }
+
   init <- init[model$state_names]
 
-  # 4) Integración ODE
+  ## -------------------------------------------------------------------------
+  ## 4) Integración ODE
+  ## -------------------------------------------------------------------------
   out <- deSolve::ode(
-    y = init,
+    y     = init,
     times = times,
-    func = model$rhs,
+    func  = model$rhs,
     parms = theta,
     ...
   )
+
   out <- as.data.frame(out)
 
-  # 5) Incidencia latente definida por el modelo (si existe)
-  if ("incidence" %in% names(out)) {
-    inc_true <- out$incidence[-1]
-    time_inc <- out$time[-1]
+  ## -------------------------------------------------------------------------
+  ## 5) Separar estados y flujos
+  ## -------------------------------------------------------------------------
+  state_names <- model$state_names
+  flow_names  <- setdiff(names(out), c("time", state_names))
+
+  states_df <- out[, c("time", state_names), drop = FALSE]
+
+  flows_df <- if (length(flow_names) > 0) {
+    out[, c("time", flow_names), drop = FALSE]
   } else {
-    inc_true <- NULL
-    time_inc <- NULL
+    NULL
   }
 
-  # 6) Modelo de observación
-  if (is.null(inc_true)) {
+  ## -------------------------------------------------------------------------
+  ## 6) Modelo de observación (solo si existe flows$incidence)
+  ## -------------------------------------------------------------------------
+  incidence_obs <- NULL
 
-    inc_obs <- NULL
-    inc_cum <- NULL
+  if (!is.null(flows_df) && "incidence" %in% names(flows_df)) {
 
-  } else if (obs == "none") {
+    inc_true <- flows_df$incidence[-1]
 
-    inc_obs <- inc_true
-    inc_cum <- cumsum(inc_obs)
+    if (obs == "none") {
 
-  } else {
+      inc_obs <- inc_true
 
-    inc_obs <- switch(
-      obs,
-      poisson = stats::rpois(length(inc_true), lambda = inc_true),
-      negbin  = stats::rnbinom(length(inc_true), mu = inc_true, size = size)
+    } else {
+
+      inc_obs <- switch(
+        obs,
+        poisson = stats::rpois(length(inc_true), lambda = inc_true),
+        negbin  = stats::rnbinom(length(inc_true),
+                                 mu = inc_true,
+                                 size = size)
+      )
+    }
+
+    incidence_obs <- data.frame(
+      time = flows_df$time[-1],
+      incidence = inc_obs
     )
-    inc_cum <- cumsum(inc_obs)
   }
 
-  # 7) Resultado
+  ## -------------------------------------------------------------------------
+  ## 7) Resultado
+  ## -------------------------------------------------------------------------
   res <- list(
     model = model,
     params = as.list(theta),
-    states = out[, c("time", model$state_names), drop = FALSE],
-    incidence = if (is.null(inc_obs)) NULL
-    else data.frame(time = time_inc, inc = inc_obs),
-    incidence_cum = if (is.null(inc_cum)) NULL
-    else data.frame(time = time_inc, cases_cum = inc_cum),
+    states = states_df,
+    flows  = flows_df,
+    incidence_obs = incidence_obs,
     time_unit = time_unit
   )
 

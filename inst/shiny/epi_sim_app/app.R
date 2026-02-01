@@ -1,5 +1,5 @@
 ## ============================================================================
-## Epidemic model simulator (Shiny app)
+## Epidemic model simulator (ODE-based, Shiny app)
 ## ============================================================================
 
 library(shiny)
@@ -93,6 +93,10 @@ ui <- fluidPage(
       uiOutput("states_select_ui"),
 
       hr(),
+      h4("Flows to plot"),
+      uiOutput("flows_select_ui"),
+
+      hr(),
       sliderInput(
         "t_max",
         "Time horizon",
@@ -104,10 +108,14 @@ ui <- fluidPage(
 
     mainPanel(
       tabsetPanel(
-        tabPanel("States",
-                 plotOutput("plot_states", height = 400)),
-        tabPanel("Incidence",
-                 plotOutput("plot_incidence", height = 400)),
+        tabPanel(
+          "States",
+          plotOutput("plot_states", height = 400)
+        ),
+        tabPanel(
+          "Flows",
+          plotOutput("plot_flows", height = 400)
+        ),
         tabPanel(
           "Equations",
           tags$pre(
@@ -203,7 +211,30 @@ server <- function(input, output, session) {
   })
 
   ## ---------------------------------------------------------
-  ## Plot de estados (estilo original, subconjunto permitido)
+  ## Selector de flujos
+  ## ---------------------------------------------------------
+  output$flows_select_ui <- renderUI({
+    req(sim())
+
+    flows <- sim()$flows
+
+    if (is.null(flows) || ncol(flows) <= 1) {
+      return(tags$em("No flows defined for this model"))
+    }
+
+    flow_names <- setdiff(names(flows), "time")
+
+    checkboxGroupInput(
+      "flows_to_plot",
+      NULL,
+      choices  = flow_names,
+      selected = flow_names,
+      inline   = TRUE
+    )
+  })
+
+  ## ---------------------------------------------------------
+  ## Plot de estados
   ## ---------------------------------------------------------
   output$plot_states <- renderPlot({
     req(sim(), input$states_to_plot)
@@ -217,29 +248,35 @@ server <- function(input, output, session) {
     }
 
     sim2 <- sim()
-
-    ## mantener 'time' + estados seleccionados
     keep <- c("time", states)
-    sim2$states <- sim2$states[, keep, drop = FALSE]
 
-    ## coherencia interna del sim_epi
+    sim2$states <- sim2$states[, keep, drop = FALSE]
     sim2$model$state_names <- states
 
     plot(sim2, what = "states")
   })
 
   ## ---------------------------------------------------------
-  ## Plot de incidencia
+  ## Plot de flujos
   ## ---------------------------------------------------------
-  output$plot_incidence <- renderPlot({
-    req(sim())
+  output$plot_flows <- renderPlot({
+    req(sim(), input$flows_to_plot)
 
-    if (is.null(sim()$incidence)) {
+    flows <- input$flows_to_plot
+
+    if (length(flows) == 0) {
       plot.new()
-      text(0.5, 0.5, "No incidence defined for this model")
-    } else {
-      plot(sim(), what = "incidence")
+      text(0.5, 0.5, "No flows selected")
+      return()
     }
+
+    sim2 <- sim()
+    keep <- c("time", flows)
+
+    sim2$states <- sim2$flows[, keep, drop = FALSE]
+    sim2$model$state_names <- flows
+
+    plot(sim2, what = "states")
   })
 }
 
@@ -247,3 +284,4 @@ server <- function(input, output, session) {
 ## Run app
 ## ---------------------------------------------------------------------------
 shinyApp(ui, server)
+

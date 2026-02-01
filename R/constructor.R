@@ -1,59 +1,133 @@
-#' Create a new epidemic model object
+## ============================================================================
+## Epidemiological roles vocabulary
+## ============================================================================
+
+#' Epidemiological roles vocabulary
 #'
-#' @name new_epi_model
 #' @description
-#' Constructs an object of class \code{"epi_model"} representing a deterministic
-#' compartmental epidemic model. In addition to the ODE system, the model must
-#' explicitly declare which output of the right-hand side corresponds to the
-#' latent incidence rate.
+#' Defines the standard vocabulary of epidemiological roles supported by the
+#' package. Roles assign semantic meaning to state variables or auxiliary outputs
+#' of an epidemic model (e.g. infectious, incidence).
+#'
+#' Models declaring roles outside this vocabulary will be rejected by
+#' \code{epi_model()}, ensuring semantic consistency across models and
+#' epidemiological metrics.
 #'
 #' @details
-#' ## Incidence
-#' The \code{rhs} function may return additional named outputs besides the state
-#' derivatives. One of these outputs must represent the **latent incidence rate**
-#' (e.g. force of infection or case-generation rate).
+#' The following roles are currently supported:
 #'
-#' The \code{incidence} argument specifies the name of this output. This makes the
-#' definition of epidemic cases explicit and allows generic functions such as
-#' \code{simulate_epi()}, \code{fit_epi_model()}, and \code{summary()} to operate
-#' consistently across models.
+#' \itemize{
+#'   \item \strong{susceptible}: Individuals susceptible to infection.
+#'   \item \strong{exposed}: Infected but not yet infectious individuals.
+#'   \item \strong{infectious}: Infectious individuals.
+#'   \item \strong{recovered}: Individuals recovered with immunity (temporary or permanent).
+#'   \item \strong{deceased}: Individuals who died due to the disease.
+#'   \item \strong{incidence}: Flow representing new infections.
+#'   \item \strong{deaths}: Flow representing disease-induced deaths.
+#' }
 #'
-#' @param name Character scalar. Human-readable name of the model (e.g. \code{"SIR"}).
+#' This vocabulary may be extended in future versions of the package.
+#'
+#' @return
+#' A character vector of valid epidemiological role names.
+#'
+#' @keywords internal
+.epi_role_vocab <- function() {
+  c(
+    "susceptible",
+    "exposed",
+    "infectious",
+    "recovered",
+    "deceased",
+    "incidence",
+    "deaths"
+  )
+}
+
+
+## ============================================================================
+## Epidemic model constructor
+## ============================================================================
+
+#' Define an epidemic model
+#'
+#' @description
+#' Defines a deterministic compartmental epidemic model governed by a system
+#' of ordinary differential equations (ODEs). The model explicitly declares its
+#' state variables, parameters, model outputs, and optional epidemiological roles.
+#'
+#' Epidemiological roles assign semantic meaning (e.g. infectious, incidence)
+#' to specific state variables or auxiliary outputs, enabling generic
+#' epidemiological metrics and summaries to operate consistently across models.
+#'
+#' @param name Character scalar. Human-readable name of the model (e.g. "SIR").
 #' @param rhs Function defining the ODE system. Must have signature
-#'   \code{function(time, state, parms)} and return a list whose first element is
-#'   the vector of state derivatives.
+#'   \code{function(time, state, parms)} and return a list whose first element
+#'   is the vector of state derivatives.
 #' @param state_names Character vector of state variable names.
 #' @param par_names Character vector of parameter names.
-#' @param incidence Character scalar. Name of the \code{rhs} output corresponding
-#'   to the latent incidence rate.
+#' @param outputs Character vector of named outputs returned by the RHS.
+#'   Must include all state variables.
+#' @param roles Optional named list mapping epidemiological roles to variable
+#'   names (states or outputs). Role names must belong to the standard
+#'   vocabulary defined in \code{.epi_role_vocab()}.
 #' @param lower Optional named numeric vector of lower parameter bounds.
 #' @param upper Optional named numeric vector of upper parameter bounds.
 #' @param defaults Optional named numeric vector of default parameter values.
 #' @param init Optional named numeric vector of default initial conditions.
 #'
+#' @details
+#' ## Epidemiological roles
+#' Roles provide a semantic layer on top of model variables. For example,
+#' different models may use different variable names for infectious individuals,
+#' but assigning the \code{"infectious"} role allows epidemiological metrics to
+#' remain model-agnostic.
+#'
+#' Supported roles are:
+#' \itemize{
+#'   \item \strong{susceptible}
+#'   \item \strong{exposed}
+#'   \item \strong{infectious}
+#'   \item \strong{recovered}
+#'   \item \strong{deceased}
+#'   \item \strong{incidence}
+#'   \item \strong{deaths}
+#' }
+#'
+#' Not all roles must be defined for every model. Metrics depending on missing
+#' roles should fail explicitly.
+#'
 #' @return
 #' An object of class \code{"epi_model"}.
 #'
 #' @examples
-#' sir_model <- new_epi_model(
+#' sir_model <- epi_model(
 #'   name = "SIR",
-#'   rhs = sir_rhs,
+#'   rhs  = sir_rhs,
 #'   state_names = c("S", "I", "R"),
-#'   par_names = c("beta", "gamma"),
-#'   incidence = "incidence"
+#'   par_names   = c("beta", "gamma"),
+#'   outputs     = c("S", "I", "R", "incidence"),
+#'   roles = list(
+#'     susceptible = "S",
+#'     infectious  = "I",
+#'     recovered   = "R",
+#'     incidence   = "incidence"
+#'   )
 #' )
 #'
 #' @export
-new_epi_model <- function(name,
-                          rhs,
-                          state_names,
-                          par_names,
-                          outputs = state_names,
-                          lower = NULL,
-                          upper = NULL,
-                          defaults = NULL,
-                          init = NULL) {
+epi_model <- function(name,
+                      rhs,
+                      state_names,
+                      par_names,
+                      outputs = state_names,
+                      roles = NULL,
+                      lower = NULL,
+                      upper = NULL,
+                      defaults = NULL,
+                      init = NULL) {
 
+  ## --- basic checks ----------------------------------------------------------
   stopifnot(is.character(name), length(name) == 1)
   stopifnot(is.function(rhs))
   stopifnot(is.character(state_names), length(state_names) >= 1)
@@ -63,6 +137,41 @@ new_epi_model <- function(name,
   ## --- outputs must include states -------------------------------------------
   if (!all(state_names %in% outputs)) {
     stop("All state variables must be included in `outputs`.")
+  }
+
+  ## --- roles validation ------------------------------------------------------
+  if (!is.null(roles)) {
+
+    if (!is.list(roles) || is.null(names(roles))) {
+      stop("`roles` must be a named list.")
+    }
+
+    valid_roles <- .epi_role_vocab()
+    role_names  <- names(roles)
+
+    unknown_roles <- setdiff(role_names, valid_roles)
+    if (length(unknown_roles) > 0) {
+      stop(
+        "Unknown epidemiological roles: ",
+        paste(unknown_roles, collapse = ", "),
+        ". Valid roles are: ",
+        paste(valid_roles, collapse = ", ")
+      )
+    }
+
+    role_vars <- unlist(roles, use.names = FALSE)
+
+    unknown_vars <- setdiff(role_vars, outputs)
+    if (length(unknown_vars) > 0) {
+      stop(
+        "Roles refer to unknown outputs: ",
+        paste(unknown_vars, collapse = ", ")
+      )
+    }
+
+    if (any(duplicated(role_vars))) {
+      stop("Each role must map to a unique variable.")
+    }
   }
 
   ## --- parameter bounds ------------------------------------------------------
@@ -97,6 +206,7 @@ new_epi_model <- function(name,
       state_names = state_names,
       par_names = par_names,
       outputs = outputs,
+      roles = roles,
       lower = lower,
       upper = upper,
       defaults = defaults,
