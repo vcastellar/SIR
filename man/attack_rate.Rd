@@ -15,13 +15,23 @@ A numeric scalar giving the attack rate.
 \description{
 Computes the cumulative number of infections over the course of the epidemic,
 defined as the integral (sum) of the incidence curve.
-
-This metric requires the epidemiological role \code{"incidence"}.
 }
 \details{
-For models with permanent immunity (e.g. SIR, SEIR), this corresponds to the
-final epidemic size. For models with waning immunity (e.g. SIRS, SEIRS), the
-attack rate measures total infections and may exceed the population size.
+Let \eqn{\lambda(t)} denote the incidence function.
+The attack rate is defined as
+\deqn{
+AR = \int_0^T \lambda(t)\, dt.
+}
+
+In discrete time simulations, this integral is approximated by
+\deqn{
+AR \approx \sum_{t=0}^T \lambda(t).
+}
+
+For models with permanent immunity, this corresponds to the final epidemic
+size.
+
+This metric requires the epidemiological role \code{"incidence"}.
 }
 \examples{
 sim <- simulate_epi(

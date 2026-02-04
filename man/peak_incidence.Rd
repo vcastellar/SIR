@@ -10,15 +10,22 @@ peak_incidence(sim)
 \item{sim}{An object of class \code{"sim_epi"}.}
 }
 \value{
-A named list with elements:
-\itemize{
-\item \code{time}: Time at which peak incidence occurs.
-\item \code{value}: Maximum incidence value.
-}
+A named list with elements \code{time} and \code{value}.
 }
 \description{
 Computes the maximum value of the incidence curve and the time at which
 it occurs.
+}
+\details{
+Let \eqn{\lambda(t)} denote the incidence function.
+The peak incidence is defined as
+\deqn{
+\lambda_{\max} = \max_t \lambda(t),
+}
+and the time to peak incidence is
+\deqn{
+t^* = \arg\max_t \lambda(t).
+}
 
 This metric requires the epidemiological role \code{"incidence"}.
 }

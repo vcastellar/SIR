@@ -83,6 +83,13 @@ plot(sim, what = "incidence")
 # Plot a single state variable
 plot(sim, what = "I")
 
+# Plot all flows
+plot(sim, what = "flows")
+
+
+# If the model defines Rt as a flow, it can be plotted directly
+plot(sim, what = "Rt")
+
 }
 \seealso{
 \code{\link{simulate_epi}}, \code{\link{summary.sim_epi}},

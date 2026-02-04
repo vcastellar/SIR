@@ -79,6 +79,13 @@
 #' # Plot a single state variable
 #' plot(sim, what = "I")
 #'
+#' # Plot all flows
+#' plot(sim, what = "flows")
+#'
+#'
+#' # If the model defines Rt as a flow, it can be plotted directly
+#' plot(sim, what = "Rt")
+#'
 #' @export
 plot.sim_epi <- function(x,
                          what = "states",
@@ -99,9 +106,9 @@ plot.sim_epi <- function(x,
     stop("Invalid 'sim_epi' object: missing $states with column 'time'.")
   }
 
-  model  <- x$model
-  st     <- x$states
-  states <- model$state_names
+  model   <- x$model
+  st      <- x$states
+  states  <- model$state_names
   outputs <- model$outputs
 
   ## Etiqueta del eje X según time_unit
@@ -112,9 +119,9 @@ plot.sim_epi <- function(x,
     paste0("Time (", unit, ")")
   }
 
-  ## ---------------------------------------------------------------------------
+  ## ===========================================================================
   ## CASE 1: all states
-  ## ---------------------------------------------------------------------------
+  ## ===========================================================================
   if (identical(what, "states")) {
 
     missing <- setdiff(states, names(st))
@@ -170,36 +177,55 @@ plot.sim_epi <- function(x,
       bty = "n"
     )
 
-    ## ---------------------------------------------------------------------------
-    ## CASE 2: incidence
-    ## ---------------------------------------------------------------------------
-  } else if (identical(what, "incidence")) {
+    ## ===========================================================================
+    ## CASE 2: all flows
+    ## ===========================================================================
+  } else if (identical(what, "flows")) {
 
-    inc <- x$incidence
+    fl <- x$flows
 
-    if (is.null(inc) || !all(c("time", "inc") %in% names(inc))) {
-      stop(
-        "Invalid 'sim_epi' object: missing $incidence with columns time/inc."
-      )
+    if (is.null(fl) || !"time" %in% names(fl)) {
+      stop("Invalid 'sim_epi' object: missing $flows with column 'time'.")
     }
 
-    plot(
-      inc$time, inc$inc,
-      type = "h",
+    vars <- setdiff(names(fl), "time")
+
+    if (length(vars) == 0) {
+      stop("No flows to plot.")
+    }
+
+    y <- fl[, vars, drop = FALSE]
+
+    matplot(
+      fl$time, y,
+      type = "l",
+      lty = 1,
+      lwd = 2,
       xlab = xlab,
-      ylab = "Observed incidence",
-      main = paste("Observed incidence:", model$name),
+      ylab = "Flows",
+      main = paste("Flows:", model$name),
       ...
     )
 
-    ## ---------------------------------------------------------------------------
-    ## CASE 3: single output (state or other observable)
-    ## ---------------------------------------------------------------------------
-  } else if (is.character(what) && length(what) == 1 && what %in% outputs) {
+    legend(
+      "topright",
+      legend = vars,
+      col = seq_along(vars),
+      lty = 1,
+      lwd = 2,
+      bty = "n"
+    )
+
+    ## ===========================================================================
+    ## CASE 3: single state
+    ## ===========================================================================
+  } else if (is.character(what) &&
+             length(what) == 1 &&
+             what %in% states) {
 
     if (!what %in% names(st)) {
       stop(
-        "Output '", what, "' not found in x$states."
+        "State '", what, "' not found in x$states."
       )
     }
 
@@ -215,16 +241,37 @@ plot.sim_epi <- function(x,
       ...
     )
 
+    ## ===========================================================================
+    ## CASE 4: single flow
+    ## ===========================================================================
+  } else if (is.character(what) &&
+             length(what) == 1 &&
+             !is.null(x$flows) &&
+             what %in% names(x$flows)) {
+
+    fl <- x$flows
+
+    plot(
+      fl$time, fl[[what]],
+      type = "l",
+      lwd = 2,
+      xlab = xlab,
+      ylab = what,
+      main = paste("Flow:", model$name, "-", what),
+      ...
+    )
+
   } else {
     stop(
-      "`what` must be 'states', 'incidence', or one of: ",
-      paste(outputs, collapse = ", "),
+      "`what` must be 'states', 'flows', or one of: ",
+      paste(c(states, setdiff(names(x$flows), "time")), collapse = ", "),
       call. = FALSE
     )
   }
 
   invisible(x)
 }
+
 
 
 
@@ -387,13 +434,36 @@ print.sim_epi <- function(x, ...) {
 
   cat("\nOutcomes\n")
 
+  ## ---------------------------------------------------------------------------
+  ## Peak incidence (flow)
+  ## ---------------------------------------------------------------------------
+  inc <- try(get_role(x, "incidence"), silent = TRUE)
+
+  if (!inherits(inc, "try-error")) {
+
+    t_inc <- x$flows$time
+    peak_inc <- max(inc, na.rm = TRUE)
+
+    if (is.finite(peak_inc)) {
+      time_inc <- t_inc[which.max(inc)]
+      cat("  Peak incidence:       ", round(peak_inc), "\n", sep = "")
+      cat("  Time of inc. peak:    ",
+          time_inc, " ", unit_lbl, "\n", sep = "")
+    }
+  }
+
+  ## ---------------------------------------------------------------------------
+  ## Peak infectious (state I)
+  ## ---------------------------------------------------------------------------
   if ("I" %in% names(states)) {
+
     peak_I <- max(states$I, na.rm = TRUE)
+
     if (is.finite(peak_I)) {
-      time_pk <- states$time[which.max(states$I)]
+      time_I <- states$time[which.max(states$I)]
       cat("  Peak infectious:      ", round(peak_I), "\n", sep = "")
-      cat("  Time of peak:         ",
-          time_pk, " ", unit_lbl, "\n", sep = "")
+      cat("  Time of I peak:       ",
+          time_I, " ", unit_lbl, "\n", sep = "")
     }
   }
 

@@ -92,15 +92,6 @@ plot(sim)
 ## Plot observed incidence (if an observation model is used)
 plot(sim, what = "incidence")
 
-## Fit the model to observed incidence
-fit_inc <- fit_epi_model(
-  x = sim$incidence$inc,
-  model = SIR_MODEL,
-  init = SIR_MODEL$init,
-  target = "incidence"
-)
-
-fit_inc
 
 }
 \seealso{

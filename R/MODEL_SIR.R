@@ -22,11 +22,7 @@ sir_rhs <- function(time, state, parms) {
 
       ## flujos instantáneos
       incidence = lambda,
-      recovery  = gamma * I,
-
-      ## fracciones útiles
-      prevalence = I / N,
-      Rt = beta / gamma * (S / N)
+      recovery  = gamma * I
     )
   })
 }
@@ -111,15 +107,6 @@ sir_rhs <- function(time, state, parms) {
 #' ## Plot observed incidence (if an observation model is used)
 #' plot(sim, what = "incidence")
 #'
-#' ## Fit the model to observed incidence
-#' fit_inc <- fit_epi_model(
-#'   x = sim$incidence$inc,
-#'   model = SIR_MODEL,
-#'   init = SIR_MODEL$init,
-#'   target = "incidence"
-#' )
-#'
-#' fit_inc
 #'
 #' @seealso
 #' \code{\link{simulate_epi}},
@@ -148,10 +135,7 @@ SIR_MODEL <- epi_model(
     "S", "I", "R",
 
     ## flujos
-    "incidence", "recovery",
-
-    ## métricas
-    "prevalence", "Rt"
+    "incidence", "recovery"
   ),
   roles = list(
     susceptible = "S",

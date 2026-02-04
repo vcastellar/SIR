@@ -14,6 +14,13 @@ A numeric scalar giving the peak prevalence.
 }
 \description{
 Computes the maximum number of infectious individuals during the epidemic.
+}
+\details{
+Let \eqn{I(t)} denote the number of infectious individuals over time.
+The peak prevalence is defined as
+\deqn{
+I_{\max} = \max_t I(t).
+}
 
 This metric requires the epidemiological role \code{"infectious"}.
 }

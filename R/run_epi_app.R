@@ -1,26 +1,120 @@
-#' Run the epidemic model simulator
+#' Launch the epidemic model Shiny simulator
 #'
-#' Launches the interactive Shiny application for exploring and simulating
-#' registered epidemiological models.
+#' Launches the interactive Shiny application for simulating deterministic
+#' epidemiological models defined as systems of ordinary differential equations
+#' (ODEs).
 #'
-#' The app automatically detects all models available through
-#' \code{list_epi_models()}, including user-defined models registered with
-#' \code{register_epi_model()}.
+#' By default, the app includes a set of built-in models (e.g. SI, SIR, SEIR).
+#' User-defined models can be explored by passing them explicitly via the
+#' \code{models} argument.
+#'
+#' @param models Optional named list of objects of class \code{epi_model}.
+#'   These models are added to the built-in ones and become available in the
+#'   Shiny interface. If \code{NULL} (default), only built-in models are used.
+#'
+#' @details
+#' The Shiny application does not rely on global state or registries.
+#' All models must be provided explicitly at launch time so that they are
+#' available in the Shiny session.
+#'
+#' User-defined models must be fully specified \code{epi_model} objects,
+#' including state roles and parameter definitions.
+#'
+#' @return
+#' A \code{shiny.appobj}. This function is called for its side effects
+#' (launching the Shiny application).
+#'
+#' @examples
+#' ## ---------------------------------------------------------
+#' ## Define a custom SEIRD model (with roles)
+#' ## ---------------------------------------------------------
+#'
+#' seird_rhs <- function(time, state, parms) {
+#'   with(as.list(c(state, parms)), {
+#'
+#'     N <- S + E + I + R
+#'
+#'     lambda <- beta * S * I / N
+#'
+#'     dS <- -lambda
+#'     dE <-  lambda - sigma * E
+#'     dI <-  sigma * E - gamma * I - mu * I
+#'     dR <-  gamma * I
+#'     dD <-  mu * I
+#'
+#'     list(
+#'       c(dS, dE, dI, dR, dD),
+#'       incidence = lambda,
+#'       deaths    = mu * I
+#'     )
+#'   })
+#' }
+#'
+#' seird_model <- epi_model(
+#'   name        = "SEIRD",
+#'   rhs         = seird_rhs,
+#'   state_names = c("S", "E", "I", "R", "D"),
+#'   roles       = list(
+#'     susceptible = "S",
+#'     exposed     = "E",
+#'     infectious  = "I",
+#'     recovered   = "R",
+#'     deaths      = "D"
+#'   ),
+#'   par_names   = c("beta", "sigma", "gamma", "mu"),
+#'   init        = c(S = 999, E = 0, I = 1, R = 0, D = 0),
+#'   defaults    = c(beta = 0.4, sigma = 0.2, gamma = 0.1, mu = 0.02)
+#' )
+#'
+#' ## ---------------------------------------------------------
+#' ## Launch the Shiny app with the custom model
+#' ## ---------------------------------------------------------
+#'
+#' run_epi_app(
+#'   models = list(SEIRD = seird_model)
+#' )
+#'
+#' @seealso
+#' \code{\link{epi_model}}, \code{\link{simulate_epi}}
 #'
 #' @export
-run_epi_app <- function() {
+run_epi_app <- function(models = NULL) {
 
+  builtin <- .get_builtin_models()
 
-  app_dir <- system.file(
-    "shiny", "epi_sim_app",
-    package = "SIR"
-  )
+  if (is.null(models)) {
+    all_models <- builtin
+  } else {
+    stopifnot(is.list(models))
+    stopifnot(length(models) > 0)
 
-  if (app_dir == "") {
-    stop("Could not find Shiny app directory.", call. = FALSE)
+    ok <- vapply(models, inherits, logical(1), "epi_model")
+    if (!all(ok)) {
+      stop("All elements of 'models' must be objects of class 'epi_model'.")
+    }
+
+    if (is.null(names(models)) || any(names(models) == "")) {
+      stop("'models' must be a named list.")
+    }
+
+    dup <- intersect(names(models), names(builtin))
+    if (length(dup) > 0) {
+      stop(
+        "Model name(s) already exist: ",
+        paste(dup, collapse = ", ")
+      )
+    }
+
+    all_models <- c(builtin, models)
   }
 
-  shiny::runApp(app_dir)
+  shiny::shinyApp(
+    ui = app_ui(all_models),
+    server = function(input, output, session) {
+      app_server(input, output, session, all_models)
+    }
+  )
 }
+
 
 

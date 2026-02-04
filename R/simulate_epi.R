@@ -213,47 +213,65 @@ simulate_epi <- function(model,
     stop("`times` must be strictly increasing.")
   }
 
-  ## -------------------------------------------------------------------------
-  ## 2) Parámetros: defaults + override
-  ## -------------------------------------------------------------------------
+  ## ---------------------------------------------------------------------------
+  ## Parameters
+  ## ---------------------------------------------------------------------------
+
   theta <- model$defaults
+
   if (is.null(theta)) {
-    theta <- setNames(rep(NA_real_, length(model$par_names)),
-                      model$par_names)
+    theta <- setNames(
+      rep(NA_real_, length(model$par_names)),
+      model$par_names
+    )
   }
 
   if (!is.null(parms)) {
+
     stopifnot(is.numeric(parms), !is.null(names(parms)))
+
     unknown <- setdiff(names(parms), model$par_names)
     if (length(unknown) > 0) {
       stop("Unknown parameters: ", paste(unknown, collapse = ", "))
     }
+
     theta[names(parms)] <- parms
   }
 
   if (any(is.na(theta))) {
-    stop("Missing parameters: ",
-         paste(names(theta)[is.na(theta)], collapse = ", "))
+    stop(
+      "Missing parameters: ",
+      paste(names(theta)[is.na(theta)], collapse = ", ")
+    )
   }
 
   theta <- theta[model$par_names]
 
-  ## -------------------------------------------------------------------------
-  ## 3) Estado inicial
-  ## -------------------------------------------------------------------------
+  ## ---------------------------------------------------------------------------
+  ## Initial conditions
+  ## ---------------------------------------------------------------------------
+
   if (is.null(init)) {
-    stop("Provide `init`.")
+
+    if (is.null(model$init)) {
+      stop("Provide `init` or define `model$init`.")
+    }
+
+    init <- model$init
   }
 
   init <- unlist(init)
 
   missing_states <- setdiff(model$state_names, names(init))
   if (length(missing_states) > 0) {
-    stop("Missing initial states: ",
-         paste(missing_states, collapse = ", "))
+    stop(
+      "Missing initial states: ",
+      paste(missing_states, collapse = ", ")
+    )
   }
 
   init <- init[model$state_names]
+
 
   ## -------------------------------------------------------------------------
   ## 4) Integración ODE

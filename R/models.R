@@ -15,10 +15,8 @@
 
 
 
-
-#' @param name Model name
-#' @param model An epi_model object
-#' @param overwrite Overwrite existing model?
+#' example of new epi model
+#' @keywords internal
 #' @examples
 #' ## ---------------------------------------------------------------
 #' ## Define and register a new epidemiological model (SIRD)
@@ -41,7 +39,7 @@
 #'   })
 #' }
 #'
-#' SIRD_MODEL <- new_epi_model(
+#' SIRD_MODEL <- epi_model(
 #'   name        = "SIRD",
 #'   rhs         = sird_rhs,
 #'   state_names = c("S", "I", "R", "D"),
@@ -57,11 +55,11 @@
 #'   model = SIRD_MODEL,
 #'   times = 0:200,
 #'   parms = c(beta = 0.25, gamma = 0.1, mu = 0.02),
-#'   init  = get_epi_model("SIRD")$init
+#'   init  = SIRD_MODEL$init
 #' )
 #'
 #' plot(sim)
-#' plot(sim, what = "incidence")
+#' plot(sim, what = "flows")
 
 
 

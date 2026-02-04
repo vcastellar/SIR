@@ -119,15 +119,6 @@ seirs_rhs <- function(time, state, parms) {
 #' ## Plot observed incidence
 #' plot(sim, what = "incidence")
 #'
-#' ## Fit the model to observed incidence
-#' fit_inc <- fit_epi_model(
-#'   x = sim$incidence$inc,
-#'   model = SEIRS_MODEL,
-#'   init = SEIRS_MODEL$init,
-#'   target = "incidence"
-#' )
-#'
-#' fit_inc
 #'
 #' @seealso
 #' \code{\link{simulate_epi}},

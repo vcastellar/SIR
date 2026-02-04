@@ -10,18 +10,19 @@ doubling_time_ts(sim)
 \item{sim}{An object of class \code{"sim_epi"}.}
 }
 \value{
-A data.frame with columns:
-\itemize{
-\item \code{time}: Time points.
-\item \code{doubling_time}: Time-varying doubling time.
-}
+A data.frame with columns \code{time} and \code{doubling_time}.
 }
 \description{
 Computes the time-varying epidemic doubling time based on the instantaneous
 growth rate.
+}
+\details{
+Given the instantaneous growth rate \eqn{r(t)}, the doubling time is
+\deqn{
+T_d(t) = \frac{\log 2}{r(t)}.
+}
 
-As the epidemic approaches its peak, the doubling time increases and tends
-to infinity when growth vanishes.
+When \eqn{r(t) \le 0}, the doubling time is set to infinity.
 
 Requires the epidemiological role \code{"incidence"}.
 }

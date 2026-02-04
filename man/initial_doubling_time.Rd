@@ -15,9 +15,12 @@ A numeric scalar giving the initial doubling time.
 \description{
 Computes the epidemic doubling time during the initial exponential growth
 phase.
-
-This is defined as \eqn{\log(2) / r}, where \eqn{r} is the initial exponential
-growth rate.
+}
+\details{
+If incidence grows exponentially, the doubling time is
+\deqn{
+T_d = \frac{\log 2}{r}.
+}
 }
 \examples{
 sim <- simulate_epi(

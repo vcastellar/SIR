@@ -14,14 +14,21 @@ A numeric scalar giving the time to peak incidence.
 }
 \description{
 Returns the time at which incidence reaches its maximum.
+}
+\details{
+Let \eqn{\lambda(t)} be the incidence curve.
+The time to peak incidence is defined as
+\deqn{
+t^* = \arg\max_t \lambda(t).
+}
 
 This is a convenience wrapper around \code{peak_incidence()}.
 }
 \examples{
 sim <- simulate_epi(
   model = SI_MODEL,
-  times = 0:100,
-  parms = c(beta = 0.3),
+  times = 0:80,
+  parms = c(beta = 0.25),
   init  = c(S = 999, I = 1)
 )
 
