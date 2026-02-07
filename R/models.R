@@ -9,7 +9,8 @@
     SIR   = SIR_MODEL,
     SIRS  = SIRS_MODEL,
     SEIR  = SEIR_MODEL,
-    SEIRS = SEIRS_MODEL
+    SEIRS = SEIRS_MODEL,
+    SIR_VITAL = SIR_VITAL_MODEL
   )
 }
 

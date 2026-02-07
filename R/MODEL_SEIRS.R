@@ -135,7 +135,8 @@ SEIRS_MODEL <- epi_model(
   upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 1),
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
   init = c("S" = 1e6, "I" = 10, "R" = 0, "E" = 0),
-  outputs = c("S", "E", "I", "R", "incidence"),
+  states = c("S", "E", "I", "R"),
+  flows = c("incidence"),
   roles = list(
     susceptible = "S",
     exposed     = "E",

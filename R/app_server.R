@@ -1,6 +1,13 @@
 app_server <- function(input, output, session, models) {
 
   ## ---------------------------------------------------------
+  ## Valores reactivos auxiliares
+  ## ---------------------------------------------------------
+  rv <- shiny::reactiveValues(
+    flows_selected = NULL
+  )
+
+  ## ---------------------------------------------------------
   ## Modelo seleccionado
   ## ---------------------------------------------------------
   model <- shiny::reactive({
@@ -39,14 +46,21 @@ app_server <- function(input, output, session, models) {
   parms <- shiny::reactive({
     shiny::req(model())
 
-    vals <- sapply(
+    vals <- vapply(
       model()$par_names,
-      function(p) input[[paste0("par_", p)]]
+      function(p) {
+        id <- paste0("par_", p)
+        shiny::req(!is.null(input[[id]]))
+        input[[id]]
+      },
+      numeric(1)
     )
 
-    shiny::req(!any(is.null(vals)))
-    vals
+    shiny::req(!any(is.na(vals)))
+    setNames(as.numeric(vals), model()$par_names)
   })
+
+
 
   ## ---------------------------------------------------------
   ## Estados iniciales
@@ -54,13 +68,18 @@ app_server <- function(input, output, session, models) {
   init <- shiny::reactive({
     shiny::req(model())
 
-    vals <- sapply(
+    vals <- vapply(
       model()$state_names,
-      function(s) input[[paste0("init_", s)]]
+      function(s) {
+        id <- paste0("init_", s)
+        shiny::req(!is.null(input[[id]]))
+        input[[id]]
+      },
+      numeric(1)
     )
 
-    shiny::req(!any(is.null(vals)))
-    vals
+    shiny::req(!any(is.na(vals)))
+    setNames(as.numeric(vals), model()$state_names)
   })
 
   ## ---------------------------------------------------------
@@ -78,13 +97,34 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
+  ## Gestión de selección de flujos (sticky)
+  ## ---------------------------------------------------------
+  observeEvent(sim(), {
+    flows <- sim()$flows
+    if (is.null(flows) || ncol(flows) <= 1) return()
+
+    flow_names <- setdiff(names(flows), "time")
+
+    if (is.null(rv$flows_selected)) {
+      # primera vez
+      rv$flows_selected <- flow_names
+    } else {
+      # mantener solo los que siguen existiendo
+      rv$flows_selected <- intersect(rv$flows_selected, flow_names)
+    }
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$flows_to_plot, {
+    rv$flows_selected <- input$flows_to_plot
+  }, ignoreInit = TRUE)
+
+  ## ---------------------------------------------------------
   ## Selector de flujos
   ## ---------------------------------------------------------
   output$flows_select_ui <- shiny::renderUI({
     shiny::req(sim())
 
     flows <- sim()$flows
-
     if (is.null(flows) || ncol(flows) <= 1) {
       return(shiny::tags$em("No flows defined for this model"))
     }
@@ -95,7 +135,7 @@ app_server <- function(input, output, session, models) {
       "flows_to_plot",
       NULL,
       choices  = flow_names,
-      selected = flow_names,
+      selected = rv$flows_selected,
       inline   = TRUE
     )
   })
@@ -107,7 +147,6 @@ app_server <- function(input, output, session, models) {
     shiny::req(sim(), input$states_to_plot)
 
     states <- input$states_to_plot
-
     if (length(states) == 0) {
       plot.new()
       text(0.5, 0.5, "No states selected")
@@ -130,7 +169,6 @@ app_server <- function(input, output, session, models) {
     shiny::req(sim(), input$flows_to_plot)
 
     flows <- input$flows_to_plot
-
     if (length(flows) == 0) {
       plot.new()
       text(0.5, 0.5, "No flows selected")
@@ -146,3 +184,4 @@ app_server <- function(input, output, session, models) {
     plot(sim2, what = "states")
   })
 }
+

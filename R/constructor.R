@@ -6,14 +6,24 @@
 #'
 #' @description
 #' Defines the standard vocabulary of epidemiological roles supported by the
-#' package. Roles assign semantic meaning to state variables or auxiliary outputs
-#' of an epidemic model (e.g. infectious, incidence).
+#' package. Roles assign semantic epidemiological meaning to **state variables**
+#' and **flows** of an epidemic model (e.g. susceptible, infectious, incidence).
 #'
-#' Models declaring roles outside this vocabulary will be rejected by
-#' \code{epi_model()}, ensuring semantic consistency across models and
-#' epidemiological metrics.
+#' Roles are used to ensure semantic consistency across models and to enable
+#' generic epidemiological metrics and visualisations.
 #'
 #' @details
+#' Roles can only be assigned to:
+#' \itemize{
+#'   \item state variables (e.g. \code{S}, \code{I}, \code{R}),
+#'   \item flows or auxiliary outputs (e.g. incidence, deaths).
+#' }
+#'
+#' Epidemiological roles **must not** be assigned to model parameters
+#' (e.g. transmission or recovery rates). Models declaring roles outside this
+#' vocabulary, or assigning roles to parameters, will be rejected by
+#' \code{epi_model()}.
+#'
 #' The following roles are currently supported:
 #'
 #' \itemize{
@@ -32,6 +42,7 @@
 #' A character vector of valid epidemiological role names.
 #'
 #' @keywords internal
+
 .epi_role_vocab <- function() {
   c(
     "susceptible",
@@ -120,7 +131,8 @@ epi_model <- function(name,
                       rhs,
                       state_names,
                       par_names,
-                      outputs = state_names,
+                      states = states,
+                      flows = flows,
                       roles = NULL,
                       lower = NULL,
                       upper = NULL,
@@ -132,11 +144,11 @@ epi_model <- function(name,
   stopifnot(is.function(rhs))
   stopifnot(is.character(state_names), length(state_names) >= 1)
   stopifnot(is.character(par_names), length(par_names) >= 1)
-  stopifnot(is.character(outputs), length(outputs) >= 1)
+  stopifnot(is.character(states), length(states) >= 1)
 
   ## --- outputs must include states -------------------------------------------
-  if (!all(state_names %in% outputs)) {
-    stop("All state variables must be included in `outputs`.")
+  if (!all(state_names %in% states)) {
+    stop("All state variables must be included in `states`.")
   }
 
   ## --- roles validation ------------------------------------------------------
@@ -161,7 +173,7 @@ epi_model <- function(name,
 
     role_vars <- unlist(roles, use.names = FALSE)
 
-    unknown_vars <- setdiff(role_vars, outputs)
+    unknown_vars <- setdiff(role_vars, c(states, flows))
     if (length(unknown_vars) > 0) {
       stop(
         "Roles refer to unknown outputs: ",
@@ -205,7 +217,8 @@ epi_model <- function(name,
       rhs = rhs,
       state_names = state_names,
       par_names = par_names,
-      outputs = outputs,
+      states = states,
+      flows = flows,
       roles = roles,
       lower = lower,
       upper = upper,

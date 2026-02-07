@@ -135,7 +135,7 @@
 #' ## Example 2: Using a different numerical integration method
 #' ## ------------------------------------------------------------------
 #'
-#' sim_rk4 <- simulate_epi(
+#' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   times = 0:200,
 #'   parms = c(beta = 0.30, gamma = 0.10),
@@ -143,7 +143,7 @@
 #'   method = "rk4"
 #' )
 #'
-#' plot(sim_rk4)
+#' plot(sim)
 #'
 #'
 #' ## ------------------------------------------------------------------
@@ -201,24 +201,17 @@ simulate_epi <- function(model,
   ## -------------------------------------------------------------------------
   ## 1) Tiempos
   ## -------------------------------------------------------------------------
-  if (missing(times)) {
-    stop("Provide `times` as a strictly increasing numeric vector.")
-  }
-
   if (!is.numeric(times) || length(times) < 2 || anyNA(times)) {
     stop("`times` must be a numeric vector of length >= 2 with no missing values.")
   }
-
   if (any(diff(times) <= 0)) {
     stop("`times` must be strictly increasing.")
   }
 
-  ## ---------------------------------------------------------------------------
-  ## Parameters
-  ## ---------------------------------------------------------------------------
-
+  ## -------------------------------------------------------------------------
+  ## 2) Parámetros
+  ## -------------------------------------------------------------------------
   theta <- model$defaults
-
   if (is.null(theta)) {
     theta <- setNames(
       rep(NA_real_, length(model$par_names)),
@@ -227,51 +220,41 @@ simulate_epi <- function(model,
   }
 
   if (!is.null(parms)) {
-
     stopifnot(is.numeric(parms), !is.null(names(parms)))
 
     unknown <- setdiff(names(parms), model$par_names)
     if (length(unknown) > 0) {
       stop("Unknown parameters: ", paste(unknown, collapse = ", "))
     }
-
     theta[names(parms)] <- parms
   }
 
   if (any(is.na(theta))) {
-    stop(
-      "Missing parameters: ",
-      paste(names(theta)[is.na(theta)], collapse = ", ")
-    )
+    stop("Missing parameters: ",
+         paste(names(theta)[is.na(theta)], collapse = ", "))
   }
 
   theta <- theta[model$par_names]
 
-  ## ---------------------------------------------------------------------------
-  ## Initial conditions
-  ## ---------------------------------------------------------------------------
-
+  ## -------------------------------------------------------------------------
+  ## 3) Condiciones iniciales
+  ## -------------------------------------------------------------------------
   if (is.null(init)) {
-
     if (is.null(model$init)) {
       stop("Provide `init` or define `model$init`.")
     }
-
     init <- model$init
   }
 
   init <- unlist(init)
 
-  missing_states <- setdiff(model$state_names, names(init))
+  missing_states <- setdiff(model$states, names(init))
   if (length(missing_states) > 0) {
-    stop(
-      "Missing initial states: ",
-      paste(missing_states, collapse = ", ")
-    )
+    stop("Missing initial states: ",
+         paste(missing_states, collapse = ", "))
   }
 
-  init <- init[model$state_names]
-
+  init <- init[model$states]
 
   ## -------------------------------------------------------------------------
   ## 4) Integración ODE
@@ -287,21 +270,22 @@ simulate_epi <- function(model,
   out <- as.data.frame(out)
 
   ## -------------------------------------------------------------------------
-  ## 5) Separar estados y flujos
+  ## 5) Extraer estados y flujos declarados
   ## -------------------------------------------------------------------------
-  state_names <- model$state_names
-  flow_names  <- setdiff(names(out), c("time", state_names))
+  states_df <- out[, c("time", model$states), drop = FALSE]
 
-  states_df <- out[, c("time", state_names), drop = FALSE]
-
-  flows_df <- if (length(flow_names) > 0) {
-    out[, c("time", flow_names), drop = FALSE]
-  } else {
-    NULL
+  flows_df <- NULL
+  if (!is.null(model$flows)) {
+    missing_flows <- setdiff(model$flows, names(out))
+    if (length(missing_flows) > 0) {
+      stop("Model RHS did not return declared flows: ",
+           paste(missing_flows, collapse = ", "))
+    }
+    flows_df <- out[, c("time", model$flows), drop = FALSE]
   }
 
   ## -------------------------------------------------------------------------
-  ## 6) Modelo de observación (solo si existe flows$incidence)
+  ## 6) Modelo de observación (solo incidence)
   ## -------------------------------------------------------------------------
   incidence_obs <- NULL
 
@@ -309,20 +293,14 @@ simulate_epi <- function(model,
 
     inc_true <- flows_df$incidence[-1]
 
-    if (obs == "none") {
-
-      inc_obs <- inc_true
-
-    } else {
-
-      inc_obs <- switch(
-        obs,
-        poisson = stats::rpois(length(inc_true), lambda = inc_true),
-        negbin  = stats::rnbinom(length(inc_true),
-                                 mu = inc_true,
-                                 size = size)
-      )
-    }
+    inc_obs <- switch(
+      obs,
+      none     = inc_true,
+      poisson = stats::rpois(length(inc_true), lambda = inc_true),
+      negbin  = stats::rnbinom(length(inc_true),
+                               mu = inc_true,
+                               size = size)
+    )
 
     incidence_obs <- data.frame(
       time = flows_df$time[-1],

@@ -104,7 +104,8 @@ SI_MODEL <- epi_model(
   rhs = si_rhs,
   state_names = c("S", "I"),
   par_names = c("beta"),
-  outputs = c("S", "I", "incidence"),
+  states = c("S", "I"),
+  flows = c("incidence"),
   defaults = c(beta = 0.3),
   init = c(S = 999999, I = 1),
   roles = list(

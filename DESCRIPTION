@@ -1,7 +1,7 @@
 Package: SIR
 Type: Package
 Title: Simulation and Inference for Deterministic Epidemic Models
-Version: 0.2.1
+Version: 0.2.2
 Author: Vicente Castellar
 Maintainer: Vicente Castellar <vic.castellar@gmail.com>
 Authors@R:
@@ -44,6 +44,7 @@ Collate:
     'MODEL_SI.R'
     'MODEL_SIR.R'
     'MODEL_SIRS.R'
+    'MODEL_SIR_VITAL.R'
     'app_helpers.R'
     'app_server.R'
     'app_ui.R'

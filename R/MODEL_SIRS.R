@@ -114,7 +114,8 @@ SIRS_MODEL <- epi_model(
   upper = c(beta = 2,    gamma = 1,    omega = 1),
   defaults = c(beta = 0.3, gamma = 0.1, omega = 0.02),
   init = c("S" = 1e6, "I" = 20, "R" = 0),
-  outputs = c("S", "I", "R", "incidence"),
+  states = c("S", "I", "R"),
+  flows  = c("incidence"),
   roles = list(
     susceptible = "S",
     infectious  = "I",

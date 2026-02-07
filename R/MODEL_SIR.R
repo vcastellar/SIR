@@ -130,13 +130,9 @@ SIR_MODEL <- epi_model(
 
   init = c(S  = 1e6, I  = 10, R  = 0),
 
-  outputs = c(
-    ## estados
-    "S", "I", "R",
+  states = c("S", "I", "R"),
+  flows = c("incidence", "recovery"),
 
-    ## flujos
-    "incidence", "recovery"
-  ),
   roles = list(
     susceptible = "S",
     infectious  = "I",
