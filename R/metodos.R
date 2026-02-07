@@ -60,21 +60,33 @@
 #' \code{\link{print.sim_epi}}
 #'
 #' @examples
-#' sim <- simulate_epi(
-#'   model = SIR_MODEL,
-#'   times = 0:200,
-#'   time_unit = "days",
-#'   parms = c(beta = 0.3, gamma = 0.1),
-#'   init  = c(S = 999990, I = 10, R = 0, C = 10),
-#'   obs   = "poisson",
-#'   seed  = 1
+#' sird_rhs <- function(time, state, parms) {
+#'   with(as.list(c(state, parms)), {
+#'     N <- S + I + R
+#'     lambda <- beta * S * I / N
+#'
+#'     dS <- -lambda
+#'     dI <-  lambda - gamma * I - mu * I
+#'     dR <-  gamma * I
+#'     dD <-  mu * I
+#'
+#'     list(
+#'       c(dS, dI, dR, dD),
+#'       incidence = lambda
+#'     )
+#'   })
+#' }
+#'
+#' SIRD_MODEL <- epi_model(
+#'   name      = "SIRD",
+#'   rhs       = sird_rhs,
+#'   states    = c("S", "I", "R", "D"),
+#'   par_names = c("beta", "gamma", "mu")
 #' )
 #'
-#' # Plot all model states
-#' plot(sim)
-#'
 #' # Plot observed incidence (requires an observation model)
-#' plot(sim, what = "incidence")
+#' simulate_epi(model = SIRD_MODEL,
+#'              times = 0:200)
 #'
 #' # Plot a single state variable
 #' plot(sim, what = "I")

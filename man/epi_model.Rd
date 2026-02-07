@@ -79,18 +79,32 @@ roles should fail explicitly.
 }
 }
 \examples{
-sir_model <- epi_model(
+sir_rhs <- function(time, state, parms) {
+with(as.list(c(state, parms)), {
+
+  N <- S + I + R
+
+  lambda <- beta * S * I / N
+
+  dS <- -lambda
+  dI <-  lambda - gamma * I
+  dR <-  gamma * I
+
+
+  list(
+    c(dS, dI, dR),
+
+    ## flujos instantáneos
+    incidence = lambda,
+    recovery  = gamma * I
+  )
+})
+}
+sir <- epi_model(
   name = "SIR",
   rhs  = sir_rhs,
   states = c("S", "I", "R"),
-  par_names   = c("beta", "gamma"),
-  outputs     = c("S", "I", "R", "incidence"),
-  roles = list(
-    susceptible = "S",
-    infectious  = "I",
-    recovered   = "R",
-    incidence   = "incidence"
-  )
+  par_names   = c("beta", "gamma")
 )
 
 }
