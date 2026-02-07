@@ -20,7 +20,7 @@ param_sliders_ui <- function(model) {
 
 init_sliders_ui <- function(model) {
 
-  lapply(model$state_names, function(s) {
+  lapply(model$states, function(s) {
 
     val <- model$init[[s]] %||% 0
 

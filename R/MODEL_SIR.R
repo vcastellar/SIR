@@ -116,11 +116,7 @@ sir_rhs <- function(time, state, parms) {
 #' @export
 SIR_MODEL <- epi_model(
   name = "SIR",
-
   rhs = sir_rhs,
-
-  state_names = c("S", "I", "R"),
-
   par_names = c("beta", "gamma"),
 
   lower = c(beta = 1e-8, gamma = 1e-8),

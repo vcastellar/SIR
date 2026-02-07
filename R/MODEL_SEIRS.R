@@ -129,7 +129,6 @@ seirs_rhs <- function(time, state, parms) {
 SEIRS_MODEL <- epi_model(
   name = "SEIRS",
   rhs = seirs_rhs,
-  state_names = c("S", "E", "I", "R"),
   par_names = c("beta", "sigma", "gamma", "omega"),
   lower = c(beta = 1e-8, sigma = 1e-8, gamma = 1e-8, omega = 1e-8),
   upper = c(beta = 5,    sigma = 2,    gamma = 2,    omega = 1),

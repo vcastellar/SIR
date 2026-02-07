@@ -75,7 +75,7 @@
 #' @param rhs Function defining the ODE system. Must have signature
 #'   \code{function(time, state, parms)} and return a list whose first element
 #'   is the vector of state derivatives.
-#' @param state_names Character vector of state variable names.
+#' @param states Character vector of state variable names.
 #' @param par_names Character vector of parameter names.
 #' @param outputs Character vector of named outputs returned by the RHS.
 #'   Must include all state variables.
@@ -115,7 +115,7 @@
 #' sir_model <- epi_model(
 #'   name = "SIR",
 #'   rhs  = sir_rhs,
-#'   state_names = c("S", "I", "R"),
+#'   states = c("S", "I", "R"),
 #'   par_names   = c("beta", "gamma"),
 #'   outputs     = c("S", "I", "R", "incidence"),
 #'   roles = list(
@@ -129,10 +129,9 @@
 #' @export
 epi_model <- function(name,
                       rhs,
-                      state_names,
                       par_names,
-                      states = states,
-                      flows = flows,
+                      states,
+                      flows = character(0),
                       roles = NULL,
                       lower = NULL,
                       upper = NULL,
@@ -142,14 +141,20 @@ epi_model <- function(name,
   ## --- basic checks ----------------------------------------------------------
   stopifnot(is.character(name), length(name) == 1)
   stopifnot(is.function(rhs))
-  stopifnot(is.character(state_names), length(state_names) >= 1)
   stopifnot(is.character(par_names), length(par_names) >= 1)
   stopifnot(is.character(states), length(states) >= 1)
+  stopifnot(length(unique(states)) == length(states))
 
-  ## --- outputs must include states -------------------------------------------
-  if (!all(state_names %in% states)) {
-    stop("All state variables must be included in `states`.")
+  if (missing(flows) || length(flows) == 0) {
+    flows <- character(0)
   }
+
+  # una variable no puede ser state y flow a la vez
+  stopifnot(
+    is.character(flows),
+    length(unique(flows)) == length(flows),
+    !any(flows %in% states)
+  )
 
   ## --- roles validation ------------------------------------------------------
   if (!is.null(roles)) {
@@ -207,15 +212,14 @@ epi_model <- function(name,
 
   ## --- init ------------------------------------------------------------------
   if (!is.null(init)) {
-    stopifnot(is.numeric(init), all(state_names %in% names(init)))
-    init <- init[state_names]
+    stopifnot(is.numeric(init), all(states %in% names(init)))
+    init <- init[states]
   }
 
   structure(
     list(
       name = name,
       rhs = rhs,
-      state_names = state_names,
       par_names = par_names,
       states = states,
       flows = flows,
@@ -268,7 +272,7 @@ print.epi_model <- function(x, ...) {
   cat("<epi_model> ", x$name, "\n", sep = "")
 
   ## --- core structure --------------------------------------------------------
-  cat("  States:   ", paste(x$state_names, collapse = ", "), "\n", sep = "")
+  cat("  States:   ", paste(x$states, collapse = ", "), "\n", sep = "")
   cat("  Params:   ", paste(x$par_names, collapse = ", "), "\n", sep = "")
 
   ## --- outputs ---------------------------------------------------------------

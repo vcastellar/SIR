@@ -102,7 +102,6 @@ si_rhs <- function(time, state, parms) {
 SI_MODEL <- epi_model(
   name = "SI",
   rhs = si_rhs,
-  state_names = c("S", "I"),
   par_names = c("beta"),
   states = c("S", "I"),
   flows = c("incidence"),

@@ -53,7 +53,7 @@
 #' seird_model <- epi_model(
 #'   name        = "SEIRD",
 #'   rhs         = seird_rhs,
-#'   state_names = c("S", "E", "I", "R", "D"),
+#'   states = c("S", "E", "I", "R", "D"),
 #'   roles       = list(
 #'     susceptible = "S",
 #'     exposed     = "E",

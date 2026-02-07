@@ -30,8 +30,8 @@ app_server <- function(input, output, session, models) {
     shiny::checkboxGroupInput(
       "states_to_plot",
       NULL,
-      choices  = model()$state_names,
-      selected = model()$state_names,
+      choices  = model()$states,
+      selected = model()$states,
       inline   = TRUE
     )
   })
@@ -69,7 +69,7 @@ app_server <- function(input, output, session, models) {
     shiny::req(model())
 
     vals <- vapply(
-      model()$state_names,
+      model()$states,
       function(s) {
         id <- paste0("init_", s)
         shiny::req(!is.null(input[[id]]))
@@ -79,7 +79,7 @@ app_server <- function(input, output, session, models) {
     )
 
     shiny::req(!any(is.na(vals)))
-    setNames(as.numeric(vals), model()$state_names)
+    setNames(as.numeric(vals), model()$states)
   })
 
   ## ---------------------------------------------------------
@@ -157,7 +157,7 @@ app_server <- function(input, output, session, models) {
     keep <- c("time", states)
 
     sim2$states <- sim2$states[, keep, drop = FALSE]
-    sim2$model$state_names <- states
+    sim2$model$states <- states
 
     plot(sim2, what = "states")
   })
@@ -179,7 +179,7 @@ app_server <- function(input, output, session, models) {
     keep <- c("time", flows)
 
     sim2$states <- sim2$flows[, keep, drop = FALSE]
-    sim2$model$state_names <- flows
+    sim2$model$states <- flows
 
     plot(sim2, what = "states")
   })

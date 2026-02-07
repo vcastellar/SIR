@@ -19,7 +19,7 @@
 #'
 #' \itemize{
 #'   \item{\code{what = "states"}}{Plots the time evolution of all state variables
-#'     defined in \code{x$model$state_names}, using the simulated trajectories
+#'     defined in \code{x$model$states}, using the simulated trajectories
 #'     stored in \code{x$states}. The time variable is taken from the
 #'     \code{time} column of \code{x$states} and is not considered a state.}
 #'
@@ -108,7 +108,7 @@ plot.sim_epi <- function(x,
 
   model   <- x$model
   st      <- x$states
-  states  <- model$state_names
+  states  <- model$states
   outputs <- model$outputs
 
   ## Etiqueta del eje X según time_unit

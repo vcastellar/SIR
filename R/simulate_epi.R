@@ -21,7 +21,7 @@
 #' must define:
 #' \itemize{
 #'   \item an ODE right-hand side function (\code{model$rhs});
-#'   \item the state variables (\code{model$state_names});
+#'   \item the state variables (\code{model$states});
 #'   \item the model parameters (\code{model$par_names}).
 #' }
 #'
@@ -41,7 +41,7 @@
 #'
 #' ## Initial conditions
 #' The initial state \code{init} must be supplied explicitly as a named numeric
-#' vector whose names match \code{model$state_names}. No automatic construction
+#' vector whose names match \code{model$states}. No automatic construction
 #' of initial conditions is performed.
 #'
 #' ## Observation model
@@ -84,7 +84,7 @@
 #'   \code{model$par_names}. Any missing parameters are taken from
 #'   \code{model$defaults}, if available.
 #' @param init Named numeric vector giving the initial values of the state
-#'   variables. Names must exactly match \code{model$state_names}.
+#'   variables. Names must exactly match \code{model$states}.
 #' @param obs Character string specifying the observation model. One of
 #'   \code{"none"}, \code{"poisson"}, or \code{"negbin"}.
 #' @param size Numeric. Dispersion (size) parameter for the negative binomial

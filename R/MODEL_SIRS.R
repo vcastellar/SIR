@@ -108,7 +108,6 @@ sirs_rhs <- function(time, state, parms) {
 SIRS_MODEL <- epi_model(
   name = "SIRS",
   rhs = sirs_rhs,
-  state_names = c("S", "I", "R"),
   par_names = c("beta", "gamma", "omega"),
   lower = c(beta = 1e-8, gamma = 1e-8, omega = 1e-8),
   upper = c(beta = 2,    gamma = 1,    omega = 1),

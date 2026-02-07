@@ -121,8 +121,6 @@ sir_vital_rhs <- function(time, state, parms) {
 SIR_VITAL_MODEL <- epi_model(
   name = "SIR with vital dynamics",
   rhs  = sir_vital_rhs,
-
-  state_names = c("S", "I", "R"),
   par_names   = c("beta", "gamma", "mu"),
 
   states = c("S", "I", "R"),
