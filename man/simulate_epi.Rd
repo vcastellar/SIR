@@ -36,7 +36,7 @@ in printed summaries and plots, but does not affect the numerical solution.}
 \code{model$defaults}, if available.}
 
 \item{init}{Named numeric vector giving the initial values of the state
-variables. Names must exactly match \code{model$state_names}.}
+variables. Names must exactly match \code{model$states}.}
 
 \item{obs}{Character string specifying the observation model. One of
 \code{"none"}, \code{"poisson"}, or \code{"negbin"}.}
@@ -84,7 +84,7 @@ typically created with \code{\link{new_epi_model}}. At minimum, the model
 must define:
 \itemize{
 \item an ODE right-hand side function (\code{model$rhs});
-\item the state variables (\code{model$state_names});
+\item the state variables (\code{model$states});
 \item the model parameters (\code{model$par_names}).
 }
 
@@ -108,7 +108,7 @@ irregular or non-integer time grids.
 \subsection{Initial conditions}{
 
 The initial state \code{init} must be supplied explicitly as a named numeric
-vector whose names match \code{model$state_names}. No automatic construction
+vector whose names match \code{model$states}. No automatic construction
 of initial conditions is performed.
 }
 
@@ -168,7 +168,7 @@ plot(sim, what = "CR")
 ## Example 2: Using a different numerical integration method
 ## ------------------------------------------------------------------
 
-sim_rk4 <- simulate_epi(
+sim <- simulate_epi(
   model = SIR_MODEL,
   times = 0:200,
   parms = c(beta = 0.30, gamma = 0.10),
@@ -176,7 +176,7 @@ sim_rk4 <- simulate_epi(
   method = "rk4"
 )
 
-plot(sim_rk4)
+plot(sim)
 
 
 ## ------------------------------------------------------------------

@@ -7,9 +7,9 @@
 epi_model(
   name,
   rhs,
-  state_names,
   par_names,
-  outputs = state_names,
+  states,
+  flows = character(0),
   roles = NULL,
   lower = NULL,
   upper = NULL,
@@ -24,12 +24,9 @@ epi_model(
 \code{function(time, state, parms)} and return a list whose first element
 is the vector of state derivatives.}
 
-\item{state_names}{Character vector of state variable names.}
-
 \item{par_names}{Character vector of parameter names.}
 
-\item{outputs}{Character vector of named outputs returned by the RHS.
-Must include all state variables.}
+\item{states}{Character vector of state variable names.}
 
 \item{roles}{Optional named list mapping epidemiological roles to variable
 names (states or outputs). Role names must belong to the standard
@@ -42,6 +39,9 @@ vocabulary defined in \code{.epi_role_vocab()}.}
 \item{defaults}{Optional named numeric vector of default parameter values.}
 
 \item{init}{Optional named numeric vector of default initial conditions.}
+
+\item{outputs}{Character vector of named outputs returned by the RHS.
+Must include all state variables.}
 }
 \value{
 An object of class \code{"epi_model"}.
@@ -82,7 +82,7 @@ roles should fail explicitly.
 sir_model <- epi_model(
   name = "SIR",
   rhs  = sir_rhs,
-  state_names = c("S", "I", "R"),
+  states = c("S", "I", "R"),
   par_names   = c("beta", "gamma"),
   outputs     = c("S", "I", "R", "incidence"),
   roles = list(

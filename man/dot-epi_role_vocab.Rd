@@ -11,14 +11,24 @@ A character vector of valid epidemiological role names.
 }
 \description{
 Defines the standard vocabulary of epidemiological roles supported by the
-package. Roles assign semantic meaning to state variables or auxiliary outputs
-of an epidemic model (e.g. infectious, incidence).
+package. Roles assign semantic epidemiological meaning to \strong{state variables}
+and \strong{flows} of an epidemic model (e.g. susceptible, infectious, incidence).
 
-Models declaring roles outside this vocabulary will be rejected by
-\code{epi_model()}, ensuring semantic consistency across models and
-epidemiological metrics.
+Roles are used to ensure semantic consistency across models and to enable
+generic epidemiological metrics and visualisations.
 }
 \details{
+Roles can only be assigned to:
+\itemize{
+\item state variables (e.g. \code{S}, \code{I}, \code{R}),
+\item flows or auxiliary outputs (e.g. incidence, deaths).
+}
+
+Epidemiological roles \strong{must not} be assigned to model parameters
+(e.g. transmission or recovery rates). Models declaring roles outside this
+vocabulary, or assigning roles to parameters, will be rejected by
+\code{epi_model()}.
+
 The following roles are currently supported:
 
 \itemize{

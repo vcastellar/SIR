@@ -41,15 +41,21 @@
 #' }
 #'
 #' SIRD_MODEL <- epi_model(
-#'   name        = "SIRD",
-#'   rhs         = sird_rhs,
-#'   states = c("S", "I", "R", "D"),
-#'   par_names   = c("beta", "gamma", "mu"),
-#'   defaults    = c(beta = 0.3, gamma = 0.1, mu = 0.01),
-#'   init        = c(S = 1e6, I = 10, R = 0, D = 0),
-#'   outputs     = c("S", "I", "R", "D", "incidence")
+#'   name      = "SIRD",
+#'   rhs       = sird_rhs,
+#'   states    = c("S", "I", "R", "D"),
+#'   flows     = c("incidence"),
+#'   par_names = c("beta", "gamma", "mu"),
+#'   defaults  = c(beta = 0.3, gamma = 0.1, mu = 0.01),
+#'   init      = c(S = 1e6, I = 10, R = 0, D = 0),
+#'   roles     = list(
+#'     susceptible = "S",
+#'     infectious  = "I",
+#'     recovered   = "R",
+#'     deceased    = "D",
+#'     incidence   = "incidence"
+#'   )
 #' )
-#'
 #'
 #' ## Simulate using explicit initial conditions
 #' sim <- simulate_epi(
@@ -61,6 +67,7 @@
 #'
 #' plot(sim)
 #' plot(sim, what = "flows")
+#' run_epi_app(list(SIRD = SIRD_MODEL))
 
 
 
