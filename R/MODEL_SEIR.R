@@ -142,7 +142,6 @@ SEIR_MODEL <- epi_model(
     susceptible = "S",
     exposed     = "E",
     infectious  = "I",
-    recovered   = "R",
-    incidence   = "incidence"
+    recovered   = "R"
   )
 )

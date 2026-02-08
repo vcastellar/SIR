@@ -2,7 +2,7 @@
 % Please edit documentation in R/constructor.R
 \name{epi_model}
 \alias{epi_model}
-\title{Define an epidemic model}
+\title{Construct an epidemiological model}
 \usage{
 epi_model(
   name,
@@ -14,97 +14,107 @@ epi_model(
   lower = NULL,
   upper = NULL,
   defaults = NULL,
-  init = NULL
+  init = NULL,
+  outputs = NULL
 )
 }
 \arguments{
-\item{name}{Character scalar. Human-readable name of the model (e.g. "SIR").}
+\item{name}{Character scalar giving the name of the model.}
 
-\item{rhs}{Function defining the ODE system. Must have signature
-\code{function(time, state, parms)} and return a list whose first element
-is the vector of state derivatives.}
+\item{rhs}{A function defining the right-hand side of the system of
+differential (or difference) equations. The function must be compatible
+with the simulation backend used by \code{simulate_epi()}.}
 
-\item{par_names}{Character vector of parameter names.}
+\item{par_names}{Character vector with the names of the model parameters.}
 
-\item{states}{Character vector of state variable names.}
+\item{states}{Character vector giving the names of the compartmental state
+variables of the model. Each state name must be unique.}
 
-\item{roles}{Optional named list mapping epidemiological roles to variable
-names (states or outputs). Role names must belong to the standard
-vocabulary defined in \code{.epi_role_vocab()}.}
+\item{flows}{Optional character vector giving the names of flow variables
+used internally by the model or returned as outputs. Flow variables are
+not required to have epidemiological roles.}
 
-\item{lower}{Optional named numeric vector of lower parameter bounds.}
+\item{roles}{Named list mapping \emph{epidemiological roles} to state variables.
+Names correspond to epidemiological state roles (see
+\code{\link{epi_role_vocab}}), and values correspond to names of variables
+defined in \code{states}.
 
-\item{upper}{Optional named numeric vector of upper parameter bounds.}
+If \code{roles = NULL} (default), roles are inferred automatically using
+the internal epidemiological role vocabulary. In all cases, every state
+variable must be associated with exactly one epidemiological role.}
 
-\item{defaults}{Optional named numeric vector of default parameter values.}
+\item{lower}{Optional named numeric vector giving lower bounds for model
+parameters. Names must match \code{par_names}.}
 
-\item{init}{Optional named numeric vector of default initial conditions.}
+\item{upper}{Optional named numeric vector giving upper bounds for model
+parameters. Names must match \code{par_names}.}
 
-\item{outputs}{Character vector of named outputs returned by the RHS.
-Must include all state variables.}
+\item{defaults}{Optional named numeric vector of default parameter values.
+Names must match \code{par_names}.}
+
+\item{init}{Optional named numeric vector of initial values for the state
+variables. Names must match \code{states}.}
+
+\item{outputs}{Optional character vector giving the names of model variables
+(states and/or flows) to be returned by default in simulations. If
+\code{NULL}, all states and flows are included.}
 }
 \value{
-An object of class \code{"epi_model"}.
+An object of class \code{"epi_model"} containing the model definition.
 }
 \description{
-Defines a deterministic compartmental epidemic model governed by a system
-of ordinary differential equations (ODEs). The model explicitly declares its
-state variables, parameters, model outputs, and optional epidemiological roles.
-
-Epidemiological roles assign semantic meaning (e.g. infectious, incidence)
-to specific state variables or auxiliary outputs, enabling generic
-epidemiological metrics and summaries to operate consistently across models.
+Creates an \code{epi_model} object describing the structure of a deterministic
+compartmental epidemiological model. The model definition includes the
+system of equations, state variables, optional flow variables, parameter
+names, and a semantic mapping between state variables and epidemiological
+roles.
 }
 \details{
+The resulting object is a \emph{model definition} and does not perform any
+simulation by itself. It is intended to be used by downstream functions such
+as \code{simulate_epi()}.
 \subsection{Epidemiological roles}{
 
-Roles provide a semantic layer on top of model variables. For example,
-different models may use different variable names for infectious individuals,
-but assigning the \code{"infectious"} role allows epidemiological metrics to
-remain model-agnostic.
+Epidemiological roles provide a semantic layer on top of the model states,
+allowing downstream tools (metrics, summaries, plotting functions) to refer
+to core epidemiological concepts (e.g. susceptible, infectious) in a
+model-independent way.
 
-Supported roles are:
+Roles apply \strong{exclusively to state variables}. Flow variables are not
+part of the role system and are treated as implementation details or optional
+model outputs.
+
+The set of supported epidemiological roles and their default associated state
+names are defined by \code{\link{epi_role_vocab}}.
+\subsection{Automatic role assignment}{
+
+When \code{roles = NULL}, the constructor attempts to assign roles
+automatically by matching the default state names defined in
+\code{epi_role_vocab()} against the declared \code{states}.
+
+Model construction fails if any state variable cannot be associated with an
+epidemiological role.
+}
+
+\subsection{User-defined roles}{
+
+When \code{roles} is provided by the user:
+
 \itemize{
-\item \strong{susceptible}
-\item \strong{exposed}
-\item \strong{infectious}
-\item \strong{recovered}
-\item \strong{deceased}
-\item \strong{incidence}
-\item \strong{deaths}
+\item User-defined role assignments take precedence over automatic
+inference.
+\item Role names must belong to the epidemiological role vocabulary.
+\item Role targets must correspond to state variables declared in
+\code{states}.
 }
 
-Not all roles must be defined for every model. Metrics depending on missing
-roles should fail explicitly.
+Any roles not explicitly defined by the user are completed automatically
+using the vocabulary. All states must be identifiable after completion.
+}
+
 }
 }
-\examples{
-sir_rhs <- function(time, state, parms) {
-with(as.list(c(state, parms)), {
-
-  N <- S + I + R
-
-  lambda <- beta * S * I / N
-
-  dS <- -lambda
-  dI <-  lambda - gamma * I
-  dR <-  gamma * I
-
-
-  list(
-    c(dS, dI, dR),
-
-    ## flujos instantáneos
-    incidence = lambda,
-    recovery  = gamma * I
-  )
-})
-}
-sir <- epi_model(
-  name = "SIR",
-  rhs  = sir_rhs,
-  states = c("S", "I", "R"),
-  par_names   = c("beta", "gamma")
-)
-
+\seealso{
+\code{\link{simulate_epi}},
+\code{\link{epi_role_vocab}}
 }

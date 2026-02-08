@@ -118,8 +118,7 @@ SIRS_MODEL <- epi_model(
   roles = list(
     susceptible = "S",
     infectious  = "I",
-    recovered   = "R",
-    incidence   = "incidence"
+    recovered   = "R"
   )
 
 )

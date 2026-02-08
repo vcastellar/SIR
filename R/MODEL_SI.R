@@ -109,7 +109,6 @@ SI_MODEL <- epi_model(
   init = c(S = 999999, I = 1),
   roles = list(
     susceptible = "S",
-    infectious  = "I",
-    incidence   = "incidence"
+    infectious  = "I"
   )
 )

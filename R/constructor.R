@@ -1,159 +1,198 @@
-## ============================================================================
-## Epidemiological roles vocabulary
-## ============================================================================
-
-#' Epidemiological roles vocabulary
+#-------------------------------------------------------------------------------
+# Epidemiological role vocabulary (state roles only)
+#-------------------------------------------------------------------------------
+#' Epidemiological role vocabulary
 #'
-#' @description
-#' Defines the standard vocabulary of epidemiological roles supported by the
-#' package. Roles assign semantic epidemiological meaning to **state variables**
-#' and **flows** of an epidemic model (e.g. susceptible, infectious, incidence).
+#' Defines the internal vocabulary of epidemiological roles supported by the
+#' framework.
 #'
-#' Roles are used to ensure semantic consistency across models and to enable
-#' generic epidemiological metrics and visualisations.
+#' This vocabulary is restricted to *state roles only*. Epidemiological roles
+#' describe the semantic meaning of compartmental state variables (e.g.
+#' susceptible, infectious) and are used to provide a model-independent way of
+#' referring to core epidemiological concepts.
+#'
+#' Flows are intentionally excluded from the role system. Flow variables are
+#' treated as implementation details or optional model outputs and are not
+#' required to have epidemiological roles.
 #'
 #' @details
-#' Roles can only be assigned to:
-#' \itemize{
-#'   \item state variables (e.g. \code{S}, \code{I}, \code{R}),
-#'   \item flows or auxiliary outputs (e.g. incidence, deaths).
+#' ## State roles
+#'
+#' The vocabulary defines the set of supported epidemiological state roles and
+#' their default associated state variable names. The returned vector maps role
+#' names (keys) to default state names (values).
+#'
+#' The following state roles are currently supported:
+#'
+#' \describe{
+#'   \item{\code{susceptible}}{
+#'     Individuals who are not infected and are at risk of infection.
+#'     By default, associated with the state variable \code{"S"}.
+#'   }
+#'   \item{\code{exposed}}{
+#'     Individuals who have been infected but are not yet infectious.
+#'     By default, associated with the state variable \code{"E"}.
+#'   }
+#'   \item{\code{infectious}}{
+#'     Individuals who are currently infectious and capable of transmitting
+#'     the pathogen.
+#'     By default, associated with the state variable \code{"I"}.
+#'   }
+#'   \item{\code{recovered}}{
+#'     Individuals who have recovered from infection and are no longer
+#'     infectious.
+#'     By default, associated with the state variable \code{"R"}.
+#'   }
+#'   \item{\code{deceased}}{
+#'     Individuals who have died as a consequence of the disease.
+#'     By default, associated with the state variable \code{"D"}.
+#'   }
 #' }
 #'
-#' Epidemiological roles **must not** be assigned to model parameters
-#' (e.g. transmission or recovery rates). Models declaring roles outside this
-#' vocabulary, or assigning roles to parameters, will be rejected by
-#' \code{epi_model()}.
+#' ## Use in \code{epi_model()}
 #'
-#' The following roles are currently supported:
+#' The vocabulary is used by \code{epi_model()} to:
 #'
 #' \itemize{
-#'   \item \strong{susceptible}: Individuals susceptible to infection.
-#'   \item \strong{exposed}: Infected but not yet infectious individuals.
-#'   \item \strong{infectious}: Infectious individuals.
-#'   \item \strong{recovered}: Individuals recovered with immunity (temporary or permanent).
-#'   \item \strong{deceased}: Individuals who died due to the disease.
-#'   \item \strong{incidence}: Flow representing new infections.
-#'   \item \strong{deaths}: Flow representing disease-induced deaths.
+#'   \item Infer state roles automatically when \code{roles = NULL}.
+#'   \item Validate user-defined state role assignments.
+#'   \item Ensure that all model states have an epidemiological role.
 #' }
 #'
-#' This vocabulary may be extended in future versions of the package.
+#' All state variables declared in an \code{epi_model} must be identifiable
+#' through this vocabulary or explicitly assigned by the user. If a state
+#' cannot be mapped to a role, model construction fails.
 #'
 #' @return
-#' A character vector of valid epidemiological role names.
+#' A named character vector mapping epidemiological state roles (names) to
+#' default state variable names (values).
+#'
+#' @seealso
+#' \code{\link{epi_model}}
 #'
 #' @keywords internal
 
-.epi_role_vocab <- function() {
+
+epi_role_vocab <- function() {
   c(
-    "susceptible",
-    "exposed",
-    "infectious",
-    "recovered",
-    "deceased",
-    "incidence",
-    "deaths"
+    susceptible = "S",
+    exposed     = "E",
+    infectious  = "I",
+    recovered   = "R",
+    deceased    = "D"
   )
 }
 
 
-## ============================================================================
-## Epidemic model constructor
-## ============================================================================
-
-#' Define an epidemic model
+#-------------------------------------------------------------------------------
+# Epidemiological model constructor
+#-------------------------------------------------------------------------------
+#' Construct an epidemiological model
 #'
-#' @description
-#' Defines a deterministic compartmental epidemic model governed by a system
-#' of ordinary differential equations (ODEs). The model explicitly declares its
-#' state variables, parameters, model outputs, and optional epidemiological roles.
+#' Creates an \code{epi_model} object describing the structure of a deterministic
+#' compartmental epidemiological model. The model definition includes the
+#' system of equations, state variables, optional flow variables, parameter
+#' names, and a semantic mapping between state variables and epidemiological
+#' roles.
 #'
-#' Epidemiological roles assign semantic meaning (e.g. infectious, incidence)
-#' to specific state variables or auxiliary outputs, enabling generic
-#' epidemiological metrics and summaries to operate consistently across models.
+#' The resulting object is a *model definition* and does not perform any
+#' simulation by itself. It is intended to be used by downstream functions such
+#' as \code{simulate_epi()}.
 #'
-#' @param name Character scalar. Human-readable name of the model (e.g. "SIR").
-#' @param rhs Function defining the ODE system. Must have signature
-#'   \code{function(time, state, parms)} and return a list whose first element
-#'   is the vector of state derivatives.
-#' @param states Character vector of state variable names.
-#' @param par_names Character vector of parameter names.
-#' @param outputs Character vector of named outputs returned by the RHS.
-#'   Must include all state variables. Defaults to \code{c(states, flows)}.
-#' @param roles Named list mapping epidemiological roles to variable
-#'   names (states or outputs). Role names must belong to the standard
-#'   vocabulary defined in \code{.epi_role_vocab()}. Must include at least
-#'   \code{"susceptible"} and \code{"infectious"}.
-#' @param lower Optional named numeric vector of lower parameter bounds.
-#' @param upper Optional named numeric vector of upper parameter bounds.
+#' @param name Character scalar giving the name of the model.
+#'
+#' @param rhs A function defining the right-hand side of the system of
+#'   differential (or difference) equations. The function must be compatible
+#'   with the simulation backend used by \code{simulate_epi()}.
+#'
+#' @param par_names Character vector with the names of the model parameters.
+#'
+#' @param states Character vector giving the names of the compartmental state
+#'   variables of the model. Each state name must be unique.
+#'
+#' @param flows Optional character vector giving the names of flow variables
+#'   used internally by the model or returned as outputs. Flow variables are
+#'   not required to have epidemiological roles.
+#'
+#' @param roles Named list mapping *epidemiological roles* to state variables.
+#'   Names correspond to epidemiological state roles (see
+#'   \code{\link{epi_role_vocab}}), and values correspond to names of variables
+#'   defined in \code{states}.
+#'
+#'   If \code{roles = NULL} (default), roles are inferred automatically using
+#'   the internal epidemiological role vocabulary. In all cases, every state
+#'   variable must be associated with exactly one epidemiological role.
+#'
+#' @param lower Optional named numeric vector giving lower bounds for model
+#'   parameters. Names must match \code{par_names}.
+#'
+#' @param upper Optional named numeric vector giving upper bounds for model
+#'   parameters. Names must match \code{par_names}.
+#'
 #' @param defaults Optional named numeric vector of default parameter values.
-#' @param init Optional named numeric vector of default initial conditions.
+#'   Names must match \code{par_names}.
+#'
+#' @param init Optional named numeric vector of initial values for the state
+#'   variables. Names must match \code{states}.
+#'
+#' @param outputs Optional character vector giving the names of model variables
+#'   (states and/or flows) to be returned by default in simulations. If
+#'   \code{NULL}, all states and flows are included.
 #'
 #' @details
 #' ## Epidemiological roles
-#' Roles provide a semantic layer on top of model variables. For example,
-#' different models may use different variable names for infectious individuals,
-#' but assigning the \code{"infectious"} role allows epidemiological metrics to
-#' remain model-agnostic.
 #'
-#' Supported roles are:
+#' Epidemiological roles provide a semantic layer on top of the model states,
+#' allowing downstream tools (metrics, summaries, plotting functions) to refer
+#' to core epidemiological concepts (e.g. susceptible, infectious) in a
+#' model-independent way.
+#'
+#' Roles apply \strong{exclusively to state variables}. Flow variables are not
+#' part of the role system and are treated as implementation details or optional
+#' model outputs.
+#'
+#' The set of supported epidemiological roles and their default associated state
+#' names are defined by \code{\link{epi_role_vocab}}.
+#'
+#' ### Automatic role assignment
+#'
+#' When \code{roles = NULL}, the constructor attempts to assign roles
+#' automatically by matching the default state names defined in
+#' \code{epi_role_vocab()} against the declared \code{states}.
+#'
+#' Model construction fails if any state variable cannot be associated with an
+#' epidemiological role.
+#'
+#' ### User-defined roles
+#'
+#' When \code{roles} is provided by the user:
+#'
 #' \itemize{
-#'   \item \strong{susceptible}
-#'   \item \strong{exposed}
-#'   \item \strong{infectious}
-#'   \item \strong{recovered}
-#'   \item \strong{deceased}
-#'   \item \strong{incidence}
-#'   \item \strong{deaths}
+#'   \item User-defined role assignments take precedence over automatic
+#'   inference.
+#'   \item Role names must belong to the epidemiological role vocabulary.
+#'   \item Role targets must correspond to state variables declared in
+#'   \code{states}.
 #' }
 #'
-#' Not all roles must be defined for every model. Metrics depending on missing
-#' roles should fail explicitly.
+#' Any roles not explicitly defined by the user are completed automatically
+#' using the vocabulary. All states must be identifiable after completion.
 #'
 #' @return
-#' An object of class \code{"epi_model"}.
+#' An object of class \code{"epi_model"} containing the model definition.
 #'
-#' @examples
-#' sir_rhs <- function(time, state, parms) {
-#' with(as.list(c(state, parms)), {
-#'
-#'   N <- S + I + R
-#'
-#'   lambda <- beta * S * I / N
-#'
-#'   dS <- -lambda
-#'   dI <-  lambda - gamma * I
-#'   dR <-  gamma * I
-#'
-#'
-#'   list(
-#'     c(dS, dI, dR),
-#'
-#'     ## flujos instantáneos
-#'     incidence = lambda,
-#'     recovery  = gamma * I
-#'   )
-#' })
-#' }
-#' sir <- epi_model(
-#'   name = "SIR",
-#'   rhs  = sir_rhs,
-#'   states = c("S", "I", "R"),
-#'   par_names   = c("beta", "gamma"),
-#'   roles = list(
-#'     susceptible = "S",
-#'     infectious  = "I",
-#'     recovered   = "R",
-#'     incidence   = "incidence"
-#'   )
-#' )
+#' @seealso
+#' \code{\link{simulate_epi}},
+#' \code{\link{epi_role_vocab}}
 #'
 #' @export
+
 epi_model <- function(name,
                       rhs,
                       par_names,
                       states,
                       flows = character(0),
-                      roles,
+                      roles = NULL,
                       lower = NULL,
                       upper = NULL,
                       defaults = NULL,
@@ -171,55 +210,98 @@ epi_model <- function(name,
     flows <- character(0)
   }
 
-  # una variable no puede ser state y flow a la vez
+  ## a variable cannot be both state and flow
   stopifnot(
     is.character(flows),
     length(unique(flows)) == length(flows),
     !any(flows %in% states)
   )
 
-  ## --- roles validation ------------------------------------------------------
-  if (!is.list(roles) || is.null(names(roles))) {
-    stop("`roles` must be a named list.")
+  #-----------------------------------------------------------------------------
+  ## Roles handling (STATES ONLY)
+  #-----------------------------------------------------------------------------
+
+  vocab <- epi_role_vocab()
+  model_states <- states
+
+  ## -------------------------------------------------------------------------
+  ## Case 1: roles = NULL  → infer from vocabulary
+  ## -------------------------------------------------------------------------
+  if (is.null(roles)) {
+
+    roles <- list()
+
+    for (role in names(vocab)) {
+      state <- vocab[[role]]
+
+      if (state %in% model_states) {
+        roles[[role]] <- state
+      }
+    }
+
+    ## all states must have a role
+    missing_states <- setdiff(model_states, unlist(roles))
+
+    if (length(missing_states) > 0) {
+      stop(
+        "Unable to assign epidemiological roles to the following states: ",
+        paste(missing_states, collapse = ", ")
+      )
+    }
+
+    ## -------------------------------------------------------------------------
+    ## Case 2 & 3: roles defined by the user (partial or complete)
+    ## -------------------------------------------------------------------------
+  } else {
+
+    ## --- structure ----------------------------------------------------------
+    if (!is.list(roles) || is.null(names(roles))) {
+      stop("`roles` must be a named list.")
+    }
+
+    ## --- role names must exist in vocabulary --------------------------------
+    unknown_roles <- setdiff(names(roles), names(vocab))
+    if (length(unknown_roles) > 0) {
+      stop(
+        "Unknown epidemiological roles: ",
+        paste(unknown_roles, collapse = ", ")
+      )
+    }
+
+    ## --- role targets must be states ----------------------------------------
+    unknown_states <- setdiff(unlist(roles), model_states)
+    if (length(unknown_states) > 0) {
+      stop(
+        "Roles refer to unknown states: ",
+        paste(unknown_states, collapse = ", ")
+      )
+    }
+
+    ## --- complete missing roles using vocabulary ----------------------------
+    missing_roles <- setdiff(names(vocab), names(roles))
+
+    for (role in missing_roles) {
+      state <- vocab[[role]]
+
+      if (state %in% model_states) {
+        roles[[role]] <- state
+      }
+    }
+
+    ## --- all states must have a role ----------------------------------------
+    missing_states <- setdiff(model_states, unlist(roles))
+
+    if (length(missing_states) > 0) {
+      stop(
+        "Unable to assign epidemiological roles to the following states: ",
+        paste(missing_states, collapse = ", ")
+      )
+    }
   }
 
-  valid_roles <- .epi_role_vocab()
-  role_names  <- names(roles)
-
-  unknown_roles <- setdiff(role_names, valid_roles)
-  if (length(unknown_roles) > 0) {
-    stop(
-      "Unknown epidemiological roles: ",
-      paste(unknown_roles, collapse = ", "),
-      ". Valid roles are: ",
-      paste(valid_roles, collapse = ", ")
-    )
-  }
-
-  role_vars <- unlist(roles, use.names = FALSE)
-
-  unknown_vars <- setdiff(role_vars, c(states, flows))
-  if (length(unknown_vars) > 0) {
-    stop(
-      "Roles refer to unknown outputs: ",
-      paste(unknown_vars, collapse = ", ")
-    )
-  }
-
-  if (any(duplicated(role_vars))) {
-    stop("Each role must map to a unique variable.")
-  }
-
-  required_roles <- c("susceptible", "infectious")
-  missing_roles <- setdiff(required_roles, names(roles))
-  if (length(missing_roles) > 0) {
-    stop(
-      "Missing required epidemiological roles: ",
-      paste(missing_roles, collapse = ", ")
-    )
-  }
-
-  ## --- parameter bounds ------------------------------------------------------
+  #-----------------------------------------------------------------------------
+  ## Parameter bounds
+  #-----------------------------------------------------------------------------
   if (!is.null(lower)) {
     stopifnot(is.numeric(lower), all(par_names %in% names(lower)))
     lower <- lower[par_names]

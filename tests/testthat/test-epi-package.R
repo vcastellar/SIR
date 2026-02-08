@@ -2,6 +2,45 @@ library(testthat)
 library(SIR)
 
 
+
+
+# ------------------------------------------------------------------------------
+test_that("build-in basic model", {
+  seird_rhs <- function(time, state, parms) {
+    with(as.list(c(state, parms)), {
+
+      N <- S + E + I + R
+
+      lambda <- beta * S * I / N
+
+      dS <- -lambda
+      dE <-  lambda - sigma * E
+      dI <-  sigma * E - gamma * I - mu * I
+      dR <-  gamma * I
+      dD <-  mu * I
+
+      list(
+        c(dS, dE, dI, dR, dD),
+        incidence = lambda,
+        deaths    = mu * I
+      )
+    })
+  }
+
+  seird_model <- epi_model(
+    name        = "SEIRD",
+    rhs         = seird_rhs,
+    states = c("S", "E", "I", "R", "D"),
+    par_names   = c("beta", "sigma", "gamma", "mu"),
+    flows       = c("incidence", "deaths"),
+  )
+
+  expect_s3_class(seird_model, "epi_model")
+})
+#-------------------------------------------------------------------------------
+
+
+
 # ------------------------------------------------------------------------------
 test_that("build-in basic model", {
   seird_rhs <- function(time, state, parms) {

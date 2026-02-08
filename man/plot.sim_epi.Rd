@@ -85,7 +85,14 @@ SIRD_MODEL <- epi_model(
   name      = "SIRD",
   rhs       = sird_rhs,
   states    = c("S", "I", "R", "D"),
-  par_names = c("beta", "gamma", "mu")
+  par_names = c("beta", "gamma", "mu"),
+  roles     = list(
+    susceptible = "S",
+    infectious  = "I",
+    recovered   = "R",
+    deceased    = "D",
+    incidence   = "incidence"
+  )
 )
 
 # Plot observed incidence (requires an observation model)

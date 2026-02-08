@@ -136,8 +136,7 @@ SIR_VITAL_MODEL <- epi_model(
   roles = list(
     susceptible = "S",
     infectious  = "I",
-    recovered   = "R",
-    incidence   = "infection"
+    recovered   = "R"
   ),
 
   lower = c(beta = 1e-8, gamma = 1e-8, mu = 1e-8, Lambda = 1e-8),
