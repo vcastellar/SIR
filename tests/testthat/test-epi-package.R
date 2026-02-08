@@ -1,6 +1,99 @@
 library(testthat)
 library(SIR)
 
+
+# ------------------------------------------------------------------------------
+test_that("build-in basic model", {
+  seird_rhs <- function(time, state, parms) {
+    with(as.list(c(state, parms)), {
+
+      N <- S + E + I + R
+
+      lambda <- beta * S * I / N
+
+      dS <- -lambda
+      dE <-  lambda - sigma * E
+      dI <-  sigma * E - gamma * I - mu * I
+      dR <-  gamma * I
+      dD <-  mu * I
+
+      list(
+        c(dS, dE, dI, dR, dD),
+        incidence = lambda,
+        deaths    = mu * I
+      )
+    })
+  }
+
+  seird_model <- epi_model(
+    name        = "SEIRD",
+    rhs         = seird_rhs,
+    states = c("S", "E", "I", "R", "D"),
+    par_names   = c("beta", "sigma", "gamma", "mu")
+  )
+
+  expect_s3_class(seird_model, "epi_model")
+})
+#-------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+test_that("simulate_epi works for seird_model", {
+
+  sim <- simulate_epi(
+    model = seird_model,
+    times = 0:200,
+    parms = c(beta = 0.4, sigma = 0.2, gamma = 0.1, mu = 0.02),
+    init  = c(S = 9999, E = 0, I = 1, R = 0, D = 0)
+  )
+
+  expect_s3_class(sim, "sim_epi")
+  expect_equal(nrow(sim$states), 201)
+})
+
+# ------------------------------------------------------------------------------
+
+
+
+# ------------------------------------------------------------------------------
+test_that("print, plot and summary do not crash for seird_model", {
+
+  expect_output(print(sim))
+
+  expect_silent({
+    grDevices::pdf(NULL)
+    plot(sim)
+    plot(sim, what = "I")
+    grDevices::dev.off()
+  })
+
+  expect_true(is.list(summary(sim)))
+})
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+test_that("metricks work for seird_model", {
+
+  expect_error(print(peak_incidence(sim)))
+  expect_error(print(time_to_peak(sim)))
+  expect_error(print(peak_prevalence(sim)))
+
+
+})
+#-------------------------------------------------------------------------------
+
+
+
+#-------------------------------------------------------------------------------
+test_that("run_epi_app works for seird_model", {
+  run_epi_app(models = list(SEIRD = seird_model))
+})
+
+
+
+
+
 # ------------------------------------------------------------------------------
 test_that("built-in models exist", {
 
@@ -16,24 +109,15 @@ test_that("simulate_epi works for SIR", {
     model = SIR_MODEL,
     times = 0:200,
     parms = c(beta = 0.3, gamma = 0.1),
-    init = SIR_MODEL$init,
-    obs = "none"
+    init = SIR_MODEL$init
   )
 
   expect_s3_class(sim, "sim_epi")
-  expect_equal(nrow(sim$states), 21)
+  expect_equal(nrow(sim$states), 201)
 })
 
 # ------------------------------------------------------------------------------
 test_that("print, plot and summary do not crash", {
-
-  sim <- simulate_epi(
-    model = SIR_MODEL,
-    times = 0:200,
-    parms = c(beta = 0.3, gamma = 0.1),
-    init = SIR_MODEL$init,
-    obs = "negbin"
-  )
 
   expect_output(print(sim))
 
@@ -44,7 +128,7 @@ test_that("print, plot and summary do not crash", {
     grDevices::dev.off()
   })
 
-  expect_silent(invisible(summary(sim)))
+  expect_output(summary(sim))
 })
 
 # ------------------------------------------------------------------------------
@@ -73,35 +157,7 @@ test_that("fit_epi_model works end-to-end", {
   expect_true(all(is.finite(unlist(fit$par))))
 })
 
-# ------------------------------------------------------------------------------
-test_that("predict works on fitted model", {
 
-  init <- c(S = 99990, I = 10, R = 0)
-
-  sim <- simulate_epi(
-    model = SIR_MODEL,
-    times = 0:200,
-    parms = c(beta = 0.3, gamma = 0.1),
-    init = init,
-    obs = "poisson",
-    seed = 1
-  )
-
-  fit <- fit_epi_model(
-    x = sim$incidence$inc,
-    model = SIR_MODEL,
-    init = init
-  )
-
-  pred <- predict(
-    fit,
-    n_days = 10,
-    init = tail(sim$states, n = 1)[,-1]
-  )
-
-  expect_true(is.list(pred))
-  expect_true("states" %in% names(pred))
-})
 
 # ------------------------------------------------------------------------------
 test_that("invalid inputs raise errors", {

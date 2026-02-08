@@ -146,7 +146,7 @@ epi_model <- function(name,
                       par_names,
                       states,
                       flows = character(0),
-                      roles = NULL,
+                      roles,
                       lower = NULL,
                       upper = NULL,
                       defaults = NULL,
@@ -171,39 +171,45 @@ epi_model <- function(name,
   )
 
   ## --- roles validation ------------------------------------------------------
-  if (!is.null(roles)) {
-
-    if (!is.list(roles) || is.null(names(roles))) {
-      stop("`roles` must be a named list.")
-    }
-
-    valid_roles <- .epi_role_vocab()
-    role_names  <- names(roles)
-
-    unknown_roles <- setdiff(role_names, valid_roles)
-    if (length(unknown_roles) > 0) {
-      stop(
-        "Unknown epidemiological roles: ",
-        paste(unknown_roles, collapse = ", "),
-        ". Valid roles are: ",
-        paste(valid_roles, collapse = ", ")
-      )
-    }
-
-    role_vars <- unlist(roles, use.names = FALSE)
-
-    unknown_vars <- setdiff(role_vars, c(states, flows))
-    if (length(unknown_vars) > 0) {
-      stop(
-        "Roles refer to unknown outputs: ",
-        paste(unknown_vars, collapse = ", ")
-      )
-    }
-
-    if (any(duplicated(role_vars))) {
-      stop("Each role must map to a unique variable.")
-    }
+  if (!is.list(roles) || is.null(names(roles))) {
+    stop("`roles` must be a named list.")
   }
+
+  valid_roles <- .epi_role_vocab()
+  role_names  <- names(roles)
+
+  unknown_roles <- setdiff(role_names, valid_roles)
+  if (length(unknown_roles) > 0) {
+    stop(
+      "Unknown epidemiological roles: ",
+      paste(unknown_roles, collapse = ", "),
+      ". Valid roles are: ",
+      paste(valid_roles, collapse = ", ")
+    )
+  }
+
+  role_vars <- unlist(roles, use.names = FALSE)
+
+  unknown_vars <- setdiff(role_vars, c(states, flows))
+  if (length(unknown_vars) > 0) {
+    stop(
+      "Roles refer to unknown outputs: ",
+      paste(unknown_vars, collapse = ", ")
+    )
+  }
+
+  if (any(duplicated(role_vars))) {
+    stop("Each role must map to a unique variable.")
+  }
+
+  required_roles <- c("susceptible", "infectious")
+  missing_roles <- setdiff(required_roles, names(roles))
+  if (length(missing_roles) > 0) {
+    stop(
+      "Missing required epidemiological roles: ",
+      paste(missing_roles, collapse = ", ")
+    )
+    }
 
   ## --- parameter bounds ------------------------------------------------------
   if (!is.null(lower)) {
