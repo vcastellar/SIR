@@ -81,13 +81,13 @@
 #'   name      = "SIRD",
 #'   rhs       = sird_rhs,
 #'   states    = c("S", "I", "R", "D"),
+#'   flows     = c("incidence"),
 #'   par_names = c("beta", "gamma", "mu"),
 #'   roles     = list(
 #'     susceptible = "S",
 #'     infectious  = "I",
 #'     recovered   = "R",
-#'     deceased    = "D",
-#'     incidence   = "incidence"
+#'     deceased    = "D"
 #'   )
 #' )
 #'

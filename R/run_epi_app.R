@@ -54,6 +54,7 @@
 #'   name        = "SEIRD",
 #'   rhs         = seird_rhs,
 #'   states = c("S", "E", "I", "R", "D"),
+#'   flows       = c("incidence", "deaths"),
 #'   par_names   = c("beta", "sigma", "gamma", "mu"),
 #'   init        = c(S = 999, E = 0, I = 1, R = 0, D = 0),
 #'   defaults    = c(beta = 0.4, sigma = 0.2, gamma = 0.1, mu = 0.02),
@@ -62,9 +63,7 @@
 #'     exposed     = "E",
 #'     infectious  = "I",
 #'     recovered   = "R",
-#'     deceased    = "D",
-#'     incidence   = "incidence",
-#'     deaths      = "deaths"
+#'     deceased    = "D"
 #'   )
 #' )
 #'
@@ -117,5 +116,4 @@ run_epi_app <- function(models = NULL) {
     }
   )
 }
-
 
