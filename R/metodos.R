@@ -81,7 +81,14 @@
 #'   name      = "SIRD",
 #'   rhs       = sird_rhs,
 #'   states    = c("S", "I", "R", "D"),
-#'   par_names = c("beta", "gamma", "mu")
+#'   par_names = c("beta", "gamma", "mu"),
+#'   roles     = list(
+#'     susceptible = "S",
+#'     infectious  = "I",
+#'     recovered   = "R",
+#'     deceased    = "D",
+#'     incidence   = "incidence"
+#'   )
 #' )
 #'
 #' # Plot observed incidence (requires an observation model)
@@ -332,19 +339,24 @@ plot.sim_epi <- function(x,
 summary.sim_epi <- function(object, ...) {
 
   st  <- object$states
-  inc <- object$incidence
+  roles <- object$model$roles
 
   res <- list(
     model = object$model
   )
 
-  if ("I" %in% names(st)) {
+  if ("infectious" %in% names(roles)) {
+    inf <- get_role(object, "infectious")
+    res$peak_I <- max(inf, na.rm = TRUE)
+    res$time_peak_I <- st$time[which.max(inf)]
+  } else if ("I" %in% names(st)) {
     res$peak_I <- max(st$I, na.rm = TRUE)
     res$time_peak_I <- st$time[which.max(st$I)]
   }
 
-  if (!is.null(inc) && "inc" %in% names(inc)) {
-    res$total_infections <- sum(inc$inc, na.rm = TRUE)
+  if ("incidence" %in% names(roles)) {
+    inc <- get_role(object, "incidence")
+    res$total_infections <- sum(inc, na.rm = TRUE)
   }
 
   res
@@ -449,9 +461,8 @@ print.sim_epi <- function(x, ...) {
   ## ---------------------------------------------------------------------------
   ## Peak incidence (flow)
   ## ---------------------------------------------------------------------------
-  inc <- try(get_role(x, "incidence"), silent = TRUE)
-
-  if (!inherits(inc, "try-error")) {
+  if ("incidence" %in% names(x$model$roles)) {
+    inc <- get_role(x, "incidence")
 
     t_inc <- x$flows$time
     peak_inc <- max(inc, na.rm = TRUE)
@@ -467,8 +478,17 @@ print.sim_epi <- function(x, ...) {
   ## ---------------------------------------------------------------------------
   ## Peak infectious (state I)
   ## ---------------------------------------------------------------------------
-  if ("I" %in% names(states)) {
+  if ("infectious" %in% names(x$model$roles)) {
+    inf <- get_role(x, "infectious")
+    peak_I <- max(inf, na.rm = TRUE)
 
+    if (is.finite(peak_I)) {
+      time_I <- states$time[which.max(inf)]
+      cat("  Peak infectious:      ", round(peak_I), "\n", sep = "")
+      cat("  Time of I peak:       ",
+          time_I, " ", unit_lbl, "\n", sep = "")
+    }
+  } else if ("I" %in% names(states)) {
     peak_I <- max(states$I, na.rm = TRUE)
 
     if (is.finite(peak_I)) {

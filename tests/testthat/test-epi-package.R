@@ -29,7 +29,17 @@ test_that("build-in basic model", {
     name        = "SEIRD",
     rhs         = seird_rhs,
     states = c("S", "E", "I", "R", "D"),
-    par_names   = c("beta", "sigma", "gamma", "mu")
+    par_names   = c("beta", "sigma", "gamma", "mu"),
+    flows       = c("incidence", "deaths"),
+    roles       = list(
+      susceptible = "S",
+      exposed     = "E",
+      infectious  = "I",
+      recovered   = "R",
+      deceased    = "D",
+      incidence   = "incidence",
+      deaths      = "deaths"
+    )
   )
 
   expect_s3_class(seird_model, "epi_model")
@@ -185,4 +195,3 @@ test_that("invalid inputs raise errors", {
 })
 
 #-------------------------------------------------------------------------------
-
