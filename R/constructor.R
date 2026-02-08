@@ -78,10 +78,11 @@
 #' @param states Character vector of state variable names.
 #' @param par_names Character vector of parameter names.
 #' @param outputs Character vector of named outputs returned by the RHS.
-#'   Must include all state variables.
-#' @param roles Optional named list mapping epidemiological roles to variable
+#'   Must include all state variables. Defaults to \code{c(states, flows)}.
+#' @param roles Named list mapping epidemiological roles to variable
 #'   names (states or outputs). Role names must belong to the standard
-#'   vocabulary defined in \code{.epi_role_vocab()}.
+#'   vocabulary defined in \code{.epi_role_vocab()}. Must include at least
+#'   \code{"susceptible"} and \code{"infectious"}.
 #' @param lower Optional named numeric vector of lower parameter bounds.
 #' @param upper Optional named numeric vector of upper parameter bounds.
 #' @param defaults Optional named numeric vector of default parameter values.
@@ -137,7 +138,13 @@
 #'   name = "SIR",
 #'   rhs  = sir_rhs,
 #'   states = c("S", "I", "R"),
-#'   par_names   = c("beta", "gamma")
+#'   par_names   = c("beta", "gamma"),
+#'   roles = list(
+#'     susceptible = "S",
+#'     infectious  = "I",
+#'     recovered   = "R",
+#'     incidence   = "incidence"
+#'   )
 #' )
 #'
 #' @export
@@ -150,7 +157,8 @@ epi_model <- function(name,
                       lower = NULL,
                       upper = NULL,
                       defaults = NULL,
-                      init = NULL) {
+                      init = NULL,
+                      outputs = NULL) {
 
   ## --- basic checks ----------------------------------------------------------
   stopifnot(is.character(name), length(name) == 1)
@@ -209,7 +217,7 @@ epi_model <- function(name,
       "Missing required epidemiological roles: ",
       paste(missing_roles, collapse = ", ")
     )
-    }
+  }
 
   ## --- parameter bounds ------------------------------------------------------
   if (!is.null(lower)) {
@@ -236,6 +244,12 @@ epi_model <- function(name,
     init <- init[states]
   }
 
+  ## --- outputs ---------------------------------------------------------------
+  if (is.null(outputs)) {
+    outputs <- unique(c(states, flows))
+  }
+  stopifnot(is.character(outputs), all(states %in% outputs))
+
   structure(
     list(
       name = name,
@@ -243,6 +257,7 @@ epi_model <- function(name,
       par_names = par_names,
       states = states,
       flows = flows,
+      outputs = outputs,
       roles = roles,
       lower = lower,
       upper = upper,
