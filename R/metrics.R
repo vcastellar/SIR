@@ -15,6 +15,18 @@ get_role <- function(sim, role) {
   }
 }
 
+get_flow <- function(sim, flow) {
+  if (is.null(sim$flows) || !"time" %in% names(sim$flows)) {
+    stop("Simulation does not define flows.")
+  }
+
+  if (!flow %in% names(sim$flows)) {
+    stop("Simulation does not define flow: ", flow)
+  }
+
+  sim$flows[[flow]]
+}
+
 
 ## ============================================================================
 ## Epidemiological metrics based on roles
@@ -37,7 +49,7 @@ get_role <- function(sim, role) {
 #' t^* = \arg\max_t \lambda(t).
 #' }
 #'
-#' This metric requires the epidemiological role \code{"incidence"}.
+#' This metric requires a model flow named \code{"incidence"}.
 #'
 #' @param sim An object of class \code{"sim_epi"}.
 #'
@@ -59,7 +71,7 @@ peak_incidence <- function(sim) {
 
   stopifnot(inherits(sim, "sim_epi"))
 
-  inc <- get_role(sim, "incidence")
+  inc <- get_flow(sim, "incidence")
   t   <- sim$flows$time
 
   i <- which.max(inc)
@@ -167,7 +179,7 @@ peak_prevalence <- function(sim) {
 #' For models with permanent immunity, this corresponds to the final epidemic
 #' size.
 #'
-#' This metric requires the epidemiological role \code{"incidence"}.
+#' This metric requires a model flow named \code{"incidence"}.
 #'
 #' @param sim An object of class \code{"sim_epi"}.
 #'
@@ -189,7 +201,7 @@ attack_rate <- function(sim) {
 
   stopifnot(inherits(sim, "sim_epi"))
 
-  inc <- get_role(sim, "incidence")
+  inc <- get_flow(sim, "incidence")
 
   sum(inc, na.rm = TRUE)
 }
@@ -213,7 +225,7 @@ attack_rate <- function(sim) {
 #' \log \lambda(t) = \log C + r t.
 #' }
 #'
-#' Requires the epidemiological role \code{"incidence"}.
+#' Requires a model flow named \code{"incidence"}.
 #'
 #' @param sim An object of class \code{"sim_epi"}.
 #' @param n Integer. Number of initial time points.
@@ -237,7 +249,7 @@ initial_growth_rate <- function(sim, n = 7) {
   stopifnot(inherits(sim, "sim_epi"))
   stopifnot(n >= 2)
 
-  inc <- get_role(sim, "incidence")[seq_len(n)]
+  inc <- get_flow(sim, "incidence")[seq_len(n)]
   t   <- sim$flows$time[seq_len(n)]
 
   if (any(inc <= 0)) {
@@ -330,7 +342,7 @@ instantaneous_growth_rate <- function(sim, window = 1, offset = 0.5) {
 
   stopifnot(inherits(sim, "sim_epi"))
 
-  inc <- get_role(sim, "incidence")
+  inc <- get_flow(sim, "incidence")
   t   <- sim$flows$time
 
   # 1. Aplicar suavizado (Moving Average)
@@ -372,7 +384,7 @@ instantaneous_growth_rate <- function(sim, window = 1, offset = 0.5) {
 #'
 #' When \eqn{r(t) \le 0}, the doubling time is set to infinity.
 #'
-#' Requires the epidemiological role \code{"incidence"}.
+#' Requires a model flow named \code{"incidence"}.
 #'
 #' @param sim An object of class \code{"sim_epi"}.
 #'
