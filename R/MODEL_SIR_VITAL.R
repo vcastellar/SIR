@@ -139,14 +139,13 @@ SIR_VITAL_MODEL <- epi_model(
     recovered   = "R"
   ),
 
-  lower = c(beta = 1e-8, gamma = 1e-8, mu = 1e-8, Lambda = 1e-8),
-  upper = c(beta = 5, gamma = 1, mu = 0.1, Lambda = 1),
+  lower = c(beta = 1e-8, gamma = 1e-8, mu = 1e-8),
+  upper = c(beta = 5, gamma = 1, mu = 0.1),
 
   defaults = c(
     beta   = 0.3,
     gamma  = 0.1,
-    mu     = 0.01,
-    Lambda = 0.01
+    mu     = 0.01
   ),
 
   init = c(
@@ -155,4 +154,3 @@ SIR_VITAL_MODEL <- epi_model(
     R = 0
   )
 )
-
