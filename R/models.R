@@ -52,8 +52,7 @@
 #'     susceptible = "S",
 #'     infectious  = "I",
 #'     recovered   = "R",
-#'     deceased    = "D",
-#'     incidence   = "incidence"
+#'     deceased    = "D"
 #'   )
 #' )
 #'
@@ -68,7 +67,6 @@
 #' plot(sim)
 #' plot(sim, what = "flows")
 #' run_epi_app(list(SIRD = SIRD_MODEL))
-
 
 
 
