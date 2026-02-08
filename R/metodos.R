@@ -6,8 +6,7 @@
 #' Plot method for objects of class \code{"sim_epi"} as returned by
 #' \code{\link{simulate_epi}}. The function provides a flexible visualization
 #' interface for simulated epidemic trajectories by allowing the user to plot
-#' either all model states, the observed incidence time series, or a single
-#' model-defined output.
+#' either all model states, all model flows, or a single model-defined output.
 #'
 #' Unlike earlier versions, this method does not assume a specific
 #' compartmental structure (e.g. SIR or SEIR). All available quantities that can
@@ -23,16 +22,17 @@
 #'     stored in \code{x$states}. The time variable is taken from the
 #'     \code{time} column of \code{x$states} and is not considered a state.}
 #'
-#'   \item{\code{what = "incidence"}}{Plots the observed incidence counts generated
-#'     by the observation model and stored in \code{x$incidence}. If no observation
-#'     model was specified during simulation (i.e. \code{obs = "none"}), this
-#'     option results in an error.}
+#'   \item{\code{what = "flows"}}{Plots the time evolution of all flows defined
+#'     in \code{x$model$flows}, using the simulated trajectories stored in
+#'     \code{x$flows}. The time variable is taken from the \code{time} column of
+#'     \code{x$flows}.}
 #'
 #'   \item{\code{what = <output>}}{Plots a single model-defined output, where
 #'     \code{<output>} is the name of one of the quantities declared in
 #'     \code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}, \code{"R"},
 #'     or \code{"incidence"}). The corresponding trajectory is extracted from
-#'     \code{x$states}.}
+#'     \code{x$states} when it is a state, and from \code{x$flows} when it is a
+#'     flow.}
 #' }
 #'
 #' If available, the time unit stored in the \code{sim_epi} object
@@ -43,9 +43,9 @@
 #'   \code{\link{simulate_epi}}.
 #' @param what Character string specifying what to plot. One of:
 #'   \code{"states"} (all state variables),
-#'   \code{"incidence"} (observed incidence counts),
+#'   \code{"flows"} (all model flows),
 #'   or the name of a single model output declared in
-#'   \code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}).
+#'   \code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}, \code{"incidence"}).
 #' @param scale Character string specifying the scale for state plots.
 #'   One of \code{"auto"}, \code{"full"}, \code{"small"}, or \code{"log"}.
 #'   This argument is only used when \code{what = "states"}.
@@ -279,12 +279,12 @@ plot.sim_epi <- function(x,
 #' The summary includes:
 #' \describe{
 #'   \item{model}{The epidemic model simulated (e.g. \code{"sir"} or \code{"sirs"}).}
-#'   \item{R0}{The basic reproduction number, computed as
-#'     \eqn{R_0 = \beta / \gamma}.}
 #'   \item{peak_I}{The maximum number of infectious individuals observed during
-#'     the simulation.}
+#'     the simulation, when an infectious role (or \code{I} state) is present.}
+#'   \item{time_peak_I}{The time at which the infectious prevalence reaches its
+#'     maximum, when available.}
 #'   \item{total_infections}{The total number of infection events, computed as
-#'     the maximum value of the cumulative infection variable \code{C(t)}.}
+#'     the sum of the \code{"incidence"} flow when present.}
 #' }
 #'
 #' This method is automatically dispatched when calling \code{summary()} on an
@@ -325,8 +325,8 @@ summary.sim_epi <- function(object, ...) {
     res$time_peak_I <- st$time[which.max(st$I)]
   }
 
-  if ("incidence" %in% names(roles)) {
-    inc <- get_role(object, "incidence")
+  if (!is.null(object$flows) && "incidence" %in% names(object$flows)) {
+    inc <- get_flow(object, "incidence")
     res$total_infections <- sum(inc, na.rm = TRUE)
   }
 
@@ -432,8 +432,8 @@ print.sim_epi <- function(x, ...) {
   ## ---------------------------------------------------------------------------
   ## Peak incidence (flow)
   ## ---------------------------------------------------------------------------
-  if ("incidence" %in% names(x$model$roles)) {
-    inc <- get_role(x, "incidence")
+  if (!is.null(x$flows) && "incidence" %in% names(x$flows)) {
+    inc <- get_flow(x, "incidence")
 
     t_inc <- x$flows$time
     peak_inc <- max(inc, na.rm = TRUE)
