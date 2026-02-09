@@ -30,7 +30,7 @@ Taking logarithms yields
 \log \lambda(t) = \log C + r t.
 }
 
-Requires the epidemiological role \code{"incidence"}.
+Requires a model flow named \code{"incidence"}.
 }
 \examples{
 sim <- simulate_epi(

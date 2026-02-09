@@ -24,7 +24,7 @@ T_d(t) = \frac{\log 2}{r(t)}.
 
 When \eqn{r(t) \le 0}, the doubling time is set to infinity.
 
-Requires the epidemiological role \code{"incidence"}.
+Requires a model flow named \code{"incidence"}.
 }
 \examples{
 sim <- simulate_epi(

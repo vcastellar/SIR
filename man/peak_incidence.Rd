@@ -27,7 +27,7 @@ and the time to peak incidence is
 t^* = \arg\max_t \lambda(t).
 }
 
-This metric requires the epidemiological role \code{"incidence"}.
+This metric requires a model flow named \code{"incidence"}.
 }
 \examples{
 sim <- simulate_epi(

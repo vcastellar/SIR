@@ -31,7 +31,7 @@ AR \approx \sum_{t=0}^T \lambda(t).
 For models with permanent immunity, this corresponds to the final epidemic
 size.
 
-This metric requires the epidemiological role \code{"incidence"}.
+This metric requires a model flow named \code{"incidence"}.
 }
 \examples{
 sim <- simulate_epi(

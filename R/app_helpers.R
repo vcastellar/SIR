@@ -31,35 +31,59 @@ param_sliders_ui <- function(model) {
 }
 
 
-#-------------------------------------------------------------------------------
-# Initial condition sliders UI
-#-------------------------------------------------------------------------------
 init_sliders_ui <- function(model) {
 
   states <- model$states
   init   <- model$init
+  roles  <- model$roles
 
-  no_init <- is.null(init)
+  # Reverse mapping: variable -> role
+  role_of <- setNames(names(roles), unlist(roles))
+
+  # Population size
+  has_init <- !is.null(init) && length(init) > 0 && sum(init) > 0
+  N <- if (has_init) sum(init) else 1e6
 
   lapply(states, function(s) {
 
-    if (no_init) {
-      val <- 1e6
-      max_val <- val
+    role <- role_of[[s]] %||% "other"
+
+    # Default initial value
+    val <- if (has_init) {
+      init[[s]] %||% 0
     } else {
-      val <- init[[s]] %||% 0
-      max_val <- 10 * max(1, val)
+      switch(
+        role,
+        susceptible = N,
+        infectious  = 10,
+        exposed     = 0,
+        recovered   = 0,
+        deceased    = 0,
+        0
+      )
     }
+
+    # Upper bound by role
+    max_val <- switch(
+      role,
+      susceptible = N,
+      infectious  = max(100, 0.01 * N),
+      exposed     = max(100, 0.01 * N),
+      recovered   = max(100, 0.01 * N),
+      deceased    = max(10,  0.005 * N),
+      10 * max(1, val)
+    )
 
     shiny::sliderInput(
       inputId = paste0("init_", s),
-      label   = s,
+      label   = paste0(s, " (", role, ")"),
       min     = 0,
       max     = max_val,
       value   = val
     )
   })
 }
+
 
 #-------------------------------------------------------------------------------
 # Build parameters vector from input

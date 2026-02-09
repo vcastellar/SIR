@@ -12,9 +12,9 @@
 
 \item{what}{Character string specifying what to plot. One of:
 \code{"states"} (all state variables),
-\code{"incidence"} (observed incidence counts),
+\code{"flows"} (all model flows),
 or the name of a single model output declared in
-\code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}).}
+\code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}, \code{"incidence"}).}
 
 \item{scale}{Character string specifying the scale for state plots.
 One of \code{"auto"}, \code{"full"}, \code{"small"}, or \code{"log"}.
@@ -30,8 +30,7 @@ Invisibly returns the input object \code{x}.
 Plot method for objects of class \code{"sim_epi"} as returned by
 \code{\link{simulate_epi}}. The function provides a flexible visualization
 interface for simulated epidemic trajectories by allowing the user to plot
-either all model states, the observed incidence time series, or a single
-model-defined output.
+either all model states, all model flows, or a single model-defined output.
 
 Unlike earlier versions, this method does not assume a specific
 compartmental structure (e.g. SIR or SEIR). All available quantities that can
@@ -47,16 +46,17 @@ defined in \code{x$model$states}, using the simulated trajectories
 stored in \code{x$states}. The time variable is taken from the
 \code{time} column of \code{x$states} and is not considered a state.}
 
-\item{\code{what = "incidence"}}{Plots the observed incidence counts generated
-by the observation model and stored in \code{x$incidence}. If no observation
-model was specified during simulation (i.e. \code{obs = "none"}), this
-option results in an error.}
+\item{\code{what = "flows"}}{Plots the time evolution of all flows defined
+in \code{x$model$flows}, using the simulated trajectories stored in
+\code{x$flows}. The time variable is taken from the \code{time} column of
+\code{x$flows}.}
 
 \item{\code{what = <output>}}{Plots a single model-defined output, where
 \code{<output>} is the name of one of the quantities declared in
 \code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}, \code{"R"},
 or \code{"incidence"}). The corresponding trajectory is extracted from
-\code{x$states}.}
+\code{x$states} when it is a state, and from \code{x$flows} when it is a
+flow.}
 }
 
 If available, the time unit stored in the \code{sim_epi} object
@@ -64,47 +64,18 @@ If available, the time unit stored in the \code{sim_epi} object
 plot labels and does not change the numerical values of time.
 }
 \examples{
-sird_rhs <- function(time, state, parms) {
-  with(as.list(c(state, parms)), {
-    N <- S + I + R
-    lambda <- beta * S * I / N
-
-    dS <- -lambda
-    dI <-  lambda - gamma * I - mu * I
-    dR <-  gamma * I
-    dD <-  mu * I
-
-    list(
-      c(dS, dI, dR, dD),
-      incidence = lambda
-    )
-  })
-}
-
-SIRD_MODEL <- epi_model(
-  name      = "SIRD",
-  rhs       = sird_rhs,
-  states    = c("S", "I", "R", "D"),
-  flows     = c("incidence"),
-  par_names = c("beta", "gamma", "mu"),
-  roles     = list(
-    susceptible = "S",
-    infectious  = "I",
-    recovered   = "R",
-    deceased    = "D"
-  )
+sim <- simulate_epi(
+  model = SIR_MODEL,
+  times = 0:200,
+  parms = c(beta = 0.3, gamma = 0.1),
+  init  = c(S = 1e6, I = 10, R = 0)
 )
-
-# Plot observed incidence (requires an observation model)
-simulate_epi(model = SIRD_MODEL,
-             times = 0:200)
 
 # Plot a single state variable
 plot(sim, what = "I")
 
 # Plot all flows
 plot(sim, what = "flows")
-
 
 # If the model defines Rt as a flow, it can be plotted directly
 plot(sim, what = "Rt")

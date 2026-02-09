@@ -25,12 +25,12 @@ epidemiologically meaningful summary quantities derived from the simulation.
 The summary includes:
 \describe{
 \item{model}{The epidemic model simulated (e.g. \code{"sir"} or \code{"sirs"}).}
-\item{R0}{The basic reproduction number, computed as
-\eqn{R_0 = \beta / \gamma}.}
 \item{peak_I}{The maximum number of infectious individuals observed during
-the simulation.}
+the simulation, when an infectious role (or \code{I} state) is present.}
+\item{time_peak_I}{The time at which the infectious prevalence reaches its
+maximum, when available.}
 \item{total_infections}{The total number of infection events, computed as
-the maximum value of the cumulative infection variable \code{C(t)}.}
+the sum of the \code{"incidence"} flow when present.}
 }
 
 This method is automatically dispatched when calling \code{summary()} on an
