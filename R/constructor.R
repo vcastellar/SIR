@@ -12,7 +12,7 @@
 #' referring to core epidemiological concepts.
 #'
 #' Flows are intentionally excluded from the role system. Flow variables are
-#' treated as implementation details or optional model outputs and are not
+#' treated as implementation details or optional derived quantities and are not
 #' required to have epidemiological roles.
 #'
 #' @details
@@ -111,7 +111,7 @@ epi_role_vocab <- function() {
 #'   variables of the model. Each state name must be unique.
 #'
 #' @param flows Optional character vector giving the names of flow variables
-#'   used internally by the model or returned as outputs. Flow variables are
+#'   used internally by the model or returned as flows. Flow variables are
 #'   not required to have epidemiological roles.
 #'
 #' @param roles Named list mapping *epidemiological roles* to state variables.
@@ -135,10 +135,6 @@ epi_role_vocab <- function() {
 #' @param init Optional named numeric vector of initial values for the state
 #'   variables. Names must match \code{states}.
 #'
-#' @param outputs Optional character vector giving the names of model variables
-#'   (states and/or flows) to be returned by default in simulations. If
-#'   \code{NULL}, all states and flows are included.
-#'
 #' @details
 #' ## Epidemiological roles
 #'
@@ -149,7 +145,7 @@ epi_role_vocab <- function() {
 #'
 #' Roles apply \strong{exclusively to state variables}. Flow variables are not
 #' part of the role system and are treated as implementation details or optional
-#' model outputs.
+#' model flows.
 #'
 #' The set of supported epidemiological roles and their default associated state
 #' names are defined by \code{\link{epi_role_vocab}}.
@@ -196,8 +192,7 @@ epi_model <- function(name,
                       lower = NULL,
                       upper = NULL,
                       defaults = NULL,
-                      init = NULL,
-                      outputs = NULL) {
+                      init = NULL) {
 
   ## --- basic checks ----------------------------------------------------------
   stopifnot(is.character(name), length(name) == 1)
@@ -326,12 +321,6 @@ epi_model <- function(name,
     init <- init[states]
   }
 
-  ## --- outputs ---------------------------------------------------------------
-  if (is.null(outputs)) {
-    outputs <- unique(c(states, flows))
-  }
-  stopifnot(is.character(outputs), all(states %in% outputs))
-
   structure(
     list(
       name = name,
@@ -339,7 +328,6 @@ epi_model <- function(name,
       par_names = par_names,
       states = states,
       flows = flows,
-      outputs = outputs,
       roles = roles,
       lower = lower,
       upper = upper,
@@ -357,17 +345,16 @@ epi_model <- function(name,
 #' @description
 #' Provides a concise, human-readable summary of an \code{epi_model} object.
 #' The printed output includes the model name, state variables, parameters,
-#' the declared model outputs, and the underlying system of differential
+#' the declared model flows, and the underlying system of differential
 #' equations.
 #'
 #' This method is automatically called when an object of class
 #' \code{"epi_model"} is printed at the console.
 #'
 #' @details
-#' The \code{epi_model} class explicitly declares the set of model outputs via
-#' the \code{outputs} field. These outputs may include state variables, derived
-#' quantities such as incidence, or any other observable returned by the
-#' model's right-hand side (\code{rhs}) function.
+#' Model flows are shown when available. These may include derived quantities
+#' such as incidence, or any other observable returned by the model's
+#' right-hand side (\code{rhs}) function.
 #'
 #' Parameter bounds are shown when available. The model equations are printed
 #' by deparsing the \code{rhs} function for inspection.
@@ -392,9 +379,9 @@ print.epi_model <- function(x, ...) {
   cat("  States:   ", paste(x$states, collapse = ", "), "\n", sep = "")
   cat("  Params:   ", paste(x$par_names, collapse = ", "), "\n", sep = "")
 
-  ## --- outputs ---------------------------------------------------------------
-  if (!is.null(x$outputs)) {
-    cat("  Outputs:  ", paste(x$outputs, collapse = ", "), "\n", sep = "")
+  ## --- flows -----------------------------------------------------------------
+  if (!is.null(x$flows) && length(x$flows) > 0) {
+    cat("  Flows:    ", paste(x$flows, collapse = ", "), "\n", sep = "")
   }
 
   ## --- parameter bounds ------------------------------------------------------
