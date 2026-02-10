@@ -21,7 +21,7 @@ susceptible, infectious) and are used to provide a model-independent way of
 referring to core epidemiological concepts.
 
 Flows are intentionally excluded from the role system. Flow variables are
-treated as implementation details or optional model outputs and are not
+treated as implementation details or optional derived quantities and are not
 required to have epidemiological roles.
 \subsection{State roles}{
 

@@ -6,12 +6,12 @@
 #' Plot method for objects of class \code{"sim_epi"} as returned by
 #' \code{\link{simulate_epi}}. The function provides a flexible visualization
 #' interface for simulated epidemic trajectories by allowing the user to plot
-#' either all model states, all model flows, or a single model-defined output.
+#' either all model states, all model flows, or a single state/flow variable.
 #'
 #' Unlike earlier versions, this method does not assume a specific
 #' compartmental structure (e.g. SIR or SEIR). All available quantities that can
-#' be plotted are taken directly from the outputs declared in the underlying
-#' \code{\link{epi_model}} used to generate the simulation.
+#' be plotted are taken directly from the states and flows declared in the
+#' underlying \code{\link{epi_model}} used to generate the simulation.
 #'
 #' @details
 #' The behavior of the function depends on the value of the \code{what} argument:
@@ -27,10 +27,10 @@
 #'     \code{x$flows}. The time variable is taken from the \code{time} column of
 #'     \code{x$flows}.}
 #'
-#'   \item{\code{what = <output>}}{Plots a single model-defined output, where
-#'     \code{<output>} is the name of one of the quantities declared in
-#'     \code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}, \code{"R"},
-#'     or \code{"incidence"}). The corresponding trajectory is extracted from
+#'   \item{\code{what = <var>}}{Plots a single state or flow variable, where
+#'     \code{<var>} is the name of one state in \code{x$model$states}
+#'     (e.g. \code{"I"}, \code{"S"}, \code{"R"}) or one flow in
+#'     \code{x$model$flows} (e.g. \code{"incidence"}). The corresponding trajectory is extracted from
 #'     \code{x$states} when it is a state, and from \code{x$flows} when it is a
 #'     flow.}
 #' }
@@ -44,8 +44,8 @@
 #' @param what Character string specifying what to plot. One of:
 #'   \code{"states"} (all state variables),
 #'   \code{"flows"} (all model flows),
-#'   or the name of a single model output declared in
-#'   \code{x$model$outputs} (e.g. \code{"I"}, \code{"S"}, \code{"incidence"}).
+#'   or the name of a single model state/flow
+#'   (e.g. \code{"I"}, \code{"S"}, \code{"incidence"}).
 #' @param scale Character string specifying the scale for state plots.
 #'   One of \code{"auto"}, \code{"full"}, \code{"small"}, or \code{"log"}.
 #'   This argument is only used when \code{what = "states"}.
@@ -99,8 +99,6 @@ plot.sim_epi <- function(x,
   model   <- x$model
   st      <- x$states
   states  <- model$states
-  outputs <- model$outputs
-
   ## Etiqueta del eje X según time_unit
   unit <- x$time_unit
   xlab <- if (is.null(unit) || !nzchar(unit)) {

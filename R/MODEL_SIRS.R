@@ -41,8 +41,8 @@ sirs_rhs <- function(time, state, parms) {
 #' The total population size is conserved:
 #' \deqn{N = S(t) + I(t) + R(t).}
 #'
-#' ## Model outputs
-#' The SIRS model declares the following outputs:
+#' ## Model variables
+#' The SIRS model declares the following variables:
 #' \describe{
 #'   \item{\code{"S"}}{Susceptible population size.}
 #'   \item{\code{"I"}}{Infectious population size.}
@@ -51,7 +51,7 @@ sirs_rhs <- function(time, state, parms) {
 #'     \eqn{\lambda(t)} returned by the model's right-hand side.}
 #' }
 #'
-#' All declared outputs may be used as observables in generic utilities such as
+#' All declared variables may be used as observables in generic utilities such as
 #' \code{\link{fit_epi_model}} via the \code{target} argument.
 #'
 #' ## Parameters

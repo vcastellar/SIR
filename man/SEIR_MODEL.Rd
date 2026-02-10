@@ -36,9 +36,9 @@ The total population size is conserved:
 \deqn{N = S(t) + E(t) + I(t) + R(t).}
 }
 
-\subsection{Model outputs}{
+\subsection{Model variables}{
 
-The SEIR model declares the following outputs:
+The SEIR model declares the following variables:
 \describe{
 \item{\code{"S"}}{Susceptible population size.}
 \item{\code{"E"}}{Exposed (latent) population size.}
@@ -49,7 +49,7 @@ The SEIR model declares the following outputs:
 infectious cases returned by the model's right-hand side.}
 }
 
-All declared outputs may be used as observables in generic utilities such as
+All declared variables may be used as observables in generic utilities such as
 \code{\link{fit_epi_model}} via the \code{target} argument.
 }
 

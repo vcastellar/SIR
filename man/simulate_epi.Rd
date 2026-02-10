@@ -71,7 +71,7 @@ must define:
 
 Optionally, the model may declare one or more flows via \code{model$flows}.
 If present, these flows must be returned by the ODE right-hand side function
-as additional named outputs and will be extracted into the simulation result.
+as additional named flows and will be extracted into the simulation result.
 
 No assumptions are made about the semantic meaning of states or flows
 (e.g. incidence, prevalence, cumulative counts).

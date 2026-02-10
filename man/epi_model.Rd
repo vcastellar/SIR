@@ -14,8 +14,7 @@ epi_model(
   lower = NULL,
   upper = NULL,
   defaults = NULL,
-  init = NULL,
-  outputs = NULL
+  init = NULL
 )
 }
 \arguments{
@@ -31,7 +30,7 @@ with the simulation backend used by \code{simulate_epi()}.}
 variables of the model. Each state name must be unique.}
 
 \item{flows}{Optional character vector giving the names of flow variables
-used internally by the model or returned as outputs. Flow variables are
+used internally by the model or returned as flows. Flow variables are
 not required to have epidemiological roles.}
 
 \item{roles}{Named list mapping \emph{epidemiological roles} to state variables.
@@ -55,9 +54,6 @@ Names must match \code{par_names}.}
 \item{init}{Optional named numeric vector of initial values for the state
 variables. Names must match \code{states}.}
 
-\item{outputs}{Optional character vector giving the names of model variables
-(states and/or flows) to be returned by default in simulations. If
-\code{NULL}, all states and flows are included.}
 }
 \value{
 An object of class \code{"epi_model"} containing the model definition.
@@ -82,7 +78,7 @@ model-independent way.
 
 Roles apply \strong{exclusively to state variables}. Flow variables are not
 part of the role system and are treated as implementation details or optional
-model outputs.
+model flows.
 
 The set of supported epidemiological roles and their default associated state
 names are defined by \code{\link{epi_role_vocab}}.

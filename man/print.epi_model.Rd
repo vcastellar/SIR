@@ -17,17 +17,16 @@ Invisibly returns the input object \code{x}.
 \description{
 Provides a concise, human-readable summary of an \code{epi_model} object.
 The printed output includes the model name, state variables, parameters,
-the declared model outputs, and the underlying system of differential
+the declared model flows, and the underlying system of differential
 equations.
 
 This method is automatically called when an object of class
 \code{"epi_model"} is printed at the console.
 }
 \details{
-The \code{epi_model} class explicitly declares the set of model outputs via
-the \code{outputs} field. These outputs may include state variables, derived
-quantities such as incidence, or any other observable returned by the
-model's right-hand side (\code{rhs}) function.
+Model flows are shown when available. These may include derived quantities
+such as incidence, or any other observable returned by the model's
+right-hand side (\code{rhs}) function.
 
 Parameter bounds are shown when available. The model equations are printed
 by deparsing the \code{rhs} function for inspection.

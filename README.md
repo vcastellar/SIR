@@ -72,8 +72,7 @@ my_sir <- new_epi_model(
   rhs         = sir_rhs,
   state_names = c("S", "I", "R"),
   par_names   = c("beta", "gamma"),
-  init        = c(S = 1e6, I = 10, R = 0),
-  outputs     = c("S", "I", "R", "incidence")
+  init        = c(S = 1e6, I = 10, R = 0)
 )
 ```
 
