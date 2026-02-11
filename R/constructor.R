@@ -79,7 +79,8 @@ epi_role_vocab <- function() {
     exposed     = "E",
     infectious  = "I",
     recovered   = "R",
-    deceased    = "D"
+    deceased    = "D",
+    vaccinated  = "V"
   )
 }
 

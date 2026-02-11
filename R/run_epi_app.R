@@ -73,7 +73,11 @@
 #' @export
 run_epi_app <- function(models = NULL) {
 
-  builtin <- .get_builtin_models()
+  # builtin <- .get_builtin_models()
+  builtin <- setNames(
+    lapply(list_models(), get_model),
+    list_models()
+  )
 
   if (is.null(models)) {
     all_models <- builtin

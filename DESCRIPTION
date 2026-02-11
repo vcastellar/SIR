@@ -50,5 +50,8 @@ Collate:
     'metodos.R'
     'metrics.R'
     'models.R'
+    'registry.R'
+    'registry_api.R'
     'run_epi_app.R'
     'simulate_epi.R'
+    'zzz.R'

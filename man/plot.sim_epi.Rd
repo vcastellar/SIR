@@ -35,7 +35,7 @@ either all model states, all model flows, or a single state/flow variable.
 Unlike earlier versions, this method does not assume a specific
 compartmental structure (e.g. SIR or SEIR). All available quantities that can
 be plotted are taken directly from the states and flows declared in the
-\code{\link{epi_model}} used to generate the simulation.
+underlying \code{\link{epi_model}} used to generate the simulation.
 }
 \details{
 The behavior of the function depends on the value of the \code{what} argument:

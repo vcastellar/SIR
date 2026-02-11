@@ -75,9 +75,7 @@ test_that("build-in basic model", {
       exposed     = "E",
       infectious  = "I",
       recovered   = "R",
-      deceased    = "D",
-      incidence   = "incidence",
-      deaths      = "deaths"
+      deceased    = "D"
     )
   )
 

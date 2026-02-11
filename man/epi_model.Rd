@@ -53,7 +53,6 @@ Names must match \code{par_names}.}
 
 \item{init}{Optional named numeric vector of initial values for the state
 variables. Names must match \code{states}.}
-
 }
 \value{
 An object of class \code{"epi_model"} containing the model definition.
