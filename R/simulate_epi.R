@@ -116,8 +116,8 @@
 #' sim <- simulate_epi(
 #'   model = SIR_MODEL,
 #'   times = 0:200,
-#'   #parms = c(beta = 0.30, gamma = 0.10),
-#'   #init  = c(S = 1e6 - 10, I = 10, R = 0),
+#'   parms = c(beta = 0.30, gamma = 0.10),
+#'   init  = c(S = 1e6 - 10, I = 10, R = 0),
 #'   method = "rk4"
 #' )
 #'
