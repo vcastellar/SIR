@@ -1,3 +1,18 @@
+get_flow <- function(sim, flow) {
+  if (is.null(sim$flows) || !"time" %in% names(sim$flows)) {
+    stop("Simulation does not define flows.")
+  }
+
+  if (!flow %in% names(sim$flows)) {
+    stop("Simulation does not define flow: ", flow)
+  }
+
+  sim$flows[[flow]]
+}
+
+
+
+
 #' Peak incidence
 #'
 #' @description
