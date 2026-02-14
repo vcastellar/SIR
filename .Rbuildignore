@@ -1,2 +1,10 @@
 ^SIR\.Rproj$
 ^\.Rproj\.user$
+^\.git$
+^\.github$
+^\.gitignore$
+^\.Rhistory$
+^\.Rd2pdf.*$
+^\.\.[Rr]check$
+^SIR\.pdf$
+^\.pdf$

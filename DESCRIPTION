@@ -17,7 +17,7 @@ Description: Simulation and exploration of deterministic compartmental epidemiol
     interactive visualization and experimentation with epidemic scenarios.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
+LazyData: false
 Depends:
     R (>= 4.1.0)
 Imports:

@@ -143,7 +143,7 @@ plot.sim_epi <- function(x,
       log_arg <- ""
     }
 
-    matplot(
+    graphics::matplot(
       st$time, y,
       type = "l",
       lty = 1,
@@ -156,7 +156,7 @@ plot.sim_epi <- function(x,
       ...
     )
 
-    legend(
+    graphics::legend(
       "topright",
       legend = states,
       col = seq_along(states),
@@ -184,7 +184,7 @@ plot.sim_epi <- function(x,
 
     y <- fl[, vars, drop = FALSE]
 
-    matplot(
+    graphics::matplot(
       fl$time, y,
       type = "l",
       lty = 1,
@@ -195,7 +195,7 @@ plot.sim_epi <- function(x,
       ...
     )
 
-    legend(
+    graphics::legend(
       "topright",
       legend = vars,
       col = seq_along(vars),

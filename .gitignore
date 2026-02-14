@@ -1,2 +1,6 @@
 .Rproj.user
 .Rhistory
+..Rcheck/
+.Rd2pdf*/
+.pdf
+SIR.pdf
