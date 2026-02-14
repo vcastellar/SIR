@@ -25,6 +25,8 @@ register_epi_model <- function(model, family = NULL) {
 }
 
 #' Remove a registered epidemiological model
+#'
+#' @param name Character scalar with the registered model name to remove.
 #' @export
 remove_epi_model <- function(name) {
 
@@ -52,6 +54,8 @@ list_models <- function() {
 }
 
 #' Get registered model
+#'
+#' @param name Character scalar with the registered model name to retrieve.
 #' @export
 get_model <- function(name) {
   epi_registry$get_entry(name)$model

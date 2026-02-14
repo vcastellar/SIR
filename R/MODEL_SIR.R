@@ -60,6 +60,8 @@ sir_rhs <- function(time, state, parms) {
 #'   \item{\code{"R"}}{Recovered (removed) population size.}
 #'   \item{\code{"incidence"}}{Instantaneous rate of new infections
 #'     \eqn{\lambda(t)} returned by the model's right-hand side.}
+#'   \item{\code{"recovery"}}{Instantaneous recovery flow
+#'     \eqn{\gamma I(t)} returned by the model's right-hand side.}
 #' }
 #'
 #' All declared variables may be used as observables in generic utilities
@@ -128,4 +130,3 @@ SIR_MODEL <- epi_model(
   states = c("S", "I", "R"),
   flows = c("incidence", "recovery")
 )
-
