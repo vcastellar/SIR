@@ -276,7 +276,7 @@ plot.sim_epi <- function(x,
 #' @details
 #' The summary includes:
 #' \describe{
-#'   \item{model}{The epidemic model simulated (e.g. \code{"sir"} or \code{"sirs"}).}
+#'   \item{model}{The \code{epi_model} object used in the simulation.}
 #'   \item{peak_I}{The maximum number of infectious individuals observed during
 #'     the simulation, when an \code{I} state is present.}
 #'   \item{time_peak_I}{The time at which the infectious prevalence reaches its
@@ -458,9 +458,9 @@ print.sim_epi <- function(x, ...) {
     }
   }
 
-  if (!is.null(x$incidence_cum)) {
-    total_C <- max(x$incidence_cum$cases_cum, na.rm = TRUE)
-    cat("  Total infections:     ", round(total_C), "\n", sep = "")
+  if (!is.null(x$flows) && "incidence" %in% names(x$flows)) {
+    total_inf <- sum(x$flows$incidence, na.rm = TRUE)
+    cat("  Total infections:     ", round(total_inf), "\n", sep = "")
   }
 
   invisible(x)
