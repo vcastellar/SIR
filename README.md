@@ -67,10 +67,10 @@ sir_rhs <- function(time, state, parms) {
   })
 }
 
-my_sir <- new_epi_model(
+my_sir <- epi_model(
   name        = "MySIR",
   rhs         = sir_rhs,
-  state_names = c("S", "I", "R"),
+  states      = c("S", "I", "R"),
   par_names   = c("beta", "gamma"),
   init        = c(S = 1e6, I = 10, R = 0)
 )

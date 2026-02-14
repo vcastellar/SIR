@@ -43,8 +43,8 @@ The SIR model declares the following variables:
 \eqn{\lambda(t)} returned by the model's right-hand side.}
 }
 
-All declared variables may be used as observables in generic utilities such as
-\code{\link{fit_epi_model}} via the \code{target} argument.
+All declared variables may be used as observables in generic utilities
+and summary methods built around \code{epi_model} objects.
 }
 
 \subsection{Parameters}{
@@ -74,8 +74,8 @@ The system of ordinary differential equations is:
 \subsection{Usage}{
 
 This predefined model object is intended to be used with generic utilities
-such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
-\code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
+such as \code{\link{simulate_epi}}, \code{\link{plot.sim_epi}}, and
+\code{\link{summary.sim_epi}} that operate on \code{epi_model} objects.
 }
 }
 \examples{
@@ -89,14 +89,13 @@ sim <- simulate_epi(
 
 plot(sim)
 
-## Plot observed incidence (if an observation model is used)
+## Plot incidence
 plot(sim, what = "incidence")
 
 
 }
 \seealso{
 \code{\link{simulate_epi}},
-\code{\link{fit_epi_model}},
-\code{\link{new_epi_model}}
+\code{\link{epi_model}}
 }
 \keyword{datasets}
