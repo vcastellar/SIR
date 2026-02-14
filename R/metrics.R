@@ -1,59 +1,7 @@
-## ============================================================================
-## Helper: extract variable by epidemiological role
-## ============================================================================
-
-get_role <- function(sim, role) {
-  var <- NULL
-
-  if (!is.null(sim$model$roles)) {
-    var <- sim$model$roles[[role]]
-  }
-
-  if (is.null(var)) {
-    var <- switch(
-      role,
-      susceptible = "S",
-      exposed     = "E",
-      infectious  = "I",
-      recovered   = "R",
-      deceased    = "D",
-      vaccinated  = "V",
-      NULL
-    )
-  }
-
-  if (is.null(var)) {
-    stop("Model does not define role: ", role)
-  }
-
-  if (var %in% names(sim$states)) {
-    sim$states[[var]]
-  } else {
-    sim$flows[[var]]
-  }
-}
-
-get_flow <- function(sim, flow) {
-  if (is.null(sim$flows) || !"time" %in% names(sim$flows)) {
-    stop("Simulation does not define flows.")
-  }
-
-  if (!flow %in% names(sim$flows)) {
-    stop("Simulation does not define flow: ", flow)
-  }
-
-  sim$flows[[flow]]
-}
-
-
-## ============================================================================
-## Epidemiological metrics based on roles
-## ============================================================================
-
 #' Peak incidence
 #'
 #' @description
-#' Computes the maximum value of the incidence curve and the time at which
+#' Computes the maximum value of an incidence curve and the time at which
 #' it occurs.
 #'
 #' @details
@@ -67,36 +15,29 @@ get_flow <- function(sim, flow) {
 #' t^* = \arg\max_t \lambda(t).
 #' }
 #'
-#' This metric requires a model flow named \code{"incidence"}.
-#'
-#' @param sim An object of class \code{"sim_epi"}.
+#' @param incidence Numeric vector giving the incidence curve.
+#' @param time Numeric vector of the same length giving time points.
 #'
 #' @return
 #' A named list with elements \code{time} and \code{value}.
 #'
 #' @examples
-#' sim <- simulate_epi(
-#'   model = SI_MODEL,
-#'   times = 0:100,
-#'   parms = c(beta = 0.3),
-#'   init  = c(S = 999, I = 1)
-#' )
-#'
-#' peak_incidence(sim)
+#' inc  <- c(1, 3, 7, 5, 2)
+#' time <- 0:4
+#' peak_incidence(inc, time)
 #'
 #' @export
-peak_incidence <- function(sim) {
+peak_incidence <- function(incidence, time) {
 
-  stopifnot(inherits(sim, "sim_epi"))
+  stopifnot(is.numeric(incidence),
+            is.numeric(time),
+            length(incidence) == length(time))
 
-  inc <- get_flow(sim, "incidence")
-  t   <- sim$flows$time
-
-  i <- which.max(inc)
+  i <- which.max(incidence)
 
   list(
-    time  = t[i],
-    value = inc[i]
+    time  = time[i],
+    value = incidence[i]
   )
 }
 
@@ -106,81 +47,58 @@ peak_incidence <- function(sim) {
 #' @description
 #' Returns the time at which incidence reaches its maximum.
 #'
-#' @details
-#' Let \eqn{\lambda(t)} be the incidence curve.
-#' The time to peak incidence is defined as
-#' \deqn{
-#' t^* = \arg\max_t \lambda(t).
-#' }
-#'
-#' This is a convenience wrapper around \code{peak_incidence()}.
-#'
-#' @param sim An object of class \code{"sim_epi"}.
+#' @param incidence Numeric vector giving the incidence curve.
+#' @param time Numeric vector of time points.
 #'
 #' @return
 #' A numeric scalar giving the time to peak incidence.
 #'
 #' @examples
-#' sim <- simulate_epi(
-#'   model = SI_MODEL,
-#'   times = 0:80,
-#'   parms = c(beta = 0.25),
-#'   init  = c(S = 999, I = 1)
-#' )
-#'
-#' time_to_peak(sim)
+#' inc  <- c(1, 4, 6, 3)
+#' time <- 0:3
+#' time_to_peak(inc, time)
 #'
 #' @export
-time_to_peak <- function(sim) {
-  peak_incidence(sim)$time
+time_to_peak <- function(incidence, time) {
+  peak_incidence(incidence, time)$time
 }
 
 
 #' Peak prevalence
 #'
 #' @description
-#' Computes the maximum number of infectious individuals during the epidemic.
+#' Computes the maximum value of a prevalence curve.
 #'
 #' @details
-#' Let \eqn{I(t)} denote the number of infectious individuals over time.
+#' Let \eqn{I(t)} denote the prevalence over time.
 #' The peak prevalence is defined as
 #' \deqn{
 #' I_{\max} = \max_t I(t).
 #' }
 #'
-#' This metric requires the epidemiological role \code{"infectious"}.
-#'
-#' @param sim An object of class \code{"sim_epi"}.
+#' @param prevalence Numeric vector representing prevalence over time.
 #'
 #' @return
 #' A numeric scalar giving the peak prevalence.
 #'
 #' @examples
-#' sim <- simulate_epi(
-#'   model = SIR_MODEL,
-#'   times = 0:160,
-#'   parms = c(beta = 0.3, gamma = 0.1),
-#'   init  = c(S = 999, I = 1, R = 0)
-#' )
-#'
-#' peak_prevalence(sim)
+#' I <- c(1, 5, 8, 4, 2)
+#' peak_prevalence(I)
 #'
 #' @export
-peak_prevalence <- function(sim) {
+peak_prevalence <- function(prevalence) {
 
-  stopifnot(inherits(sim, "sim_epi"))
+  stopifnot(is.numeric(prevalence))
 
-  I <- get_role(sim, "infectious")
-
-  max(I, na.rm = TRUE)
+  max(prevalence, na.rm = TRUE)
 }
+
 
 
 #' Attack rate
 #'
 #' @description
-#' Computes the cumulative number of infections over the course of the epidemic,
-#' defined as the integral (sum) of the incidence curve.
+#' Computes the cumulative number of events as the sum of an incidence curve.
 #'
 #' @details
 #' Let \eqn{\lambda(t)} denote the incidence function.
@@ -189,86 +107,63 @@ peak_prevalence <- function(sim) {
 #' AR = \int_0^T \lambda(t)\, dt.
 #' }
 #'
-#' In discrete time simulations, this integral is approximated by
+#' In discrete time, this is approximated by:
 #' \deqn{
-#' AR \approx \sum_{t=0}^T \lambda(t).
+#' AR \approx \sum_t \lambda(t).
 #' }
 #'
-#' For models with permanent immunity, this corresponds to the final epidemic
-#' size.
-#'
-#' This metric requires a model flow named \code{"incidence"}.
-#'
-#' @param sim An object of class \code{"sim_epi"}.
+#' @param incidence Numeric vector giving the incidence curve.
 #'
 #' @return
 #' A numeric scalar giving the attack rate.
 #'
 #' @examples
-#' sim <- simulate_epi(
-#'   model = SIR_MODEL,
-#'   times = 0:160,
-#'   parms = c(beta = 0.3, gamma = 0.1),
-#'   init  = c(S = 999, I = 1, R = 0)
-#' )
-#'
-#' attack_rate(sim)
+#' inc <- c(1, 2, 3, 4)
+#' attack_rate(inc)
 #'
 #' @export
-attack_rate <- function(sim) {
+attack_rate <- function(incidence) {
 
-  stopifnot(inherits(sim, "sim_epi"))
+  stopifnot(is.numeric(incidence))
 
-  inc <- get_flow(sim, "incidence")
-
-  sum(inc, na.rm = TRUE)
+  sum(incidence, na.rm = TRUE)
 }
 
 
 #' Initial exponential growth rate
 #'
 #' @description
-#' Estimates the early exponential growth rate of the epidemic by fitting a
-#' log-linear model to the initial segment of the incidence curve.
+#' Estimates the early exponential growth rate by fitting a log-linear model
+#' to the initial segment of an incidence curve.
 #'
 #' @details
-#' During the early epidemic phase, incidence is assumed to grow exponentially:
+#' Assuming exponential growth:
 #' \deqn{
-#' \lambda(t) \approx C e^{r t},
+#' \lambda(t) \approx C e^{r t}.
 #' }
-#' where \eqn{r} is the exponential growth rate.
 #'
-#' Taking logarithms yields
+#' Taking logarithms:
 #' \deqn{
 #' \log \lambda(t) = \log C + r t.
 #' }
 #'
-#' Requires a model flow named \code{"incidence"}.
-#'
-#' @param sim An object of class \code{"sim_epi"}.
-#' @param n Integer. Number of initial time points.
+#' @param incidence Numeric vector of incidence values.
+#' @param time Numeric vector of time points.
+#' @param n Integer. Number of initial time points used for estimation.
 #'
 #' @return
-#' A numeric scalar giving the initial exponential growth rate.
-#'
-#' @examples
-#' sim <- simulate_epi(
-#'   model = SI_MODEL,
-#'   times = 0:50,
-#'   parms = c(beta = 0.4),
-#'   init  = c(S = 999, I = 1)
-#' )
-#'
-#' initial_growth_rate(sim, n = 10)
+#' A numeric scalar giving the estimated growth rate.
 #'
 #' @export
-initial_growth_rate <- function(sim, n = 7) {
+initial_growth_rate <- function(incidence, time, n = 7) {
 
-  stopifnot(inherits(sim, "sim_epi"))
-  stopifnot(n >= 2)
+  stopifnot(is.numeric(incidence),
+            is.numeric(time),
+            length(incidence) == length(time),
+            n >= 2)
 
-  inc <- get_flow(sim, "incidence")[seq_len(n)]
-  t   <- sim$flows$time[seq_len(n)]
+  inc <- incidence[seq_len(n)]
+  t   <- time[seq_len(n)]
 
   if (any(inc <= 0)) {
     stop("Incidence must be positive to estimate growth rate.")
@@ -280,105 +175,80 @@ initial_growth_rate <- function(sim, n = 7) {
 }
 
 
+
 #' Initial doubling time
 #'
 #' @description
-#' Computes the epidemic doubling time during the initial exponential growth
-#' phase.
+#' Computes the epidemic doubling time during the initial exponential phase.
 #'
 #' @details
-#' If incidence grows exponentially, the doubling time is
+#' If incidence grows exponentially with rate \eqn{r},
+#' the doubling time is:
 #' \deqn{
 #' T_d = \frac{\log 2}{r}.
 #' }
 #'
-#' @param sim An object of class \code{"sim_epi"}.
+#' @param incidence Numeric vector of incidence values.
+#' @param time Numeric vector of time points.
+#' @param n Integer. Number of initial time points.
 #'
 #' @return
-#' A numeric scalar giving the initial doubling time.
-#'
-#' @examples
-#' sim <- simulate_epi(
-#'   model = SI_MODEL,
-#'   times = 0:50,
-#'   parms = c(beta = 0.4),
-#'   init  = c(S = 999, I = 1)
-#' )
-#'
-#' initial_doubling_time(sim)
+#' A numeric scalar giving the doubling time.
 #'
 #' @export
-initial_doubling_time <- function(sim) {
+initial_doubling_time <- function(incidence, time, n = 7) {
 
-  r <- initial_growth_rate(sim)
+  r <- initial_growth_rate(incidence, time, n)
 
   log(2) / r
 }
 
 
+
 #' Instantaneous growth rate
 #'
 #' @description
-#' Computes the time-varying exponential growth rate of the epidemic, with
-#' optional smoothing via a moving average to reduce noise.
+#' Computes the time-varying exponential growth rate from an incidence curve.
 #'
 #' @details
-#' The instantaneous growth rate is calculated as the derivative of the
-#' log-incidence. To handle noise, a moving average of size \code{window}
-#' is applied to the incidence before the transformation:
+#' The growth rate is approximated by:
 #' \deqn{
-#' \lambda_{smooth}(t) = \frac{1}{k} \sum_{j=-(k-1)/2}^{(k-1)/2} \lambda(t+j)
-#' }
-#' where \eqn{k} is the window size. The growth rate is then:
-#' \deqn{
-#' r(t_i) \approx \frac{\log \lambda_{smooth}(t_{i+1}) - \log \lambda_{smooth}(t_i)}{t_{i+1} - t_i}
+#' r(t_i) \approx \frac{\log \lambda(t_{i+1}) - \log \lambda(t_i)}
+#' {t_{i+1} - t_i}.
 #' }
 #'
-#' @param sim An object of class \code{"sim_epi"}.
-#' @param window Integer. Size of the moving average window (must be odd for
-#'   centered smoothing). Default is 1 (no smoothing).
-#' @param offset Numeric. Small constant added to incidence to avoid \code{log(0)}.
+#' Optional smoothing via moving average can be applied.
+#'
+#' @param incidence Numeric vector of incidence values.
+#' @param time Numeric vector of time points.
+#' @param window Integer. Size of moving average window.
+#' @param offset Numeric. Small constant added to avoid \code{log(0)}.
 #'
 #' @return
 #' A data.frame with columns \code{time} and \code{r}.
 #'
-#' @examples
-#' sim <- simulate_epi(
-#'   model = SI_MODEL,
-#'   times = 0:50,
-#'   parms = c(beta = 0.4),
-#'   init  = c(S = 999, I = 1)
-#' )
-#' # Sin suavizado
-#' plot(instantaneous_growth_rate(sim, window = 1))
-#'
-#' # Con suavizado (ventana de 7 días)
-#' plot(instantaneous_growth_rate(sim, window = 7))
-#'
 #' @export
-instantaneous_growth_rate <- function(sim, window = 1, offset = 0.5) {
+instantaneous_growth_rate <- function(incidence,
+                                      time,
+                                      window = 1,
+                                      offset = 0.5) {
 
-  stopifnot(inherits(sim, "sim_epi"))
+  stopifnot(is.numeric(incidence),
+            is.numeric(time),
+            length(incidence) == length(time))
 
-  inc <- get_flow(sim, "incidence")
-  t   <- sim$flows$time
+  inc <- incidence
+  t   <- time
 
-  # 1. Aplicar suavizado (Moving Average)
   if (window > 1) {
-    # Usamos stats::filter para una media móvil centrada
     inc <- as.numeric(stats::filter(inc, rep(1/window, window), sides = 2))
-
-    # El filtrado produce NAs en los extremos, los eliminamos para el cálculo
-    valid_idx <- !is.na(inc)
-    inc <- inc[valid_idx]
-    t   <- t[valid_idx]
+    valid <- !is.na(inc)
+    inc <- inc[valid]
+    t   <- t[valid]
   }
 
-  # 2. Manejo de ceros mediante offset
-  # Esto evita errores matemáticos sin detener la ejecución
   log_inc <- log(inc + offset)
 
-  # 3. Cálculo de la tasa r
   r <- diff(log_inc) / diff(t)
 
   data.frame(
@@ -388,41 +258,37 @@ instantaneous_growth_rate <- function(sim, window = 1, offset = 0.5) {
 }
 
 
+
 #' Time-varying doubling time
 #'
 #' @description
-#' Computes the time-varying epidemic doubling time based on the instantaneous
-#' growth rate.
+#' Computes the time-varying doubling time from an incidence curve.
 #'
 #' @details
-#' Given the instantaneous growth rate \eqn{r(t)}, the doubling time is
+#' Given growth rate \eqn{r(t)}, the doubling time is:
 #' \deqn{
 #' T_d(t) = \frac{\log 2}{r(t)}.
 #' }
 #'
-#' When \eqn{r(t) \le 0}, the doubling time is set to infinity.
+#' When \eqn{r(t) \le 0}, doubling time is set to \code{Inf}.
 #'
-#' Requires a model flow named \code{"incidence"}.
-#'
-#' @param sim An object of class \code{"sim_epi"}.
+#' @param incidence Numeric vector of incidence values.
+#' @param time Numeric vector of time points.
+#' @param window Integer. Moving average window.
+#' @param offset Numeric. Small constant to avoid log(0).
 #'
 #' @return
 #' A data.frame with columns \code{time} and \code{doubling_time}.
 #'
-#' @examples
-#' sim <- simulate_epi(
-#'   model = SI_MODEL,
-#'   times = 0:100,
-#'   parms = c(beta = 0.3),
-#'   init  = c(S = 999, I = 1)
-#' )
-#'
-#' head(doubling_time_ts(sim))
-#'
 #' @export
-doubling_time_ts <- function(sim) {
+doubling_time_ts <- function(incidence,
+                             time,
+                             window = 1,
+                             offset = 0.5) {
 
-  gr <- instantaneous_growth_rate(sim)
+  gr <- instantaneous_growth_rate(incidence, time,
+                                  window = window,
+                                  offset = offset)
 
   Td <- log(2) / gr$r
   Td[gr$r <= 0] <- Inf

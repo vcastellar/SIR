@@ -4,34 +4,26 @@
 \alias{peak_prevalence}
 \title{Peak prevalence}
 \usage{
-peak_prevalence(sim)
+peak_prevalence(prevalence)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{prevalence}{Numeric vector representing prevalence over time.}
 }
 \value{
 A numeric scalar giving the peak prevalence.
 }
 \description{
-Computes the maximum number of infectious individuals during the epidemic.
+Computes the maximum value of a prevalence curve.
 }
 \details{
-Let \eqn{I(t)} denote the number of infectious individuals over time.
+Let \eqn{I(t)} denote the prevalence over time.
 The peak prevalence is defined as
 \deqn{
 I_{\max} = \max_t I(t).
 }
-
-This metric requires the epidemiological role \code{"infectious"}.
 }
 \examples{
-sim <- simulate_epi(
-  model = SIR_MODEL,
-  times = 0:160,
-  parms = c(beta = 0.3, gamma = 0.1),
-  init  = c(S = 999, I = 1, R = 0)
-)
-
-peak_prevalence(sim)
+I <- c(1, 5, 8, 4, 2)
+peak_prevalence(I)
 
 }

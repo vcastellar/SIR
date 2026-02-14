@@ -4,32 +4,25 @@
 \alias{initial_doubling_time}
 \title{Initial doubling time}
 \usage{
-initial_doubling_time(sim)
+initial_doubling_time(incidence, time, n = 7)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector of incidence values.}
+
+\item{time}{Numeric vector of time points.}
+
+\item{n}{Integer. Number of initial time points.}
 }
 \value{
-A numeric scalar giving the initial doubling time.
+A numeric scalar giving the doubling time.
 }
 \description{
-Computes the epidemic doubling time during the initial exponential growth
-phase.
+Computes the epidemic doubling time during the initial exponential phase.
 }
 \details{
-If incidence grows exponentially, the doubling time is
+If incidence grows exponentially with rate \eqn{r},
+the doubling time is:
 \deqn{
 T_d = \frac{\log 2}{r}.
 }
-}
-\examples{
-sim <- simulate_epi(
-  model = SI_MODEL,
-  times = 0:50,
-  parms = c(beta = 0.4),
-  init  = c(S = 999, I = 1)
-)
-
-initial_doubling_time(sim)
-
 }

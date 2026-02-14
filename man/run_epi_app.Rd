@@ -30,11 +30,11 @@ All models must be provided explicitly at launch time so that they are
 available in the Shiny session.
 
 User-defined models must be fully specified \code{epi_model} objects,
-including state roles and parameter definitions.
+including state variables and parameter definitions.
 }
 \examples{
 ## ---------------------------------------------------------
-## Define a custom SEIRD model (with roles)
+## Define a custom SEIRD model
 ## ---------------------------------------------------------
 
 seird_rhs <- function(time, state, parms) {

@@ -4,17 +4,16 @@
 \alias{attack_rate}
 \title{Attack rate}
 \usage{
-attack_rate(sim)
+attack_rate(incidence)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector giving the incidence curve.}
 }
 \value{
 A numeric scalar giving the attack rate.
 }
 \description{
-Computes the cumulative number of infections over the course of the epidemic,
-defined as the integral (sum) of the incidence curve.
+Computes the cumulative number of events as the sum of an incidence curve.
 }
 \details{
 Let \eqn{\lambda(t)} denote the incidence function.
@@ -23,24 +22,13 @@ The attack rate is defined as
 AR = \int_0^T \lambda(t)\, dt.
 }
 
-In discrete time simulations, this integral is approximated by
+In discrete time, this is approximated by:
 \deqn{
-AR \approx \sum_{t=0}^T \lambda(t).
+AR \approx \sum_t \lambda(t).
 }
-
-For models with permanent immunity, this corresponds to the final epidemic
-size.
-
-This metric requires a model flow named \code{"incidence"}.
 }
 \examples{
-sim <- simulate_epi(
-  model = SIR_MODEL,
-  times = 0:160,
-  parms = c(beta = 0.3, gamma = 0.1),
-  init  = c(S = 999, I = 1, R = 0)
-)
-
-attack_rate(sim)
+inc <- c(1, 2, 3, 4)
+attack_rate(inc)
 
 }

@@ -4,16 +4,18 @@
 \alias{peak_incidence}
 \title{Peak incidence}
 \usage{
-peak_incidence(sim)
+peak_incidence(incidence, time)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector giving the incidence curve.}
+
+\item{time}{Numeric vector of the same length giving time points.}
 }
 \value{
 A named list with elements \code{time} and \code{value}.
 }
 \description{
-Computes the maximum value of the incidence curve and the time at which
+Computes the maximum value of an incidence curve and the time at which
 it occurs.
 }
 \details{
@@ -26,17 +28,10 @@ and the time to peak incidence is
 \deqn{
 t^* = \arg\max_t \lambda(t).
 }
-
-This metric requires a model flow named \code{"incidence"}.
 }
 \examples{
-sim <- simulate_epi(
-  model = SI_MODEL,
-  times = 0:100,
-  parms = c(beta = 0.3),
-  init  = c(S = 999, I = 1)
-)
-
-peak_incidence(sim)
+inc  <- c(1, 3, 7, 5, 2)
+time <- 0:4
+peak_incidence(inc, time)
 
 }

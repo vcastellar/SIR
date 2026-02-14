@@ -4,42 +4,30 @@
 \alias{initial_growth_rate}
 \title{Initial exponential growth rate}
 \usage{
-initial_growth_rate(sim, n = 7)
+initial_growth_rate(incidence, time, n = 7)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector of incidence values.}
 
-\item{n}{Integer. Number of initial time points.}
+\item{time}{Numeric vector of time points.}
+
+\item{n}{Integer. Number of initial time points used for estimation.}
 }
 \value{
-A numeric scalar giving the initial exponential growth rate.
+A numeric scalar giving the estimated growth rate.
 }
 \description{
-Estimates the early exponential growth rate of the epidemic by fitting a
-log-linear model to the initial segment of the incidence curve.
+Estimates the early exponential growth rate by fitting a log-linear model
+to the initial segment of an incidence curve.
 }
 \details{
-During the early epidemic phase, incidence is assumed to grow exponentially:
+Assuming exponential growth:
 \deqn{
-\lambda(t) \approx C e^{r t},
+\lambda(t) \approx C e^{r t}.
 }
-where \eqn{r} is the exponential growth rate.
 
-Taking logarithms yields
+Taking logarithms:
 \deqn{
 \log \lambda(t) = \log C + r t.
 }
-
-Requires a model flow named \code{"incidence"}.
-}
-\examples{
-sim <- simulate_epi(
-  model = SI_MODEL,
-  times = 0:50,
-  parms = c(beta = 0.4),
-  init  = c(S = 999, I = 1)
-)
-
-initial_growth_rate(sim, n = 10)
-
 }

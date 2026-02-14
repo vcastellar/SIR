@@ -26,7 +26,7 @@ The summary includes:
 \describe{
 \item{model}{The epidemic model simulated (e.g. \code{"sir"} or \code{"sirs"}).}
 \item{peak_I}{The maximum number of infectious individuals observed during
-the simulation, when an infectious role (or \code{I} state) is present.}
+the simulation, when an \code{I} state is present.}
 \item{time_peak_I}{The time at which the infectious prevalence reaches its
 maximum, when available.}
 \item{total_infections}{The total number of infection events, computed as

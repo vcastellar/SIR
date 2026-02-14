@@ -4,10 +4,12 @@
 \alias{time_to_peak}
 \title{Time to peak incidence}
 \usage{
-time_to_peak(sim)
+time_to_peak(incidence, time)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector giving the incidence curve.}
+
+\item{time}{Numeric vector of time points.}
 }
 \value{
 A numeric scalar giving the time to peak incidence.
@@ -15,23 +17,9 @@ A numeric scalar giving the time to peak incidence.
 \description{
 Returns the time at which incidence reaches its maximum.
 }
-\details{
-Let \eqn{\lambda(t)} be the incidence curve.
-The time to peak incidence is defined as
-\deqn{
-t^* = \arg\max_t \lambda(t).
-}
-
-This is a convenience wrapper around \code{peak_incidence()}.
-}
 \examples{
-sim <- simulate_epi(
-  model = SI_MODEL,
-  times = 0:80,
-  parms = c(beta = 0.25),
-  init  = c(S = 999, I = 1)
-)
-
-time_to_peak(sim)
+inc  <- c(1, 4, 6, 3)
+time <- 0:3
+time_to_peak(inc, time)
 
 }

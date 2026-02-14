@@ -10,7 +10,6 @@ epi_model(
   par_names,
   states,
   flows = character(0),
-  roles = NULL,
   lower = NULL,
   upper = NULL,
   defaults = NULL,
@@ -30,17 +29,7 @@ with the simulation backend used by \code{simulate_epi()}.}
 variables of the model. Each state name must be unique.}
 
 \item{flows}{Optional character vector giving the names of flow variables
-used internally by the model or returned as flows. Flow variables are
-not required to have epidemiological roles.}
-
-\item{roles}{Named list mapping \emph{epidemiological roles} to state variables.
-Names correspond to epidemiological state roles (see
-\code{\link{epi_role_vocab}}), and values correspond to names of variables
-defined in \code{states}.
-
-If \code{roles = NULL} (default), roles are inferred automatically using
-the internal epidemiological role vocabulary. In all cases, every state
-variable must be associated with exactly one epidemiological role.}
+used internally by the model or returned as flows.}
 
 \item{lower}{Optional named numeric vector giving lower bounds for model
 parameters. Names must match \code{par_names}.}
@@ -61,55 +50,13 @@ An object of class \code{"epi_model"} containing the model definition.
 Creates an \code{epi_model} object describing the structure of a deterministic
 compartmental epidemiological model. The model definition includes the
 system of equations, state variables, optional flow variables, parameter
-names, and a semantic mapping between state variables and epidemiological
-roles.
+names.
 }
 \details{
 The resulting object is a \emph{model definition} and does not perform any
 simulation by itself. It is intended to be used by downstream functions such
 as \code{simulate_epi()}.
-\subsection{Epidemiological roles}{
-
-Epidemiological roles provide a semantic layer on top of the model states,
-allowing downstream tools (metrics, summaries, plotting functions) to refer
-to core epidemiological concepts (e.g. susceptible, infectious) in a
-model-independent way.
-
-Roles apply \strong{exclusively to state variables}. Flow variables are not
-part of the role system and are treated as implementation details or optional
-model flows.
-
-The set of supported epidemiological roles and their default associated state
-names are defined by \code{\link{epi_role_vocab}}.
-\subsection{Automatic role assignment}{
-
-When \code{roles = NULL}, the constructor attempts to assign roles
-automatically by matching the default state names defined in
-\code{epi_role_vocab()} against the declared \code{states}.
-
-Model construction fails if any state variable cannot be associated with an
-epidemiological role.
-}
-
-\subsection{User-defined roles}{
-
-When \code{roles} is provided by the user:
-
-\itemize{
-\item User-defined role assignments take precedence over automatic
-inference.
-\item Role names must belong to the epidemiological role vocabulary.
-\item Role targets must correspond to state variables declared in
-\code{states}.
-}
-
-Any roles not explicitly defined by the user are completed automatically
-using the vocabulary. All states must be identifiable after completion.
-}
-
-}
 }
 \seealso{
-\code{\link{simulate_epi}},
-\code{\link{epi_role_vocab}}
+\code{\link{simulate_epi}}
 }

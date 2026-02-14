@@ -4,46 +4,29 @@
 \alias{instantaneous_growth_rate}
 \title{Instantaneous growth rate}
 \usage{
-instantaneous_growth_rate(sim, window = 1, offset = 0.5)
+instantaneous_growth_rate(incidence, time, window = 1, offset = 0.5)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector of incidence values.}
 
-\item{window}{Integer. Size of the moving average window (must be odd for
-centered smoothing). Default is 1 (no smoothing).}
+\item{time}{Numeric vector of time points.}
 
-\item{offset}{Numeric. Small constant added to incidence to avoid \code{log(0)}.}
+\item{window}{Integer. Size of moving average window.}
+
+\item{offset}{Numeric. Small constant added to avoid \code{log(0)}.}
 }
 \value{
 A data.frame with columns \code{time} and \code{r}.
 }
 \description{
-Computes the time-varying exponential growth rate of the epidemic, with
-optional smoothing via a moving average to reduce noise.
+Computes the time-varying exponential growth rate from an incidence curve.
 }
 \details{
-The instantaneous growth rate is calculated as the derivative of the
-log-incidence. To handle noise, a moving average of size \code{window}
-is applied to the incidence before the transformation:
+The growth rate is approximated by:
 \deqn{
-\lambda_{smooth}(t) = \frac{1}{k} \sum_{j=-(k-1)/2}^{(k-1)/2} \lambda(t+j)
+r(t_i) \approx \frac{\log \lambda(t_{i+1}) - \log \lambda(t_i)}
+{t_{i+1} - t_i}.
 }
-where \eqn{k} is the window size. The growth rate is then:
-\deqn{
-r(t_i) \approx \frac{\log \lambda_{smooth}(t_{i+1}) - \log \lambda_{smooth}(t_i)}{t_{i+1} - t_i}
-}
-}
-\examples{
-sim <- simulate_epi(
-  model = SI_MODEL,
-  times = 0:50,
-  parms = c(beta = 0.4),
-  init  = c(S = 999, I = 1)
-)
-# Sin suavizado
-plot(instantaneous_growth_rate(sim, window = 1))
 
-# Con suavizado (ventana de 7 días)
-plot(instantaneous_growth_rate(sim, window = 7))
-
+Optional smoothing via moving average can be applied.
 }

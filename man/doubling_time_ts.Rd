@@ -4,36 +4,28 @@
 \alias{doubling_time_ts}
 \title{Time-varying doubling time}
 \usage{
-doubling_time_ts(sim)
+doubling_time_ts(incidence, time, window = 1, offset = 0.5)
 }
 \arguments{
-\item{sim}{An object of class \code{"sim_epi"}.}
+\item{incidence}{Numeric vector of incidence values.}
+
+\item{time}{Numeric vector of time points.}
+
+\item{window}{Integer. Moving average window.}
+
+\item{offset}{Numeric. Small constant to avoid log(0).}
 }
 \value{
 A data.frame with columns \code{time} and \code{doubling_time}.
 }
 \description{
-Computes the time-varying epidemic doubling time based on the instantaneous
-growth rate.
+Computes the time-varying doubling time from an incidence curve.
 }
 \details{
-Given the instantaneous growth rate \eqn{r(t)}, the doubling time is
+Given growth rate \eqn{r(t)}, the doubling time is:
 \deqn{
 T_d(t) = \frac{\log 2}{r(t)}.
 }
 
-When \eqn{r(t) \le 0}, the doubling time is set to infinity.
-
-Requires a model flow named \code{"incidence"}.
-}
-\examples{
-sim <- simulate_epi(
-  model = SI_MODEL,
-  times = 0:100,
-  parms = c(beta = 0.3),
-  init  = c(S = 999, I = 1)
-)
-
-head(doubling_time_ts(sim))
-
+When \eqn{r(t) \le 0}, doubling time is set to \code{Inf}.
 }
