@@ -278,7 +278,7 @@ plot.sim_epi <- function(x,
 #' \describe{
 #'   \item{model}{The epidemic model simulated (e.g. \code{"sir"} or \code{"sirs"}).}
 #'   \item{peak_I}{The maximum number of infectious individuals observed during
-#'     the simulation, when an infectious role (or \code{I} state) is present.}
+#'     the simulation, when an \code{I} state is present.}
 #'   \item{time_peak_I}{The time at which the infectious prevalence reaches its
 #'     maximum, when available.}
 #'   \item{total_infections}{The total number of infection events, computed as
@@ -308,17 +308,12 @@ plot.sim_epi <- function(x,
 summary.sim_epi <- function(object, ...) {
 
   st  <- object$states
-  roles <- object$model$roles
 
   res <- list(
     model = object$model
   )
 
-  if ("infectious" %in% names(roles)) {
-    inf <- get_role(object, "infectious")
-    res$peak_I <- max(inf, na.rm = TRUE)
-    res$time_peak_I <- st$time[which.max(inf)]
-  } else if ("I" %in% names(st)) {
+  if ("I" %in% names(st)) {
     res$peak_I <- max(st$I, na.rm = TRUE)
     res$time_peak_I <- st$time[which.max(st$I)]
   }
@@ -447,17 +442,7 @@ print.sim_epi <- function(x, ...) {
   ## ---------------------------------------------------------------------------
   ## Peak infectious (state I)
   ## ---------------------------------------------------------------------------
-  if ("infectious" %in% names(x$model$roles)) {
-    inf <- get_role(x, "infectious")
-    peak_I <- max(inf, na.rm = TRUE)
-
-    if (is.finite(peak_I)) {
-      time_I <- states$time[which.max(inf)]
-      cat("  Peak infectious:      ", round(peak_I), "\n", sep = "")
-      cat("  Time of I peak:       ",
-          time_I, " ", unit_lbl, "\n", sep = "")
-    }
-  } else if ("I" %in% names(states)) {
+  if ("I" %in% names(states)) {
     peak_I <- max(states$I, na.rm = TRUE)
 
     if (is.finite(peak_I)) {

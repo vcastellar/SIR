@@ -3,7 +3,25 @@
 ## ============================================================================
 
 get_role <- function(sim, role) {
-  var <- sim$model$roles[[role]]
+  var <- NULL
+
+  if (!is.null(sim$model$roles)) {
+    var <- sim$model$roles[[role]]
+  }
+
+  if (is.null(var)) {
+    var <- switch(
+      role,
+      susceptible = "S",
+      exposed     = "E",
+      infectious  = "I",
+      recovered   = "R",
+      deceased    = "D",
+      vaccinated  = "V",
+      NULL
+    )
+  }
+
   if (is.null(var)) {
     stop("Model does not define role: ", role)
   }

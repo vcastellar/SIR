@@ -106,9 +106,5 @@ SI_MODEL <- epi_model(
   states = c("S", "I"),
   flows = c("incidence"),
   defaults = c(beta = 0.3),
-  init = c(S = 999999, I = 1),
-  roles = list(
-    susceptible = "S",
-    infectious  = "I"
-  )
+  init = c(S = 999999, I = 1)
 )
