@@ -4,7 +4,15 @@
 \alias{simulate_epi}
 \title{Simulate an epidemic model defined by an \code{epi_model} object}
 \usage{
-simulate_epi(model, times, time_unit = "days", parms, init, seed = NULL, ...)
+simulate_epi(
+  model,
+  times,
+  time_unit = "days",
+  parms = NULL,
+  init = NULL,
+  seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{model}{An object of class \code{"epi_model"} defining the epidemic model
@@ -124,11 +132,7 @@ integration method (typically \code{"lsoda"}).
 
 sim <- simulate_epi(
   model = SIR_MODEL,
-  times = 0:200,
-  time_unit = "week",
-  parms = c(beta = 0.30, gamma = 0.10),
-  init  = SIR_MODEL$init,
-  method = "lsoda"
+  times = 0:200
 )
 
 plot(sim)

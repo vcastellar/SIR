@@ -7,10 +7,14 @@
 register_epi_model(model, family = NULL)
 }
 \arguments{
-\item{model}{An object of class "epi_model"}
+\item{model}{An object of class \code{"epi_model"}.}
 
-\item{family}{Optional family name}
+\item{family}{Optional character scalar indicating a model family.}
+}
+\value{
+Invisibly returns \code{TRUE} when registration succeeds.
 }
 \description{
-Allows users to register custom epi_model objects
+Allows users to register custom \'epi_model\' objects in the package
+registry so they can be retrieved and used by other utilities.
 }

@@ -6,6 +6,12 @@
 \usage{
 get_model(name)
 }
+\arguments{
+\item{name}{Character scalar with the model name to retrieve.}
+}
+\value{
+An object of class \code{"epi_model"}.
+}
 \description{
-Get registered model
+Retrieves a model from the registry by name.
 }

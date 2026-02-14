@@ -24,7 +24,7 @@ epidemiologically meaningful summary quantities derived from the simulation.
 \details{
 The summary includes:
 \describe{
-\item{model}{The epidemic model simulated (e.g. \code{"sir"} or \code{"sirs"}).}
+\item{model}{The \code{epi_model} object used in the simulation.}
 \item{peak_I}{The maximum number of infectious individuals observed during
 the simulation, when an \code{I} state is present.}
 \item{time_peak_I}{The time at which the infectious prevalence reaches its

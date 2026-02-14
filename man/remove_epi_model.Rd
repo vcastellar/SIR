@@ -6,6 +6,13 @@
 \usage{
 remove_epi_model(name)
 }
+\arguments{
+\item{name}{Character scalar with the model name to remove.}
+}
+\value{
+Invisibly returns \code{TRUE} when removal succeeds.
+}
 \description{
-Remove a registered epidemiological model
+Removes a model from the registry by name. Built-in models cannot
+be removed.
 }

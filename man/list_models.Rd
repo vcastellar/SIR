@@ -6,6 +6,9 @@
 \usage{
 list_models()
 }
+\value{
+Character vector with registered model names.
+}
 \description{
-List registered models
+Returns the names of all models currently stored in the registry.
 }
