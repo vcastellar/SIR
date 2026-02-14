@@ -175,7 +175,7 @@ simulate_epi <- function(model,
   theta <- model$defaults
 
   if (is.null(theta)) {
-    theta <- setNames(
+    theta <- stats::setNames(
       rep(NA_real_, length(model$par_names)),
       model$par_names
     )
