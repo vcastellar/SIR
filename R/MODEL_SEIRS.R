@@ -110,8 +110,7 @@ seirs_rhs <- function(time, state, parms) {
 #'   model = SEIRS_MODEL,
 #'   times = 0:300,
 #'   parms = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
-#'   init  = c(S = 1e6, E = 0, I = 20, R = 0),
-#'   obs   = "poisson"
+#'   init  = c(S = 1e6, E = 0, I = 20, R = 0)
 #' )
 #'
 #' plot(sim)

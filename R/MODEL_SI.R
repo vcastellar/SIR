@@ -82,7 +82,6 @@ si_rhs <- function(time, state, parms) {
 #'   model = SI_MODEL,
 #'   times = 0:100,
 #'   parms = c(beta = 0.4),
-#'   obs = "negbin",
 #'   init = SI_MODEL$init
 #' )
 #'
