@@ -80,7 +80,6 @@ sim <- simulate_epi(
   model = SI_MODEL,
   times = 0:100,
   parms = c(beta = 0.4),
-  obs = "negbin",
   init = SI_MODEL$init
 )
 

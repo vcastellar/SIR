@@ -73,9 +73,6 @@
 #' # Plot all flows
 #' plot(sim, what = "flows")
 #'
-#' # If the model defines Rt as a flow, it can be plotted directly
-#' plot(sim, what = "Rt")
-#'
 #' @export
 plot.sim_epi <- function(x,
                          what = "states",
@@ -312,25 +309,28 @@ plot.sim_epi <- function(x,
 #' @export
 summary.sim_epi <- function(object, ...) {
 
-  st  <- object$states
+  st <- object$states
+  time <- object$flows$time
 
   res <- list(
     model = object$model
   )
 
   if ("I" %in% names(st)) {
-    res$peak_I <- max(st$I, na.rm = TRUE)
-    res$time_peak_I <- st$time[which.max(st$I)]
+    i <- which.max(st$I)
+    res$peak_I <- st$I[i]
+    res$time_peak_I <- time[i]
   }
 
   if (!is.null(object$flows) && "incidence" %in% names(object$flows)) {
-    inc <- get_flow(object, "incidence")
+    inc <- object$flows$incidence
     res$total_infections <- sum(inc, na.rm = TRUE)
   }
 
+  class(res) <- "summary_sim_epi"
+
   res
 }
-
 
 
 #' Print a simulated epidemic

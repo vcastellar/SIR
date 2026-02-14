@@ -1,3 +1,48 @@
+
+#' Right-hand side for SIR model with vital dynamics
+#'
+#' @description
+#' Internal function defining the system of differential equations
+#' for \code{SIR_VITAL_MODEL}.
+#'
+#' @param time Time variable (required by ODE solver).
+#' @param state Named numeric vector of state variables.
+#' @param parms Named numeric vector of model parameters.
+#' @param ... Additional arguments passed by the solver.
+#'
+#' @return
+#' A list containing derivatives and declared flows.
+#'
+#' @keywords internal
+sir_vital_rhs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+
+    N <- S + I + R
+    infection <- beta * S * I / N
+
+    births  <- mu * N
+    recovery <- gamma * I
+
+    death_S <- mu * S
+    death_I <- mu * I
+    death_R <- mu * R
+
+    dS <- births - infection - death_S
+    dI <- infection - recovery - death_I
+    dR <- recovery - death_R
+
+    list(
+      c(dS, dI, dR),
+      births    = births,
+      infection = infection,
+      recovery  = recovery,
+      death_S   = death_S,
+      death_I   = death_I,
+      death_R   = death_R
+    )
+  })
+}
+
 #-------------------------------------------------------------------------------
 # SIR model with vital dynamics and constant population
 #-------------------------------------------------------------------------------
@@ -85,37 +130,6 @@
 #' \code{\link{SIR_MODEL}}
 #'
 #' @export
-
-
-
-sir_vital_rhs <- function(time, state, parms) {
-  with(as.list(c(state, parms)), {
-
-    N <- S + I + R
-    infection <- beta * S * I / N
-
-    births  <- mu * N
-    recovery <- gamma * I
-
-    death_S <- mu * S
-    death_I <- mu * I
-    death_R <- mu * R
-
-    dS <- births - infection - death_S
-    dI <- infection - recovery - death_I
-    dR <- recovery - death_R
-
-    list(
-      c(dS, dI, dR),
-      births    = births,
-      infection = infection,
-      recovery  = recovery,
-      death_S   = death_S,
-      death_I   = death_I,
-      death_R   = death_R
-    )
-  })
-}
 
 
 SIR_VITAL_MODEL <- epi_model(

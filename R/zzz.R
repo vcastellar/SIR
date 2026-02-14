@@ -1,3 +1,8 @@
+#' @importFrom stats coef setNames
+#' @importFrom graphics plot.new text
+#' @importFrom shiny observeEvent
+#' @importFrom registry registry
+
 .onLoad <- function(libname, pkgname) {
 
   register_epi_model(SI_MODEL, family = "SI")
@@ -17,3 +22,4 @@
     origin = "builtin"
   )
 }
+
