@@ -15,7 +15,7 @@
 #' @details
 #' ## Model structure
 #' The \code{model} argument must be an object of class \code{"epi_model"},
-#' typically created with \code{\link{new_epi_model}}. At minimum, the model
+#' typically created with \code{\link{epi_model}}. At minimum, the model
 #' must define:
 #' \itemize{
 #'   \item an ODE right-hand side function (\code{model$rhs});
@@ -142,7 +142,7 @@
 #' plot(sim)
 #'
 #' @seealso
-#' \code{\link{new_epi_model}}, \code{\link[deSolve]{ode}},
+#' \code{\link{epi_model}}, \code{\link[deSolve]{ode}},
 #' \code{\link{plot.sim_epi}}, \code{\link{print.sim_epi}}
 #'
 #' @export

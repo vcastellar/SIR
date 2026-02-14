@@ -47,8 +47,8 @@ si_rhs <- function(time, state, parms) {
 #'     \eqn{\lambda(t)} returned by the model's right-hand side.}
 #' }
 #'
-#' All declared variables may be used as observables in generic utilities such as
-#' \code{\link{fit_epi_model}} via the \code{target} argument.
+#' All declared variables may be used as observables in generic utilities
+#' and summary methods built around \code{epi_model} objects.
 #'
 #' ## Parameters
 #' The SI model depends on a single parameter:
@@ -70,8 +70,8 @@ si_rhs <- function(time, state, parms) {
 #'
 #' ## Usage
 #' This predefined model object is intended to be used with generic utilities
-#' such as \code{\link{simulate_epi}}, \code{\link{fit_epi_model}}, and
-#' \code{\link{predict.fit_epi_model}} that operate on \code{epi_model} objects.
+#' such as \code{\link{simulate_epi}}, \code{\link{plot.sim_epi}}, and
+#' \code{\link{summary.sim_epi}} that operate on \code{epi_model} objects.
 #'
 #' @format
 #' An object of class \code{"epi_model"}.
@@ -94,8 +94,7 @@ si_rhs <- function(time, state, parms) {
 #'
 #' @seealso
 #' \code{\link{simulate_epi}},
-#' \code{\link{fit_epi_model}},
-#' \code{\link{new_epi_model}}
+#' \code{\link{epi_model}}
 #'
 #' @export
 

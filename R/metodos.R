@@ -300,7 +300,12 @@ plot.sim_epi <- function(x,
 #' \code{\link{simulate_epi}}, \code{\link{plot.sim_epi}}
 #'
 #' @examples
-#' sim <- simulate_epi(n_days = 300, model = SIRS_MODEL, omega = 1/180, seed = 1)
+#' sim <- simulate_epi(
+#'   model = SIRS_MODEL,
+#'   times = 0:300,
+#'   parms = c(beta = 0.3, gamma = 0.1, omega = 1/180),
+#'   init = SIRS_MODEL$init
+#' )
 #'
 #' summary(sim)
 #'
