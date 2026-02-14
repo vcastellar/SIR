@@ -62,10 +62,11 @@
 #' ## ---------------------------------------------------------
 #' ## Launch the Shiny app with the custom model
 #' ## ---------------------------------------------------------
-#'
+#' \dontrun{
 #' run_epi_app(
 #'   models = list(SEIRD = seird_model)
 #' )
+#' }
 #'
 #' @seealso
 #' \code{\link{epi_model}}, \code{\link{simulate_epi}}

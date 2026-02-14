@@ -71,9 +71,11 @@ seird_model <- epi_model(
 ## Launch the Shiny app with the custom model
 ## ---------------------------------------------------------
 
+\dontrun{
 run_epi_app(
   models = list(SEIRD = seird_model)
 )
+}
 
 }
 \seealso{
