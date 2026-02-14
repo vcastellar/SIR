@@ -16,12 +16,7 @@ SIRV_MODEL <- epi_model(
   name      = "SIRV",
   rhs       = sirv_rhs,
   par_names = c("beta", "gamma", "nu"),
-  states    = c("S", "I", "R", "V"),
-  roles     = list(susceptible = "S",
-                   infectious = "I",
-                    recovered = "R",
-                    vaccinated = "V"),
-  init      = c(S = 999, I = 1, R = 0, V = 0)
+  states    = c("S", "I", "R", "V")
 )
 
 

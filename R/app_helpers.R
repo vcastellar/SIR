@@ -35,48 +35,27 @@ init_sliders_ui <- function(model) {
 
   states <- model$states
   init   <- model$init
-  roles  <- model$roles
 
-  # Reverse mapping: variable -> role
-  role_of <- setNames(names(roles), unlist(roles))
-
-  # Population size
   has_init <- !is.null(init) && length(init) > 0 && sum(init) > 0
   N <- if (has_init) sum(init) else 1e6
 
   lapply(states, function(s) {
 
-    role <- role_of[[s]] %||% "other"
-
-    # Default initial value
     val <- if (has_init) {
       init[[s]] %||% 0
+    } else if (s == "S") {
+      N
+    } else if (s == "I") {
+      10
     } else {
-      switch(
-        role,
-        susceptible = N,
-        infectious  = 10,
-        exposed     = 0,
-        recovered   = 0,
-        deceased    = 0,
-        0
-      )
+      0
     }
 
-    # Upper bound by role
-    max_val <- switch(
-      role,
-      susceptible = N,
-      infectious  = max(100, 0.01 * N),
-      exposed     = max(100, 0.01 * N),
-      recovered   = max(100, 0.01 * N),
-      deceased    = max(10,  0.005 * N),
-      10 * max(1, val)
-    )
+    max_val <- max(100, 10 * max(1, val), 0.1 * N)
 
     shiny::sliderInput(
       inputId = paste0("init_", s),
-      label   = paste0(s, " (", role, ")"),
+      label   = s,
       min     = 0,
       max     = max_val,
       value   = val

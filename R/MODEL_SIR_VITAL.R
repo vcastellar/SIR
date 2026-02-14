@@ -131,26 +131,5 @@ SIR_VITAL_MODEL <- epi_model(
     "death_S",
     "death_I",
     "death_R"
-  ),
-
-  roles = list(
-    susceptible = "S",
-    infectious  = "I",
-    recovered   = "R"
-  ),
-
-  lower = c(beta = 1e-8, gamma = 1e-8, mu = 1e-8),
-  upper = c(beta = 5, gamma = 1, mu = 0.1),
-
-  defaults = c(
-    beta   = 0.3,
-    gamma  = 0.1,
-    mu     = 0.01
-  ),
-
-  init = c(
-    S = 1e6,
-    I = 1,
-    R = 0
   )
 )

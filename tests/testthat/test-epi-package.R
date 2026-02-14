@@ -69,14 +69,7 @@ test_that("build-in basic model", {
     rhs         = seird_rhs,
     states = c("S", "E", "I", "R", "D"),
     par_names   = c("beta", "sigma", "gamma", "mu"),
-    flows       = c("incidence", "deaths"),
-    roles       = list(
-      susceptible = "S",
-      exposed     = "E",
-      infectious  = "I",
-      recovered   = "R",
-      deceased    = "D"
-    )
+    flows       = c("incidence", "deaths")
   )
 
   expect_s3_class(seird_model, "epi_model")

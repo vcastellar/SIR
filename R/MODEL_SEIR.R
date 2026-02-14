@@ -137,11 +137,5 @@ SEIR_MODEL <- epi_model(
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14),
   init = c("S" = 1e6, "E" = 5, "I" = 10, "R" = 0),
   states = c("S", "E", "I", "R"),
-  flows  = c("incidence"),
-  roles = list(
-    susceptible = "S",
-    exposed     = "E",
-    infectious  = "I",
-    recovered   = "R"
-  )
+  flows  = c("incidence")
 )
