@@ -24,8 +24,7 @@ Depends:
 Imports:
     deSolve,
     stats,
-    shiny,
-    registry
+    shiny
 Suggests:
     ggplot2,
     devtools,
