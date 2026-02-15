@@ -2,16 +2,35 @@
 % Please edit documentation in R/registry_api.R
 \name{get_model}
 \alias{get_model}
-\title{Get a registered model}
+\title{Retrieve a registered epidemiological model}
 \usage{
 get_model(name)
 }
 \arguments{
-\item{name}{Character scalar with model name.}
+\item{name}{Character scalar specifying the model name.}
 }
 \value{
-An object of class "epi_model".
+An object of class \code{"epi_model"}.
 }
 \description{
-Get a registered model
+Retrieves a previously registered epidemiological model from the
+internal registry by name.
+}
+\details{
+The model must have been registered either at package load time
+(built-in models) or via \code{\link{register_epi_model}}.
+
+If no model with the specified name exists in the registry,
+an error is raised.
+}
+\examples{
+\dontrun{
+model <- get_model("SIR")
+print(model)
+}
+
+}
+\seealso{
+\code{\link{register_epi_model}},
+\code{\link{list_models}}
 }

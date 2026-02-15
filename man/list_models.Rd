@@ -2,13 +2,34 @@
 % Please edit documentation in R/registry_api.R
 \name{list_models}
 \alias{list_models}
-\title{List registered models}
+\title{List registered epidemiological models}
 \usage{
 list_models()
 }
 \value{
-Character vector with registered model names.
+A character vector with the names of registered models.
 }
 \description{
-List registered models
+Returns the names of all epidemiological models currently stored
+in the internal registry.
+}
+\details{
+The registry contains:
+\itemize{
+\item Built-in models registered at package load time.
+\item User-defined models registered via \code{\link{register_epi_model}}.
+}
+
+The returned value is a character vector containing model names.
+}
+\examples{
+\dontrun{
+library(SIR)
+list_models()
+}
+
+}
+\seealso{
+\code{\link{register_epi_model}},
+\code{\link{get_model}}
 }

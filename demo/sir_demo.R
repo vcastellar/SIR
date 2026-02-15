@@ -127,19 +127,14 @@ cat("\nThe incidence curve corresponds to new infections.\n")
 cat("It represents the flow from S to I.\n\n")
 
 
+
 ###############################################################
-# Step 6: Registration and App
+# Register model in the internal registry
 ###############################################################
 
-cat("Step 6: Registering the model\n")
-cat("------------------------------------------------------------\n\n")
-
-remove_epi_model("SIRV")
-register_epi_model(SIRV_MODEL, family = "SIR")
-
-cat("Model registered under family 'SIR'.\n\n")
-
-cat("Launching the interactive epidemiological app...\n\n")
+register_epi_model(SIRV_MODEL)
+list_models()
+cat("Model registered in internal registry.\n\n")
 
 run_epi_app()
 

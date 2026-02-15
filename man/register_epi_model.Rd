@@ -7,8 +7,44 @@
 register_epi_model(model)
 }
 \arguments{
-\item{model}{An object of class "epi_model".}
+\item{model}{An object of class \code{"epi_model"}.}
+}
+\value{
+Invisibly returns \code{TRUE} on success.
 }
 \description{
-Register an epidemiological model
+Registers an object of class \code{"epi_model"} in the internal
+model registry of the package.
+
+The registry is an in-memory environment that stores epidemiological
+models by name. Once registered, a model becomes discoverable through
+\code{\link{list_models}} and retrievable via \code{\link{get_model}}.
+
+This mechanism allows users to extend the framework with custom models
+that can be used in simulation workflows or in the Shiny application.
+}
+\details{
+The model is stored using its \code{name} field as identifier.
+Model names must be unique within the current R session.
+
+Attempting to register a model with a name that already exists in the
+registry results in an error.
+
+The registry is session-scoped and is reinitialized when the package
+is reloaded.
+}
+\examples{
+\dontrun{
+m <- SIR_MODEL
+m$name <- "SIR_custom"
+
+register_epi_model(m)
+list_models()
+}
+
+}
+\seealso{
+\code{\link{list_models}},
+\code{\link{get_model}},
+\code{\link{epi_model}}
 }
