@@ -131,4 +131,52 @@ get_model <- function(name) {
 }
 
 
+#' Remove a registered epidemiological model
+#'
+#' @description
+#' Removes a previously registered epidemiological model from the
+#' internal registry.
+#'
+#' @param name Character scalar specifying the model name to remove.
+#'
+#' @details
+#' The function deletes the model from the internal in-memory registry.
+#' This affects only the current R session.
+#'
+#' Attempting to remove a model that does not exist results in an error.
+#'
+#' Built-in models can also be removed, but they will be restored
+#' the next time the package is reloaded.
+#'
+#' @return
+#' Invisibly returns \code{TRUE} on success.
+#'
+#' @examples
+#' \dontrun{
+#' register_epi_model(SIR_MODEL)
+#' list_models()
+#'
+#' unregister_model("SIR")
+#' list_models()
+#' }
+#'
+#' @seealso
+#' \code{\link{register_model}},
+#' \code{\link{list_models}},
+#' \code{\link{get_model}}
+#'
+#' @export
+unregister_model <- function(name) {
+
+  if (!exists(name, envir = .epi_registry, inherits = FALSE)) {
+    stop("Model not found in registry.")
+  }
+
+  rm(list = name, envir = .epi_registry)
+
+  invisible(TRUE)
+}
+
+
+
 

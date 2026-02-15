@@ -1,21 +1,34 @@
 #' Launch the epidemic model Shiny simulator
 #'
+#' @description
 #' Launches the interactive Shiny application for simulating deterministic
 #' epidemiological models defined as systems of ordinary differential equations
 #' (ODEs).
 #'
-#' By default, the app includes a set of built-in models (e.g. SI, SIR, SEIR).
-#' User-defined models can be explored by passing them explicitly via the
-#' \code{models} argument.
+#' By default, the app loads all models currently registered in the internal
+#' model registry (including built-in models registered at package load time).
+#'
+#' Additional user-defined models can either be:
+#' \itemize{
+#'   \item Registered beforehand using \code{\link{register_epi_model}}, or
+#'   \item Supplied explicitly via the \code{models} argument.
+#' }
 #'
 #' @param models Optional named list of objects of class \code{epi_model}.
-#'   These models are added to the built-in ones and become available in the
-#'   Shiny interface. If \code{NULL} (default), only built-in models are used.
+#'   These models are added to the models already present in the internal
+#'   registry and become available in the Shiny interface. If \code{NULL}
+#'   (default), only registered models are used.
 #'
 #' @details
-#' The Shiny application does not rely on global state or registries.
-#' All models must be provided explicitly at launch time so that they are
-#' available in the Shiny session.
+#' The Shiny application retrieves available models from the internal
+#' registry using \code{\link{list_models}} and \code{\link{get_model}}.
+#'
+#' If a user wants a custom model to be permanently discoverable by the
+#' application during the current session, it must first be registered
+#' using \code{\link{register_epi_model}}.
+#'
+#' Models supplied via the \code{models} argument are included only for the
+#' current app launch and are not automatically stored in the registry.
 #'
 #' User-defined models must be fully specified \code{epi_model} objects,
 #' including state variables and parameter definitions.
@@ -51,16 +64,24 @@
 #' }
 #'
 #' seird_model <- epi_model(
-#'   name        = "SEIRD",
-#'   rhs         = seird_rhs,
-#'   states = c("S", "E", "I", "R", "D"),
-#'   flows       = c("incidence", "deaths"),
-#'   par_names   = c("beta", "sigma", "gamma", "mu"),
-#'   defaults    = c(beta = 0.4, sigma = 0.2, gamma = 0.1, mu = 0.02)
+#'   name      = "SEIRD",
+#'   rhs       = seird_rhs,
+#'   states    = c("S", "E", "I", "R", "D"),
+#'   flows     = c("incidence", "deaths"),
+#'   par_names = c("beta", "sigma", "gamma", "mu"),
+#'   defaults  = c(beta = 0.4, sigma = 0.2, gamma = 0.1, mu = 0.02)
 #' )
 #'
 #' ## ---------------------------------------------------------
-#' ## Launch the Shiny app with the custom model
+#' ## Option 1: Register the model (recommended)
+#' ## ---------------------------------------------------------
+#' \dontrun{
+#' register_epi_model(seird_model)
+#' run_epi_app()
+#' }
+#'
+#' ## ---------------------------------------------------------
+#' ## Option 2: Provide model only for this session
 #' ## ---------------------------------------------------------
 #' \dontrun{
 #' run_epi_app(
@@ -69,8 +90,13 @@
 #' }
 #'
 #' @seealso
-#' \code{\link{epi_model}}, \code{\link{simulate_epi}}
+#' \code{\link{epi_model}},
+#' \code{\link{simulate_epi}},
+#' \code{\link{register_epi_model}},
+#' \code{\link{list_models}}
 #'
+#' @export
+
 #' @export
 run_epi_app <- function(models = NULL) {
 
