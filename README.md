@@ -6,7 +6,7 @@ differential equations (ODEs).
 
 The package focuses on **model definition and simulation**, providing
 a small but flexible framework to study epidemic dynamics under different
-assumptions and parameter values. An optional **Shiny application** is
+assumptions and parameter values. A **Shiny application** is
 included for interactive exploration.
 
 ---
@@ -18,6 +18,7 @@ included for interactive exploration.
 - Several classical models included:
   - SI
   - SIR
+  - SIR with vital dynamics
   - SIRS
   - SEIR
   - SEIRS
@@ -34,7 +35,7 @@ included for interactive exploration.
 Install the package from source:
 
 ```r
-devtools::install("path/to/SIR")
+devtools::install_local("path/to/SIR")
 library(SIR)
 
 sim <- simulate_epi(
@@ -96,7 +97,8 @@ The app allows users to:
 - visualize state trajectories and incidence
 - inspect the model equations
 
-The Shiny app is optional; the package works without shiny installed.
+The Shiny app is included in the package and uses the installed `shiny`
+dependency.
 
 ## Scope and philosophy
 

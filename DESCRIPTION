@@ -14,7 +14,7 @@ Description: Simulation and exploration of deterministic compartmental epidemiol
     The package provides tools to define custom epidemic models, simulate latent 
     state trajectories over time, and explore model dynamics under different 
     parameter settings. Several classical models are included, such as SI, SIR, 
-    SIRS, SEIR, and SEIRS. An optional Shiny application is provided for 
+    SIR with vital dynamics, SIRS, SEIR, and SEIRS. A Shiny application is provided for 
     interactive visualization and experimentation with epidemic scenarios.
 License: MIT + file LICENSE
 Encoding: UTF-8
