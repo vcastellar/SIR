@@ -2,16 +2,16 @@
 % Please edit documentation in R/registry_api.R
 \name{get_model}
 \alias{get_model}
-\title{Get registered model}
+\title{Get a registered model}
 \usage{
 get_model(name)
 }
 \arguments{
-\item{name}{Character scalar with the model name to retrieve.}
+\item{name}{Character scalar with model name.}
 }
 \value{
-An object of class \code{"epi_model"}.
+An object of class "epi_model".
 }
 \description{
-Retrieves a model from the registry by name.
+Get a registered model
 }

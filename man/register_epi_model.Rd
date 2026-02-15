@@ -4,17 +4,11 @@
 \alias{register_epi_model}
 \title{Register an epidemiological model}
 \usage{
-register_epi_model(model, family = NULL)
+register_epi_model(model)
 }
 \arguments{
-\item{model}{An object of class \code{"epi_model"}.}
-
-\item{family}{Optional character scalar indicating a model family.}
-}
-\value{
-Invisibly returns \code{TRUE} when registration succeeds.
+\item{model}{An object of class "epi_model".}
 }
 \description{
-Allows users to register custom \'epi_model\' objects in the package
-registry so they can be retrieved and used by other utilities.
+Register an epidemiological model
 }

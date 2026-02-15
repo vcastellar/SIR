@@ -10,5 +10,5 @@ list_models()
 Character vector with registered model names.
 }
 \description{
-Returns the names of all models currently stored in the registry.
+List registered models
 }
