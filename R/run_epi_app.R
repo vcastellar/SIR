@@ -96,8 +96,6 @@
 #' \code{\link{list_models}}
 #'
 #' @export
-
-#' @export
 run_epi_app <- function(models = NULL) {
 
   # builtin <- .get_builtin_models()
