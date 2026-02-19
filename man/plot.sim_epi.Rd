@@ -47,15 +47,16 @@ stored in \code{x$states}. The time variable is taken from the
 \code{time} column of \code{x$states} and is not considered a state.}
 
 \item{\code{what = "derived"}}{Plots the time evolution of all derived variables
-defined in \code{x$model$derived}, using the simulated trajectories stored in
-\code{x$derived}. The time variable is taken from the \code{time} column.}
+defined in \code{x$model$derived}, using the simulated trajectories
+stored in \code{x$derived}. The time variable is taken from the
+\code{time} column.}
 
-\item{\code{what = <var>}}{Plots a single state or derived variable, where
+\item{\code{what = <var>}}{Plots a single state/derived variable, where
 \code{<var>} is the name of one state in \code{x$model$states}
 (e.g. \code{"I"}, \code{"S"}, \code{"R"}) or one derived variable in
-\code{x$model$derived} (e.g. \code{"incidence"}). The corresponding trajectory is extracted from
-\code{x$states} when it is a state, and from \code{x$derived} when it is a
-derived variable.}
+\code{x$model$derived} (e.g. \code{"incidence"}). The corresponding
+trajectory is extracted from \code{x$states} when it is a state, and
+from \code{x$derived} when it is derived.}
 }
 
 If available, the time unit stored in the \code{sim_epi} object

@@ -33,7 +33,7 @@ The total population size is conserved:
 \deqn{N = S(t) + I(t) + R(t).}
 }
 
-\subsection{Flows}{
+\subsection{Derived variables}{
 
 The following derived epidemiological variables are declared:
 \describe{

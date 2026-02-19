@@ -77,11 +77,13 @@ must define:
 \item the model parameters (\code{model$par_names}).
 }
 
-Optionally, the model may declare one or more derived variables via \code{model$derived}.
-If present, these variables must be returned by the ODE right-hand side function
-as additional named outputs and will be extracted into the simulation result.
+Optionally, the model may declare one or more derived variables via
+\code{model$derived}. If present, these
+variables must be returned by the ODE right-hand side function as additional
+named outputs and will be extracted into the simulation result.
 
-No assumptions are made about the semantic meaning of states or derived variables
+No assumptions are made about the semantic meaning of states or derived
+variables
 (e.g. incidence, prevalence, cumulative counts).
 }
 
