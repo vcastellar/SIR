@@ -70,8 +70,8 @@ sir_vital_rhs <- function(time, state, parms) {
 #' The total population size is conserved:
 #' \deqn{N = S(t) + I(t) + R(t).}
 #'
-#' ## Flows
-#' The following epidemiological flows are declared:
+#' ## Derived variables
+#' The following derived epidemiological variables are declared:
 #' \describe{
 #'   \item{births}{Recruitment of new susceptible individuals exactly balancing
 #'     natural deaths.}
@@ -138,7 +138,7 @@ SIR_VITAL_MODEL <- epi_model(
   par_names   = c("beta", "gamma", "mu"),
 
   states = c("S", "I", "R"),
-  flows  = c(
+  derived  = c(
     "births",
     "infection",
     "recovery",

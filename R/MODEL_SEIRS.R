@@ -133,5 +133,5 @@ SEIRS_MODEL <- epi_model(
   defaults = c(beta = 0.3, sigma = 0.2, gamma = 0.14, omega = 0.01),
   init = c("S" = 1e6, "I" = 10, "R" = 0, "E" = 0),
   states = c("S", "E", "I", "R"),
-  flows = c("incidence")
+  derived = c("incidence")
 )

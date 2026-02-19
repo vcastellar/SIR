@@ -67,7 +67,7 @@
 #'   name      = "SEIRD",
 #'   rhs       = seird_rhs,
 #'   states    = c("S", "E", "I", "R", "D"),
-#'   flows     = c("incidence", "deaths"),
+#'   derived   = c("incidence", "deaths"),
 #'   par_names = c("beta", "sigma", "gamma", "mu"),
 #'   defaults  = c(beta = 0.4, sigma = 0.2, gamma = 0.1, mu = 0.02)
 #' )

@@ -28,8 +28,8 @@ app_ui <- function(models) {
         shiny::uiOutput("states_select_ui"),
 
         shiny::hr(),
-        shiny::h4("Flows to plot"),
-        shiny::uiOutput("flows_select_ui"),
+        shiny::h4("Derived variables to plot"),
+        shiny::uiOutput("derived_select_ui"),
 
         shiny::hr(),
         shiny::sliderInput(
@@ -48,8 +48,8 @@ app_ui <- function(models) {
             shiny::plotOutput("plot_states", height = 400)
           ),
           shiny::tabPanel(
-            "Flows",
-            shiny::plotOutput("plot_flows", height = 400)
+            "Derived",
+            shiny::plotOutput("plot_derived", height = 400)
           ),
           shiny::tabPanel(
             "Equations",
