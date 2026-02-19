@@ -12,7 +12,6 @@ sir_vital_rhs(time, state, parms)
 \item{state}{Named numeric vector of state variables.}
 
 \item{parms}{Named numeric vector of model parameters.}
-
 }
 \value{
 A list containing derivatives and declared derived variables.
