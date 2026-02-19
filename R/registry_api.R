@@ -156,17 +156,17 @@ get_model <- function(name) {
 #' register_epi_model(SIR_MODEL)
 #' list_models()
 #'
-#' unregister_model("SIR")
+#' unregister_epi_model("SIR")
 #' list_models()
 #' }
 #'
 #' @seealso
-#' \code{\link{register_model}},
+#' \code{\link{register_epi_model}},
 #' \code{\link{list_models}},
 #' \code{\link{get_model}}
 #'
 #' @export
-unregister_model <- function(name) {
+unregister_epi_model <- function(name) {
 
   if (!exists(name, envir = .epi_registry, inherits = FALSE)) {
     stop("Model not found in registry.")

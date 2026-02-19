@@ -122,11 +122,17 @@ sims <- lapply(nu_values, function(nu_i) {
 
 names(sims) <- paste0("nu=", nu_values)
 
-# Peak prevalence of infectious individuals by scenario
-sapply(sims, peak_prevalence)
+# Peak prevalence of infectious individuals (I) by scenario
+peak_prev <- sapply(sims, function(sim) {
+  peak_prevalence(sim$states$I)
+})
+peak_prev
 
-# Time to infectious peak by scenario
-sapply(sims, time_to_peak)
+# Time to peak incidence by scenario
+peak_time <- sapply(sims, function(sim) {
+  time_to_peak(sim$derived$incidence, sim$derived$time)
+})
+peak_time
 ```
 
 In general, higher `nu` values tend to reduce epidemic peak prevalence and
@@ -151,3 +157,4 @@ list_models()
 - Adapt initial conditions for different population contexts.
 - Add waning immunity (for example, a SIRVS-like extension).
 - Use `run_epi_app()` for interactive scenario exploration.
+2

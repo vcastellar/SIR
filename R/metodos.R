@@ -16,7 +16,7 @@
 #' @details
 #' The behavior of the function depends on the value of the \code{what} argument:
 #'
-#' \itemize{
+#' \describe{
 #'   \item{\code{what = "states"}}{Plots the time evolution of all state variables
 #'     defined in \code{x$model$states}, using the simulated trajectories
 #'     stored in \code{x$states}. The time variable is taken from the
