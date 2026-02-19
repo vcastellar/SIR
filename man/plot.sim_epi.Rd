@@ -12,8 +12,8 @@
 
 \item{what}{Character string specifying what to plot. One of:
 \code{"states"} (all state variables),
-\code{"flows"} (all model flows),
-or the name of a single model state/flow
+\code{"derived"} (all model derived variables),
+or the name of a single model state/derived variable
 (e.g. \code{"I"}, \code{"S"}, \code{"incidence"}).}
 
 \item{scale}{Character string specifying the scale for state plots.
@@ -30,11 +30,11 @@ Invisibly returns the input object \code{x}.
 Plot method for objects of class \code{"sim_epi"} as returned by
 \code{\link{simulate_epi}}. The function provides a flexible visualization
 interface for simulated epidemic trajectories by allowing the user to plot
-either all model states, all model flows, or a single state/flow variable.
+either all model states, all model derived variables, or a single state/derived variable.
 
 Unlike earlier versions, this method does not assume a specific
 compartmental structure (e.g. SIR or SEIR). All available quantities that can
-be plotted are taken directly from the states and flows declared in the
+be plotted are taken directly from the states and derived variables declared in the
 underlying \code{\link{epi_model}} used to generate the simulation.
 }
 \details{
@@ -46,17 +46,16 @@ defined in \code{x$model$states}, using the simulated trajectories
 stored in \code{x$states}. The time variable is taken from the
 \code{time} column of \code{x$states} and is not considered a state.}
 
-\item{\code{what = "flows"}}{Plots the time evolution of all flows defined
-in \code{x$model$flows}, using the simulated trajectories stored in
-\code{x$flows}. The time variable is taken from the \code{time} column of
-\code{x$flows}.}
+\item{\code{what = "derived"}}{Plots the time evolution of all derived variables
+defined in \code{x$model$derived}, using the simulated trajectories stored in
+\code{x$derived}. The time variable is taken from the \code{time} column.}
 
-\item{\code{what = <var>}}{Plots a single state or flow variable, where
+\item{\code{what = <var>}}{Plots a single state or derived variable, where
 \code{<var>} is the name of one state in \code{x$model$states}
-(e.g. \code{"I"}, \code{"S"}, \code{"R"}) or one flow in
-\code{x$model$flows} (e.g. \code{"incidence"}). The corresponding trajectory is extracted from
-\code{x$states} when it is a state, and from \code{x$flows} when it is a
-flow.}
+(e.g. \code{"I"}, \code{"S"}, \code{"R"}) or one derived variable in
+\code{x$model$derived} (e.g. \code{"incidence"}). The corresponding trajectory is extracted from
+\code{x$states} when it is a state, and from \code{x$derived} when it is a
+derived variable.}
 }
 
 If available, the time unit stored in the \code{sim_epi} object
@@ -74,8 +73,8 @@ sim <- simulate_epi(
 # Plot a single state variable
 plot(sim, what = "I")
 
-# Plot all flows
-plot(sim, what = "flows")
+# Plot all derived variables
+plot(sim, what = "derived")
 
 }
 \seealso{

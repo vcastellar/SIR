@@ -24,7 +24,7 @@
 #' }
 #'
 #' Optionally, the model may declare one or more derived variables via
-#' \code{model$derived} (or legacy \code{model$flows}). If present, these
+#' \code{model$derived}. If present, these
 #' variables must be returned by the ODE right-hand side function as additional
 #' named outputs and will be extracted into the simulation result.
 #'
@@ -94,8 +94,6 @@
 #'     variables, containing the simulated state trajectories.}
 #'   \item{derived}{A data frame with columns \code{time} and the declared
 #'     derived variables, or \code{NULL} if the model defines none.}
-#'   \item{flows}{Deprecated alias of \code{derived}, kept for backward
-#'     compatibility.}
 #'   \item{time_unit}{Character string giving the time unit associated with
 #'     the simulation.}
 #' }
@@ -129,7 +127,7 @@
 #'
 #'
 #' ## ------------------------------------------------------------------
-#' ## Example 3: Model without flows
+#' ## Example 3: Model without derived variables
 #' ## ------------------------------------------------------------------
 #'
 #' sim <- simulate_epi(
@@ -246,13 +244,6 @@ simulate_epi <- function(model,
   states_df <- out[, c("time", model$states), drop = FALSE]
 
   derived_names <- model$derived
-  if (is.null(derived_names) && !is.null(model$flows) && length(model$flows) > 0) {
-    .Deprecated(msg = paste0(
-      "`model$flows` is deprecated and will be removed in a future release. ",
-      "Declare `model$derived` instead."
-    ))
-    derived_names <- model$flows
-  }
 
   derived_df <- NULL
   if (!is.null(derived_names) && length(derived_names) > 0) {
@@ -274,7 +265,6 @@ simulate_epi <- function(model,
     params    = as.list(theta),
     states    = states_df,
     derived   = derived_df,
-    flows     = derived_df,
     time_unit = time_unit
   )
 

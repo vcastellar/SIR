@@ -23,10 +23,6 @@
 #' @param states Character vector giving the names of the compartmental state
 #'   variables of the model. Each state name must be unique.
 #'
-#' @param flows Optional character vector giving the names of flow variables
-#'   used internally by the model or returned by the RHS. Deprecated in favor
-#'   of \code{derived}; kept for backward compatibility.
-#'
 #' @param derived Optional character vector giving the names of derived
 #'   variables returned by the RHS and extracted by \code{simulate_epi()}.
 #'
@@ -54,8 +50,7 @@ epi_model <- function(name,
                       rhs,
                       par_names,
                       states,
-                      flows = character(0),
-                      derived = NULL,
+                      derived = character(0),
                       lower = NULL,
                       upper = NULL,
                       defaults = NULL,
@@ -68,28 +63,15 @@ epi_model <- function(name,
   stopifnot(is.character(states), length(states) >= 1)
   stopifnot(length(unique(states)) == length(states))
 
-  using_derived <- !is.null(derived)
-  if (using_derived) {
-    if (!missing(flows) && length(flows) > 0) {
-      stop("Use either `flows` (deprecated) or `derived`, not both.")
-    }
-    flows <- derived
+  if (missing(derived) || length(derived) == 0) {
+    derived <- character(0)
   }
 
-  if (missing(flows) || length(flows) == 0) {
-    flows <- character(0)
-  } else if (!using_derived) {
-    .Deprecated(msg = paste0(
-      "`flows` in `epi_model()` is deprecated and will be removed in a future release. ",
-      "Use `derived` instead."
-    ))
-  }
-
-  ## a variable cannot be both state and flow
+  ## a variable cannot be both state and derived
   stopifnot(
-    is.character(flows),
-    length(unique(flows)) == length(flows),
-    !any(flows %in% states)
+    is.character(derived),
+    length(unique(derived)) == length(derived),
+    !any(derived %in% states)
   )
 
   #-----------------------------------------------------------------------------
@@ -125,8 +107,7 @@ epi_model <- function(name,
       rhs = rhs,
       par_names = par_names,
       states = states,
-      derived = flows,
-      flows = flows,
+      derived = derived,
       lower = lower,
       upper = upper,
       defaults = defaults,
@@ -179,7 +160,6 @@ print.epi_model <- function(x, ...) {
 
   ## --- derived variables -----------------------------------------------------
   derived_names <- x$derived
-  if (is.null(derived_names)) derived_names <- x$flows
 
   if (!is.null(derived_names) && length(derived_names) > 0) {
     cat("  Derived:  ", paste(derived_names, collapse = ", "), "\n", sep = "")

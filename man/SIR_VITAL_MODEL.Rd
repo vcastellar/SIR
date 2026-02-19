@@ -35,7 +35,7 @@ The total population size is conserved:
 
 \subsection{Flows}{
 
-The following epidemiological flows are declared:
+The following derived epidemiological variables are declared:
 \describe{
 \item{births}{Recruitment of new susceptible individuals exactly balancing
 natural deaths.}

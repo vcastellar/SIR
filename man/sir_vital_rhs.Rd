@@ -16,7 +16,7 @@ sir_vital_rhs(time, state, parms)
 \item{...}{Additional arguments passed by the solver.}
 }
 \value{
-A list containing derivatives and declared flows.
+A list containing derivatives and declared derived variables.
 }
 \description{
 Internal function defining the system of differential equations

@@ -49,8 +49,8 @@ An object of class \code{"sim_epi"}, containing:
 \item{params}{A list of model parameter values used in the simulation.}
 \item{states}{A data frame with columns \code{time} and the model state
 variables, containing the simulated state trajectories.}
-\item{flows}{A data frame with columns \code{time} and the declared model
-flows, or \code{NULL} if the model defines no flows.}
+\item{derived}{A data frame with columns \code{time} and the declared
+derived variables, or \code{NULL} if the model defines none.}
 \item{time_unit}{Character string giving the time unit associated with
 the simulation.}
 }
@@ -62,7 +62,7 @@ differential equations (ODEs) using \code{\link[deSolve]{ode}}.
 
 The function is fully model-agnostic: all model-specific information
 (state variables, parameters, default values, ODE right-hand side, and
-optional flow definitions) is read directly from the supplied
+optional derived-variable definitions) is read directly from the supplied
 \code{epi_model}.
 }
 \details{
@@ -77,11 +77,11 @@ must define:
 \item the model parameters (\code{model$par_names}).
 }
 
-Optionally, the model may declare one or more flows via \code{model$flows}.
-If present, these flows must be returned by the ODE right-hand side function
-as additional named flows and will be extracted into the simulation result.
+Optionally, the model may declare one or more derived variables via \code{model$derived}.
+If present, these variables must be returned by the ODE right-hand side function
+as additional named outputs and will be extracted into the simulation result.
 
-No assumptions are made about the semantic meaning of states or flows
+No assumptions are made about the semantic meaning of states or derived variables
 (e.g. incidence, prevalence, cumulative counts).
 }
 
@@ -154,7 +154,7 @@ plot(sim)
 
 
 ## ------------------------------------------------------------------
-## Example 3: Model without flows
+## Example 3: Model without derived variables
 ## ------------------------------------------------------------------
 
 sim <- simulate_epi(
