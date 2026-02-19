@@ -1,9 +1,5 @@
 get_derived <- function(sim, variable) {
   derived_data <- sim$derived
-  if (is.null(derived_data)) {
-    derived_data <- sim$flows
-  }
-
   if (is.null(derived_data) || !"time" %in% names(derived_data)) {
     stop("Simulation does not define derived variables.")
   }
@@ -13,11 +9,6 @@ get_derived <- function(sim, variable) {
   }
 
   derived_data[[variable]]
-}
-
-get_flow <- function(sim, flow) {
-  .Deprecated("get_derived", msg = "`get_flow()` is deprecated; use `get_derived()`.")
-  get_derived(sim, flow)
 }
 
 

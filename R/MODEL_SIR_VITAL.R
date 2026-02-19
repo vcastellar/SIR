@@ -11,7 +11,7 @@
 #' @param ... Additional arguments passed by the solver.
 #'
 #' @return
-#' A list containing derivatives and declared flows.
+#' A list containing derivatives and declared derived variables.
 #'
 #' @keywords internal
 sir_vital_rhs <- function(time, state, parms) {

@@ -30,7 +30,7 @@ the simulation, when an \code{I} state is present.}
 \item{time_peak_I}{The time at which the infectious prevalence reaches its
 maximum, when available.}
 \item{total_infections}{The total number of infection events, computed as
-the sum of the \code{"incidence"} flow when present.}
+the sum of the \code{"incidence"} derived variable when present.}
 }
 
 This method is automatically dispatched when calling \code{summary()} on an

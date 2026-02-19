@@ -9,7 +9,7 @@ cat("============================================================\n\n")
 cat("This demo illustrates:\n")
 cat("- Model construction\n")
 cat("- Default parameters\n")
-cat("- Incidence flow\n")
+cat("- Incidence derived variable\n")
 cat("- Simulation and visualization\n\n")
 
 
@@ -25,7 +25,7 @@ cat("I = Infectious\n")
 cat("R = Recovered\n")
 cat("V = Vaccinated\n\n")
 
-cat("Derived flow:\n")
+cat("Derived variable:\n")
 cat("incidence = beta * S * I / N\n")
 cat("This represents the number of new infections per unit time.\n\n")
 
@@ -55,7 +55,7 @@ SIRV_MODEL <- epi_model(
   rhs       = sirv_rhs,
   par_names = c("beta", "gamma", "nu"),
   states    = c("S", "I", "R", "V"),
-  flows     = "incidence",
+  derived   = "incidence",
   defaults  = c(beta = 0.3, gamma = 0.1, nu = 0.01)
 )
 
@@ -108,7 +108,7 @@ cat("Step 4: Inspecting outputs\n")
 cat("------------------------------------------------------------\n")
 cat("The simulation includes:\n")
 cat("- State variables (S, I, R, V)\n")
-cat("- Derived flow: incidence\n\n")
+cat("- Derived variable: incidence\n\n")
 
 print(summary(sim))
 cat("\n")
@@ -124,7 +124,7 @@ cat("------------------------------------------------------------\n\n")
 plot(sim)
 
 cat("\nThe incidence curve corresponds to new infections.\n")
-cat("It represents the flow from S to I.\n\n")
+cat("It represents the transition from S to I.\n\n")
 
 
 

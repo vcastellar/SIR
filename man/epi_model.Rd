@@ -9,7 +9,7 @@ epi_model(
   rhs,
   par_names,
   states,
-  flows = character(0),
+  derived = character(0),
   lower = NULL,
   upper = NULL,
   defaults = NULL,
@@ -28,8 +28,8 @@ with the simulation backend used by \code{simulate_epi()}.}
 \item{states}{Character vector giving the names of the compartmental state
 variables of the model. Each state name must be unique.}
 
-\item{flows}{Optional character vector giving the names of flow variables
-used internally by the model or returned as flows.}
+\item{derived}{Optional character vector giving the names of derived
+variables returned by the RHS and extracted by \code{simulate_epi()}.}
 
 \item{lower}{Optional named numeric vector giving lower bounds for model
 parameters. Names must match \code{par_names}.}
@@ -49,7 +49,7 @@ An object of class \code{"epi_model"} containing the model definition.
 \description{
 Creates an \code{epi_model} object describing the structure of a deterministic
 compartmental epidemiological model. The model definition includes the
-system of equations, state variables, optional flow variables, parameter
+system of equations, state variables, optional derived variables, parameter
 names.
 }
 \details{

@@ -101,7 +101,6 @@ app_server <- function(input, output, session, models) {
   ## ---------------------------------------------------------
   observeEvent(sim(), {
     derived <- sim()$derived
-    if (is.null(derived)) derived <- sim()$flows
     if (is.null(derived) || ncol(derived) <= 1) return()
 
     derived_names <- setdiff(names(derived), "time")
@@ -126,7 +125,6 @@ app_server <- function(input, output, session, models) {
     shiny::req(sim())
 
     derived <- sim()$derived
-    if (is.null(derived)) derived <- sim()$flows
     if (is.null(derived) || ncol(derived) <= 1) {
       return(shiny::tags$em("No derived variables defined for this model"))
     }
@@ -181,7 +179,6 @@ app_server <- function(input, output, session, models) {
     keep <- c("time", derived)
 
     derived_data <- sim2$derived
-    if (is.null(derived_data)) derived_data <- sim2$flows
 
     sim2$states <- derived_data[, keep, drop = FALSE]
     sim2$model$states <- derived
