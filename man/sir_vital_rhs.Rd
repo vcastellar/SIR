@@ -13,7 +13,6 @@ sir_vital_rhs(time, state, parms)
 
 \item{parms}{Named numeric vector of model parameters.}
 
-\item{...}{Additional arguments passed by the solver.}
 }
 \value{
 A list containing derivatives and declared derived variables.

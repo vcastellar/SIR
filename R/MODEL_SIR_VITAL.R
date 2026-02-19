@@ -8,7 +8,6 @@
 #' @param time Time variable (required by ODE solver).
 #' @param state Named numeric vector of state variables.
 #' @param parms Named numeric vector of model parameters.
-#' @param ... Additional arguments passed by the solver.
 #'
 #' @return
 #' A list containing derivatives and declared derived variables.
