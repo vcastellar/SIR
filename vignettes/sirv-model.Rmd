@@ -1,0 +1,153 @@
+---
+title: "SIR model with vaccination (SIRV): from demo to vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SIR model with vaccination (SIRV)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+This vignette converts the `demo/sir_demo.R` workflow into a reproducible,
+narrative document for the **SIR** package. In addition to the original demo
+steps, it includes practical analysis extensions such as scenario comparison
+and epidemiological summary metrics.
+
+## 1. Load the package
+
+```{r}
+library(SIR)
+```
+
+## 2. Define the SIRV model
+
+We start from a model with four compartments:
+
+- `S`: susceptible
+- `I`: infectious
+- `R`: recovered
+- `V`: vaccinated
+
+We also define one derived variable:
+
+- `incidence = beta * S * I / N`, where `N = S + I + R + V`
+
+```{r}
+sirv_rhs <- function(time, state, parms) {
+  with(as.list(c(state, parms)), {
+    N <- S + I + R + V
+
+    incidence <- beta * S * I / N
+
+    dS <- -incidence - nu * S
+    dI <-  incidence - gamma * I
+    dR <-  gamma * I
+    dV <-  nu * S
+
+    list(
+      c(dS, dI, dR, dV),
+      incidence = incidence
+    )
+  })
+}
+
+SIRV_MODEL <- epi_model(
+  name      = "SIRV",
+  rhs       = sirv_rhs,
+  par_names = c("beta", "gamma", "nu"),
+  states    = c("S", "I", "R", "V"),
+  derived   = "incidence",
+  defaults  = c(beta = 0.3, gamma = 0.1, nu = 0.01)
+)
+
+SIRV_MODEL
+```
+
+## 3. Default parameters and initial conditions
+
+The model object can include built-in default parameters to make quick
+simulations easier.
+
+```{r}
+SIRV_MODEL$defaults
+
+init <- c(S = 1e5, I = 10, R = 0, V = 0)
+init
+```
+
+## 4. Baseline simulation
+
+```{r}
+sim_base <- simulate_epi(
+  model = SIRV_MODEL,
+  times = 0:200,
+  parms = SIRV_MODEL$defaults,
+  init  = init
+)
+
+summary(sim_base)
+```
+
+Now plot state trajectories and incidence.
+
+```{r, fig.width=7, fig.height=4.5}
+plot(sim_base)
+```
+
+```{r, fig.width=7, fig.height=4.5}
+plot(sim_base, what = "incidence")
+```
+
+## 5. Compare vaccination scenarios
+
+One advantage of turning the demo into a vignette is easy scenario analysis.
+Here we compare three vaccination rates (`nu`).
+
+```{r}
+nu_values <- c(0, 0.01, 0.03)
+
+sims <- lapply(nu_values, function(nu_i) {
+  p <- SIRV_MODEL$defaults
+  p["nu"] <- nu_i
+  simulate_epi(SIRV_MODEL, times = 0:200, parms = p, init = init)
+})
+
+names(sims) <- paste0("nu=", nu_values)
+
+# Peak prevalence of infectious individuals by scenario
+sapply(sims, peak_prevalence)
+
+# Time to infectious peak by scenario
+sapply(sims, time_to_peak)
+```
+
+In general, higher `nu` values tend to reduce epidemic peak prevalence and
+shrink the outbreak burden by moving a larger fraction of the population into
+`V` over time.
+
+## 6. Register the model for app usage
+
+If you want to use this model in the package registry, you can register it
+explicitly.
+
+```{r}
+register_epi_model(SIRV_MODEL)
+list_models()
+```
+
+> Note: if a model with the same name already exists, you may need to remove
+> it first with `unregister_model("SIRV")`.
+
+## 7. Next steps
+
+- Adapt initial conditions for different population contexts.
+- Add waning immunity (for example, a SIRVS-like extension).
+- Use `run_epi_app()` for interactive scenario exploration.
