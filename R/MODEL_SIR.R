@@ -126,6 +126,6 @@ SIR_MODEL <- epi_model(
   init = c(S  = 1e6, I  = 10, R  = 0),
 
   states = c("S", "I", "R"),
-  flows = c("incidence", "recovery")
+  derived = c("incidence", "recovery")
 )
 

@@ -4,7 +4,7 @@ app_server <- function(input, output, session, models) {
   ## Valores reactivos auxiliares
   ## ---------------------------------------------------------
   rv <- shiny::reactiveValues(
-    flows_selected = NULL
+    derived_selected = NULL
   )
 
   ## ---------------------------------------------------------
@@ -97,45 +97,47 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Gestión de selección de flujos (sticky)
+  ## Gestión de selección de variables derivadas (sticky)
   ## ---------------------------------------------------------
   observeEvent(sim(), {
-    flows <- sim()$flows
-    if (is.null(flows) || ncol(flows) <= 1) return()
+    derived <- sim()$derived
+    if (is.null(derived)) derived <- sim()$flows
+    if (is.null(derived) || ncol(derived) <= 1) return()
 
-    flow_names <- setdiff(names(flows), "time")
+    derived_names <- setdiff(names(derived), "time")
 
-    if (is.null(rv$flows_selected)) {
+    if (is.null(rv$derived_selected)) {
       # primera vez
-      rv$flows_selected <- flow_names
+      rv$derived_selected <- derived_names
     } else {
       # mantener solo los que siguen existiendo
-      rv$flows_selected <- intersect(rv$flows_selected, flow_names)
+      rv$derived_selected <- intersect(rv$derived_selected, derived_names)
     }
   }, ignoreInit = TRUE)
 
-  observeEvent(input$flows_to_plot, {
-    rv$flows_selected <- input$flows_to_plot
+  observeEvent(input$derived_to_plot, {
+    rv$derived_selected <- input$derived_to_plot
   }, ignoreInit = TRUE)
 
   ## ---------------------------------------------------------
-  ## Selector de flujos
+  ## Selector de variables derivadas
   ## ---------------------------------------------------------
-  output$flows_select_ui <- shiny::renderUI({
+  output$derived_select_ui <- shiny::renderUI({
     shiny::req(sim())
 
-    flows <- sim()$flows
-    if (is.null(flows) || ncol(flows) <= 1) {
-      return(shiny::tags$em("No flows defined for this model"))
+    derived <- sim()$derived
+    if (is.null(derived)) derived <- sim()$flows
+    if (is.null(derived) || ncol(derived) <= 1) {
+      return(shiny::tags$em("No derived variables defined for this model"))
     }
 
-    flow_names <- setdiff(names(flows), "time")
+    derived_names <- setdiff(names(derived), "time")
 
     shiny::checkboxGroupInput(
-      "flows_to_plot",
+      "derived_to_plot",
       NULL,
-      choices  = flow_names,
-      selected = rv$flows_selected,
+      choices  = derived_names,
+      selected = rv$derived_selected,
       inline   = TRUE
     )
   })
@@ -163,23 +165,26 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Plot de flujos
+  ## Plot de variables derivadas
   ## ---------------------------------------------------------
-  output$plot_flows <- shiny::renderPlot({
-    shiny::req(sim(), input$flows_to_plot)
+  output$plot_derived <- shiny::renderPlot({
+    shiny::req(sim(), input$derived_to_plot)
 
-    flows <- input$flows_to_plot
-    if (length(flows) == 0) {
+    derived <- input$derived_to_plot
+    if (length(derived) == 0) {
       plot.new()
-      text(0.5, 0.5, "No flows selected")
+      text(0.5, 0.5, "No derived variables selected")
       return()
     }
 
     sim2 <- sim()
-    keep <- c("time", flows)
+    keep <- c("time", derived)
 
-    sim2$states <- sim2$flows[, keep, drop = FALSE]
-    sim2$model$states <- flows
+    derived_data <- sim2$derived
+    if (is.null(derived_data)) derived_data <- sim2$flows
+
+    sim2$states <- derived_data[, keep, drop = FALSE]
+    sim2$model$states <- derived
 
     plot(sim2, what = "states")
   })

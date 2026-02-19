@@ -5,7 +5,7 @@
 #'
 #' Creates an \code{epi_model} object describing the structure of a deterministic
 #' compartmental epidemiological model. The model definition includes the
-#' system of equations, state variables, optional flow variables, parameter
+#' system of equations, state variables, optional derived variables, parameter
 #' names.
 #'
 #' The resulting object is a *model definition* and does not perform any
@@ -24,7 +24,11 @@
 #'   variables of the model. Each state name must be unique.
 #'
 #' @param flows Optional character vector giving the names of flow variables
-#'   used internally by the model or returned as flows.
+#'   used internally by the model or returned by the RHS. Deprecated in favor
+#'   of \code{derived}; kept for backward compatibility.
+#'
+#' @param derived Optional character vector giving the names of derived
+#'   variables returned by the RHS and extracted by \code{simulate_epi()}.
 #'
 #' @param lower Optional named numeric vector giving lower bounds for model
 #'   parameters. Names must match \code{par_names}.
@@ -51,6 +55,7 @@ epi_model <- function(name,
                       par_names,
                       states,
                       flows = character(0),
+                      derived = NULL,
                       lower = NULL,
                       upper = NULL,
                       defaults = NULL,
@@ -63,8 +68,21 @@ epi_model <- function(name,
   stopifnot(is.character(states), length(states) >= 1)
   stopifnot(length(unique(states)) == length(states))
 
+  using_derived <- !is.null(derived)
+  if (using_derived) {
+    if (!missing(flows) && length(flows) > 0) {
+      stop("Use either `flows` (deprecated) or `derived`, not both.")
+    }
+    flows <- derived
+  }
+
   if (missing(flows) || length(flows) == 0) {
     flows <- character(0)
+  } else if (!using_derived) {
+    .Deprecated(msg = paste0(
+      "`flows` in `epi_model()` is deprecated and will be removed in a future release. ",
+      "Use `derived` instead."
+    ))
   }
 
   ## a variable cannot be both state and flow
@@ -107,6 +125,7 @@ epi_model <- function(name,
       rhs = rhs,
       par_names = par_names,
       states = states,
+      derived = flows,
       flows = flows,
       lower = lower,
       upper = upper,
@@ -124,16 +143,16 @@ epi_model <- function(name,
 #' @description
 #' Provides a concise, human-readable summary of an \code{epi_model} object.
 #' The printed output includes the model name, state variables, parameters,
-#' the declared model flows, and the underlying system of differential
+#' the declared model derived variables, and the underlying system of differential
 #' equations.
 #'
 #' This method is automatically called when an object of class
 #' \code{"epi_model"} is printed at the console.
 #'
 #' @details
-#' Model flows are shown when available. These may include derived quantities
-#' such as incidence, or any other observable returned by the model's
-#' right-hand side (\code{rhs}) function.
+#' Model derived variables are shown when available.
+#' These may include incidence, recoveries, or any other observable
+#' returned by the model's right-hand side (\code{rhs}) function.
 #'
 #' Parameter bounds are shown when available. The model equations are printed
 #' by deparsing the \code{rhs} function for inspection.
@@ -158,9 +177,12 @@ print.epi_model <- function(x, ...) {
   cat("  States:   ", paste(x$states, collapse = ", "), "\n", sep = "")
   cat("  Params:   ", paste(x$par_names, collapse = ", "), "\n", sep = "")
 
-  ## --- flows -----------------------------------------------------------------
-  if (!is.null(x$flows) && length(x$flows) > 0) {
-    cat("  Flows:    ", paste(x$flows, collapse = ", "), "\n", sep = "")
+  ## --- derived variables -----------------------------------------------------
+  derived_names <- x$derived
+  if (is.null(derived_names)) derived_names <- x$flows
+
+  if (!is.null(derived_names) && length(derived_names) > 0) {
+    cat("  Derived:  ", paste(derived_names, collapse = ", "), "\n", sep = "")
   }
 
   ## --- parameter bounds ------------------------------------------------------

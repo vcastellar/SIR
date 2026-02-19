@@ -6,11 +6,11 @@
 #' Plot method for objects of class \code{"sim_epi"} as returned by
 #' \code{\link{simulate_epi}}. The function provides a flexible visualization
 #' interface for simulated epidemic trajectories by allowing the user to plot
-#' either all model states, all model flows, or a single state/flow variable.
+#' either all model states, all model derived variables, or a single state/derived variable.
 #'
 #' Unlike earlier versions, this method does not assume a specific
 #' compartmental structure (e.g. SIR or SEIR). All available quantities that can
-#' be plotted are taken directly from the states and flows declared in the
+#' be plotted are taken directly from the states and derived variables declared in the
 #' underlying \code{\link{epi_model}} used to generate the simulation.
 #'
 #' @details
@@ -22,17 +22,17 @@
 #'     stored in \code{x$states}. The time variable is taken from the
 #'     \code{time} column of \code{x$states} and is not considered a state.}
 #'
-#'   \item{\code{what = "flows"}}{Plots the time evolution of all flows defined
-#'     in \code{x$model$flows}, using the simulated trajectories stored in
-#'     \code{x$flows}. The time variable is taken from the \code{time} column of
-#'     \code{x$flows}.}
+#'   \item{\code{what = "derived"}}{Plots the time evolution of all derived variables
+#'     defined in \code{x$model$derived} (or legacy \code{x$model$flows}),
+#'     using the simulated trajectories stored in \code{x$derived}
+#'     (or legacy \code{x$flows}). The time variable is taken from the
+#'     \code{time} column.}
 #'
-#'   \item{\code{what = <var>}}{Plots a single state or flow variable, where
+#'   \item{\code{what = <var>}}{Plots a single state/derived variable, where
 #'     \code{<var>} is the name of one state in \code{x$model$states}
-#'     (e.g. \code{"I"}, \code{"S"}, \code{"R"}) or one flow in
-#'     \code{x$model$flows} (e.g. \code{"incidence"}). The corresponding trajectory is extracted from
-#'     \code{x$states} when it is a state, and from \code{x$flows} when it is a
-#'     flow.}
+#'     (e.g. \code{"I"}, \code{"S"}, \code{"R"}) or one derived variable in
+#'     \code{x$model$derived} (or legacy \code{x$model$flows}; e.g. \code{"incidence"}). The corresponding trajectory is extracted from
+#'     \code{x$states} when it is a state, and from \code{x$derived} (or legacy \code{x$flows}) when it is derived.}
 #' }
 #'
 #' If available, the time unit stored in the \code{sim_epi} object
@@ -43,8 +43,8 @@
 #'   \code{\link{simulate_epi}}.
 #' @param what Character string specifying what to plot. One of:
 #'   \code{"states"} (all state variables),
-#'   \code{"flows"} (all model flows),
-#'   or the name of a single model state/flow
+#'   \code{"derived"} (all model derived variables; \code{"flows"} is deprecated),
+#'   or the name of a single model state/derived variable
 #'   (e.g. \code{"I"}, \code{"S"}, \code{"incidence"}).
 #' @param scale Character string specifying the scale for state plots.
 #'   One of \code{"auto"}, \code{"full"}, \code{"small"}, or \code{"log"}.
@@ -71,7 +71,7 @@
 #' plot(sim, what = "I")
 #'
 #' # Plot all flows
-#' plot(sim, what = "flows")
+#' plot(sim, what = "derived")
 #'
 #' @export
 plot.sim_epi <- function(x,
@@ -91,6 +91,11 @@ plot.sim_epi <- function(x,
 
   if (is.null(x$states) || !"time" %in% names(x$states)) {
     stop("Invalid 'sim_epi' object: missing $states with column 'time'.")
+  }
+
+  derived_data <- x$derived
+  if (is.null(derived_data)) {
+    derived_data <- x$flows
   }
 
   model   <- x$model
@@ -167,7 +172,8 @@ plot.sim_epi <- function(x,
     ## ===========================================================================
   } else if (identical(what, "flows")) {
 
-    fl <- x$flows
+    .Deprecated("plot(..., what = \"derived\")", msg = "`what = 'flows'` is deprecated; use `what = 'derived'`.")
+    fl <- derived_data
 
     if (is.null(fl) || !"time" %in% names(fl)) {
       stop("Invalid 'sim_epi' object: missing $flows with column 'time'.")
@@ -189,6 +195,45 @@ plot.sim_epi <- function(x,
       xlab = xlab,
       ylab = "Flows",
       main = paste("Flows:", model$name),
+      ...
+    )
+
+    graphics::legend(
+      "topright",
+      legend = vars,
+      col = seq_along(vars),
+      lty = 1,
+      lwd = 2,
+      bty = "n"
+    )
+
+    ## ===========================================================================
+    ## CASE 2b: all derived
+    ## ===========================================================================
+  } else if (identical(what, "derived")) {
+
+    fl <- derived_data
+
+    if (is.null(fl) || !"time" %in% names(fl)) {
+      stop("Invalid 'sim_epi' object: missing $derived with column 'time'.")
+    }
+
+    vars <- setdiff(names(fl), "time")
+
+    if (length(vars) == 0) {
+      stop("No derived variables to plot.")
+    }
+
+    y <- fl[, vars, drop = FALSE]
+
+    graphics::matplot(
+      fl$time, y,
+      type = "l",
+      lty = 1,
+      lwd = 2,
+      xlab = xlab,
+      ylab = "Derived",
+      main = paste("Derived:", model$name),
       ...
     )
 
@@ -231,10 +276,10 @@ plot.sim_epi <- function(x,
     ## ===========================================================================
   } else if (is.character(what) &&
              length(what) == 1 &&
-             !is.null(x$flows) &&
-             what %in% names(x$flows)) {
+             !is.null(derived_data) &&
+             what %in% names(derived_data)) {
 
-    fl <- x$flows
+    fl <- derived_data
 
     plot(
       fl$time, fl[[what]],
@@ -248,8 +293,8 @@ plot.sim_epi <- function(x,
 
   } else {
     stop(
-      "`what` must be 'states', 'flows', or one of: ",
-      paste(c(states, setdiff(names(x$flows), "time")), collapse = ", "),
+      "`what` must be 'states', 'flows' (deprecated), 'derived', or one of: ",
+      paste(c(states, setdiff(names(derived_data), "time")), collapse = ", "),
       call. = FALSE
     )
   }
@@ -310,7 +355,7 @@ plot.sim_epi <- function(x,
 summary.sim_epi <- function(object, ...) {
 
   st <- object$states
-  time <- object$flows$time
+  time <- object$states$time
 
   res <- list(
     model = object$model
@@ -322,8 +367,11 @@ summary.sim_epi <- function(object, ...) {
     res$time_peak_I <- time[i]
   }
 
-  if (!is.null(object$flows) && "incidence" %in% names(object$flows)) {
-    inc <- object$flows$incidence
+  derived_data <- object$derived
+  if (is.null(derived_data)) derived_data <- object$flows
+
+  if (!is.null(derived_data) && "incidence" %in% names(derived_data)) {
+    inc <- derived_data$incidence
     res$total_infections <- sum(inc, na.rm = TRUE)
   }
 
@@ -430,10 +478,13 @@ print.sim_epi <- function(x, ...) {
   ## ---------------------------------------------------------------------------
   ## Peak incidence (flow)
   ## ---------------------------------------------------------------------------
-  if (!is.null(x$flows) && "incidence" %in% names(x$flows)) {
-    inc <- get_flow(x, "incidence")
+  derived_data <- x$derived
+  if (is.null(derived_data)) derived_data <- x$flows
 
-    t_inc <- x$flows$time
+  if (!is.null(derived_data) && "incidence" %in% names(derived_data)) {
+    inc <- get_derived(x, "incidence")
+
+    t_inc <- derived_data$time
     peak_inc <- max(inc, na.rm = TRUE)
 
     if (is.finite(peak_inc)) {
@@ -458,8 +509,8 @@ print.sim_epi <- function(x, ...) {
     }
   }
 
-  if (!is.null(x$flows) && "incidence" %in% names(x$flows)) {
-    total_inf <- sum(x$flows$incidence, na.rm = TRUE)
+  if (!is.null(derived_data) && "incidence" %in% names(derived_data)) {
+    total_inf <- sum(derived_data$incidence, na.rm = TRUE)
     cat("  Total infections:     ", round(total_inf), "\n", sep = "")
   }
 

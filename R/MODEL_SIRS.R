@@ -113,6 +113,6 @@ SIRS_MODEL <- epi_model(
   defaults = c(beta = 0.3, gamma = 0.1, omega = 0.02),
   init = c("S" = 1e6, "I" = 20, "R" = 0),
   states = c("S", "I", "R"),
-  flows  = c("incidence")
+  derived  = c("incidence")
 )
 

@@ -9,7 +9,7 @@
 #'
 #' The function is fully model-agnostic: all model-specific information
 #' (state variables, parameters, default values, ODE right-hand side, and
-#' optional flow definitions) is read directly from the supplied
+#' optional derived-variable definitions) is read directly from the supplied
 #' \code{epi_model}.
 #'
 #' @details
@@ -23,11 +23,13 @@
 #'   \item the model parameters (\code{model$par_names}).
 #' }
 #'
-#' Optionally, the model may declare one or more flows via \code{model$flows}.
-#' If present, these flows must be returned by the ODE right-hand side function
-#' as additional named flows and will be extracted into the simulation result.
+#' Optionally, the model may declare one or more derived variables via
+#' \code{model$derived} (or legacy \code{model$flows}). If present, these
+#' variables must be returned by the ODE right-hand side function as additional
+#' named outputs and will be extracted into the simulation result.
 #'
-#' No assumptions are made about the semantic meaning of states or flows
+#' No assumptions are made about the semantic meaning of states or derived
+#' variables
 #' (e.g. incidence, prevalence, cumulative counts).
 #'
 #' ## Time grid
@@ -90,8 +92,10 @@
 #'   \item{params}{A list of model parameter values used in the simulation.}
 #'   \item{states}{A data frame with columns \code{time} and the model state
 #'     variables, containing the simulated state trajectories.}
-#'   \item{flows}{A data frame with columns \code{time} and the declared model
-#'     flows, or \code{NULL} if the model defines no flows.}
+#'   \item{derived}{A data frame with columns \code{time} and the declared
+#'     derived variables, or \code{NULL} if the model defines none.}
+#'   \item{flows}{Deprecated alias of \code{derived}, kept for backward
+#'     compatibility.}
 #'   \item{time_unit}{Character string giving the time unit associated with
 #'     the simulation.}
 #' }
@@ -237,20 +241,29 @@ simulate_epi <- function(model,
   out <- as.data.frame(out)
 
   ## -------------------------------------------------------------------------
-  ## 5) Extraer estados y flujos declarados
+  ## 5) Extraer estados y variables derivadas declaradas
   ## -------------------------------------------------------------------------
   states_df <- out[, c("time", model$states), drop = FALSE]
 
-  flows_df <- NULL
-  if (!is.null(model$flows)) {
-    missing_flows <- setdiff(model$flows, names(out))
-    if (length(missing_flows) > 0) {
+  derived_names <- model$derived
+  if (is.null(derived_names) && !is.null(model$flows) && length(model$flows) > 0) {
+    .Deprecated(msg = paste0(
+      "`model$flows` is deprecated and will be removed in a future release. ",
+      "Declare `model$derived` instead."
+    ))
+    derived_names <- model$flows
+  }
+
+  derived_df <- NULL
+  if (!is.null(derived_names) && length(derived_names) > 0) {
+    missing_derived <- setdiff(derived_names, names(out))
+    if (length(missing_derived) > 0) {
       stop(
-        "Model RHS did not return declared flows: ",
-        paste(missing_flows, collapse = ", ")
+        "Model RHS did not return declared derived variables: ",
+        paste(missing_derived, collapse = ", ")
       )
     }
-    flows_df <- out[, c("time", model$flows), drop = FALSE]
+    derived_df <- out[, c("time", derived_names), drop = FALSE]
   }
 
   ## -------------------------------------------------------------------------
@@ -260,7 +273,8 @@ simulate_epi <- function(model,
     model     = model,
     params    = as.list(theta),
     states    = states_df,
-    flows     = flows_df,
+    derived   = derived_df,
+    flows     = derived_df,
     time_unit = time_unit
   )
 

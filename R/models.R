@@ -44,7 +44,7 @@
 #'   name      = "SIRD",
 #'   rhs       = sird_rhs,
 #'   states    = c("S", "I", "R", "D"),
-#'   flows     = c("incidence"),
+#'   derived   = c("incidence"),
 #'   par_names = c("beta", "gamma", "mu"),
 #'   defaults  = c(beta = 0.3, gamma = 0.1, mu = 0.01),
 #'   init      = c(S = 1e6, I = 10, R = 0, D = 0)
@@ -59,7 +59,7 @@
 #' )
 #'
 #' plot(sim)
-#' plot(sim, what = "flows")
+#' plot(sim, what = "derived")
 #' run_epi_app(list(SIRD = SIRD_MODEL))
 
 
