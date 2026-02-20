@@ -8,3 +8,4 @@
 ^\.\.[Rr]check$
 ^SIR\.pdf$
 ^\.pdf$
+^LICENSE\.md$
