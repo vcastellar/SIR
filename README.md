@@ -23,6 +23,8 @@ included for interactive exploration.
   - SEIR
   - SEIRS
 - Numerical integration based on `deSolve`
+- Built-in post-simulation metrics (e.g., peak incidence, attack rate, growth rates)
+- In-session model registry (`register_epi_model()`, `list_models()`, `get_model()`)
 - Interactive Shiny app for visual exploration of model dynamics
 
 > ⚠️ This package does **not** perform parameter estimation or statistical
@@ -47,6 +49,12 @@ sim <- simulate_epi(
 
 plot(sim)
 plot(sim, what = "incidence")
+```
+
+You can also install from GitHub:
+
+```r
+remotes::install_github("vcastellar/SIR")
 ```
 
 ## Defining a custom model
@@ -79,6 +87,37 @@ my_sir <- epi_model(
 
 This model can then be simulated using simulate_epi() like any built-in
 model.
+
+## Working with the model registry
+
+Custom models can be registered in the package's in-memory registry so they
+can be discovered and reused during the current R session.
+
+```r
+register_epi_model(my_sir)
+list_models()
+model <- get_model("MySIR")
+```
+
+To remove a model from the active session:
+
+```r
+unregister_epi_model("MySIR")
+```
+
+## Built-in summary metrics
+
+After simulation, helper functions can be used to summarize epidemic
+trajectories, for example:
+
+```r
+inc <- sim$derived$incidence
+t   <- sim$states$time
+
+peak_incidence(inc, t)
+time_to_peak(inc, t)
+attack_rate(inc)
+```
 
 ## Shiny application
 
