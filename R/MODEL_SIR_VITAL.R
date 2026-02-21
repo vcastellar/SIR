@@ -131,8 +131,8 @@ sir_vital_rhs <- function(time, state, parms) {
 #' @export
 
 
-SIR_VITAL_MODEL <- epi_model(
-  name = "SIR with vital dynamics",
+SIR_V_MODEL <- epi_model(
+  name = "SIR-V",
   rhs  = sir_vital_rhs,
   par_names   = c("beta", "gamma", "mu"),
 
