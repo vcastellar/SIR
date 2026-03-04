@@ -6,7 +6,7 @@ Author: Vicente Castellar [aut, cre]
 Authors@R:
     person("Vicente", "Castellar",
            role = c("aut", "cre"),
-           email = "vic.castellar@gmail.com")
+           email = "vic.sebastia@gmail.com")
 Description: Simulation and exploration of deterministic compartmental epidemiological 
     models formulated as systems of ordinary differential equations (ODEs). 
     The package provides tools to define custom epidemic models, simulate latent 
