@@ -128,7 +128,7 @@ epi_model <- function(name,
 #'   \item State variables
 #'   \item Parameter names
 #'   \item Derived variables (if defined)
-#'   \item Initial conditions (`inits`)
+#'   \item Initial conditions (`init`)
 #'   \item Default parameter values (`defaults`)
 #'   \item Parameter bounds (if defined)
 #'   \item Right-hand side equations (`rhs`)
@@ -162,13 +162,13 @@ print.epi_model <- function(x, ...) {
   }
 
   ## --- initial conditions & defaults ----------------------------------------
-  has_inits    <- !is.null(x$inits)    && length(x$inits) > 0
+  has_inits    <- !is.null(x$init)     && length(x$init) > 0
   has_defaults <- !is.null(x$defaults) && length(x$defaults) > 0
 
   # Inits
   if (has_inits) {
     cat("  Inits:\n")
-    print(x$inits)
+    print(x$init)
   } else {
     cat("  Inits:    (none defined)\n")
   }

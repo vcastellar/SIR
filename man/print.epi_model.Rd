@@ -23,7 +23,7 @@ Displays a structured summary of the epidemiological model, including:
 \item State variables
 \item Parameter names
 \item Derived variables (if defined)
-\item Initial conditions (\code{inits})
+\item Initial conditions (\code{init})
 \item Default parameter values (\code{defaults})
 \item Parameter bounds (if defined)
 \item Right-hand side equations (\code{rhs})
