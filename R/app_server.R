@@ -1,14 +1,14 @@
 app_server <- function(input, output, session, models) {
 
   ## ---------------------------------------------------------
-  ## Valores reactivos auxiliares
+  ## Auxiliary reactive values
   ## ---------------------------------------------------------
   rv <- shiny::reactiveValues(
     derived_selected = NULL
   )
 
   ## ---------------------------------------------------------
-  ## Modelo seleccionado
+  ## Selected model
   ## ---------------------------------------------------------
   model <- shiny::reactive({
     shiny::req(input$model_name)
@@ -16,7 +16,7 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## UI dinámica
+  ## Dynamic UI
   ## ---------------------------------------------------------
   output$params_ui <- shiny::renderUI({
     shiny::tagList(param_sliders_ui(model()))
@@ -41,7 +41,7 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Parámetros
+  ## Parameters
   ## ---------------------------------------------------------
   parms <- shiny::reactive({
     shiny::req(model())
@@ -63,7 +63,7 @@ app_server <- function(input, output, session, models) {
 
 
   ## ---------------------------------------------------------
-  ## Estados iniciales
+  ## Initial states
   ## ---------------------------------------------------------
   init <- shiny::reactive({
     shiny::req(model())
@@ -83,7 +83,7 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Simulación
+  ## Simulation
   ## ---------------------------------------------------------
   sim <- shiny::reactive({
     shiny::req(parms(), init(), input$t_max)
@@ -97,7 +97,7 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Gestión de selección de variables derivadas (sticky)
+  ## Derived variable selection handling (sticky)
   ## ---------------------------------------------------------
   observeEvent(sim(), {
     derived <- sim()$derived
@@ -106,10 +106,10 @@ app_server <- function(input, output, session, models) {
     derived_names <- setdiff(names(derived), "time")
 
     if (is.null(rv$derived_selected)) {
-      # primera vez
+      # first time
       rv$derived_selected <- derived_names
     } else {
-      # mantener solo los que siguen existiendo
+      # keep only those that still exist
       rv$derived_selected <- intersect(rv$derived_selected, derived_names)
     }
   }, ignoreInit = TRUE)
@@ -119,7 +119,7 @@ app_server <- function(input, output, session, models) {
   }, ignoreInit = TRUE)
 
   ## ---------------------------------------------------------
-  ## Selector de variables derivadas
+  ## Derived variables selector
   ## ---------------------------------------------------------
   output$derived_select_ui <- shiny::renderUI({
     shiny::req(sim())
@@ -141,7 +141,7 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Plot de estados
+  ## State plot
   ## ---------------------------------------------------------
   output$plot_states <- shiny::renderPlot({
     shiny::req(sim(), input$states_to_plot)
@@ -163,7 +163,7 @@ app_server <- function(input, output, session, models) {
   })
 
   ## ---------------------------------------------------------
-  ## Plot de variables derivadas
+  ## Derived variables plot
   ## ---------------------------------------------------------
   output$plot_derived <- shiny::renderPlot({
     shiny::req(sim(), input$derived_to_plot)
@@ -186,4 +186,3 @@ app_server <- function(input, output, session, models) {
     plot(sim2, what = "states")
   })
 }
-

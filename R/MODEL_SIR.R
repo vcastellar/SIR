@@ -1,6 +1,6 @@
 
 #-------------------------------------------------------------------------------
-# modelo SIR
+# SIR model
 #-------------------------------------------------------------------------------
 #' @include constructor.R
 #' @keywords internal
@@ -20,7 +20,7 @@ sir_rhs <- function(time, state, parms) {
     list(
       c(dS, dI, dR),
 
-      ## flujos instantáneos
+      ## instantaneous flows
       incidence = lambda,
       recovery  = gamma * I
     )
