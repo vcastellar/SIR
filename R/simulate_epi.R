@@ -162,7 +162,7 @@ simulate_epi <- function(model,
   if (!is.null(seed)) set.seed(seed)
 
   ## -------------------------------------------------------------------------
-  ## 1) Tiempos
+  ## 1) Time points
   ## -------------------------------------------------------------------------
   if (!is.numeric(times) || length(times) < 2 || anyNA(times)) {
     stop("`times` must be a numeric vector of length >= 2 with no missing values.")
@@ -172,7 +172,7 @@ simulate_epi <- function(model,
   }
 
   ## -------------------------------------------------------------------------
-  ## 2) Parámetros
+  ## 2) Parameters
   ## -------------------------------------------------------------------------
   theta <- model$defaults
 
@@ -204,7 +204,7 @@ simulate_epi <- function(model,
   theta <- theta[model$par_names]
 
   ## -------------------------------------------------------------------------
-  ## 3) Condiciones iniciales
+  ## 3) Initial conditions
   ## -------------------------------------------------------------------------
   if (is.null(init)) {
     if (is.null(model$init)) {
@@ -226,7 +226,7 @@ simulate_epi <- function(model,
   init <- init[model$states]
 
   ## -------------------------------------------------------------------------
-  ## 4) Integración ODE
+  ## 4) ODE integration
   ## -------------------------------------------------------------------------
   out <- deSolve::ode(
     y     = init,
@@ -239,7 +239,7 @@ simulate_epi <- function(model,
   out <- as.data.frame(out)
 
   ## -------------------------------------------------------------------------
-  ## 5) Extraer estados y variables derivadas declaradas
+  ## 5) Extract states and declared derived variables
   ## -------------------------------------------------------------------------
   states_df <- out[, c("time", model$states), drop = FALSE]
 
@@ -258,7 +258,7 @@ simulate_epi <- function(model,
   }
 
   ## -------------------------------------------------------------------------
-  ## 6) Resultado
+  ## 6) Result
   ## -------------------------------------------------------------------------
   res <- list(
     model     = model,

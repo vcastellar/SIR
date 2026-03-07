@@ -34,7 +34,7 @@ jobs:
         with:
           r-version: ${{ matrix.r-version }}
 
-      # AÑADIDO: instala Pandoc
+      # ADDED: install Pandoc
       - name: Set up Pandoc
         uses: r-lib/actions/setup-pandoc@v2
 

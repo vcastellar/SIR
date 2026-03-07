@@ -98,7 +98,7 @@ plot.sim_epi <- function(x,
   model   <- x$model
   st      <- x$states
   states  <- model$states
-  ## Etiqueta del eje X según time_unit
+  ## X-axis label based on time_unit
   unit <- x$time_unit
   xlab <- if (is.null(unit) || !nzchar(unit)) {
     "Time"
@@ -404,7 +404,7 @@ print.sim_epi <- function(x, ...) {
   params <- x$params
   states <- x$states
 
-  # Etiqueta de unidad de tiempo
+  # Time-unit label
   unit <- x$time_unit
   unit_lbl <- if (is.null(unit) || !nzchar(unit)) {
     "time units"
